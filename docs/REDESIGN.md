@@ -1,9 +1,11 @@
 # Grimoire redesign proposal
 
-> **Status: proposal, not implemented.** Written 2026-09-19 after rebuilding and
-> screenshotting the current UI at three viewports. The full visual version, with
-> live type specimens, the drawn icon set and four screen mockups, is a private
-> artifact; this file is the text record so the decisions live with the code.
+> **Status: proposal, second draft, not implemented.** Written 2026-09-19 after
+> rebuilding and screenshotting the current UI at three viewports. The first
+> draft (warm umber ground, brass, gradients) was rejected as cheap-looking and
+> is withdrawn. The full visual version, with live type specimens, the drawn
+> icon set and four screen mockups, is a private artifact; this file is the text
+> record so the decisions live with the code.
 
 ## Diagnosis
 
@@ -33,93 +35,100 @@ the token (gradient rim, notched evil ring, the word alongside the colour), the
 clock-ring layout and its size solver, the cinematic and its performance budget,
 hold-to-reveal and the seal, film grain, blue/red reserved for alignment.
 
-## Proposal
+## Proposal: flat, black, cream
 
-### Type (recommended pairing A)
+One rule: **flat**. No gradient anywhere (including the token rim), no glows,
+no vignettes, no film grain. The only shadow is under a bottom sheet. Chrome is
+black, cream and hairlines; the only hues are the character art and the blue
+and red of alignment. This is what the physical grimoire looks like: cream
+tokens with ink art on a black board.
+
+### Type (recommended)
 
 | Role | Now | Proposed |
 | --- | --- | --- |
-| Display, phase titles, role names, headers | Cinzel 600 | **Cormorant / Cormorant SC** 600 |
-| Reading text: abilities, reminders, say-this | EB Garamond 500 | **Alegreya** 400 |
-| UI: buttons, names, numbers | Inter 380 | **Alegreya Sans** 500 |
-| Labels | Inter uppercase tracked | **Alegreya SC** small caps |
+| Titles, phase names, role names, headers | Cinzel 600 | **Libre Caslon Display** |
+| Reading text: abilities, reminders, say-this | EB Garamond 500 | **Libre Caslon Text** 400 |
+| UI: buttons, names, numbers | Inter 380 | **Libre Franklin** 400/500 |
+| Labels | Inter uppercase tracked | Franklin caps, 11px, 0.14em tracking |
 
-Alternative B: Playfair Display + Source Serif 4 + Source Sans 3 (crisper, less
-atmospheric). Body goes 17px to 18px to match optical size. Small caps replace
-tracked uppercase. Tabular figures everywhere a number changes in place. All on
-Fontsource, self-hosted as now.
+Alternative shown for comparison: Cormorant SC + Libre Caslon Text + Alegreya
+Sans. Both on Fontsource, self-hosted as now. Tabular figures wherever a number
+changes in place. Radius 6px on surfaces; tokens are the only circles.
 
 ### Colour
 
-Same structure, warmer temperature. Ground moves from blue-black to near-neutral
-umber. One new token, `candle`, for "happening now" only.
-
 ```
-umber-900 #0f0c0a  umber-800 #181311  umber-700 #241c17  umber-600 #35291f  umber-500 #4d3d30
-parch-100 #efe3cc  parch-300 #cdbc9d  parch-500 #97876d
-brass-300 #dcb75e  brass-400 #b98e2e  brass-600 #7a5a18  candle #f3cf84
-good-500  #3f7fbf  good-300  #8cb5e0  evil-500  #a72e28  evil-300 #df7a70
-shroud    #7b8087  ok        #6f8b5b
+ink-0 #0c0c0d  ink-1 #141416  ink-2 #1c1c1f  ink-3 #2a2a2f  ink-4 #3b3b42
+cream #ede8db  cream-2 #b8b3a7  cream-3 #7d796f
+blue #3f7cc4   blue-2 #8db4e2   red #b33029   red-2 #e07c72
+shroud #8a8f96  now #ffe3a3
 ```
 
-Contrast on umber-900: parch-100 15.3:1, brass-300 10.2:1, good-300 9.1:1,
-evil-300 6.6:1, evil-500 2.8:1 (fills and rings only, as now). Shroud stays cool
-on purpose.
+Neutral black, not blue-black and not brown. Brass is removed entirely.
+On ink-0: cream 15.8:1, cream-2 9.4:1, cream-3 4.6:1 (labels only), blue-2
+8.9:1, red-2 6.7:1; blue and red at the 500 step are for rings and fills only.
+"Extra dim" drops cream to cream-2 and dims the token discs.
+
+### The token
+
+Flat cream disc, art on top, flat 2.5px ring in blue or red, notched for evil.
+Unassigned: grey ring. Dead: grey disc, desaturated, flat shroud over the top
+edge. Acting now (night) or hand raised (vote): pale `now` ring with an outline.
+Reminder tokens are the same object at 16px (ring) and 26px (sheet), carrying
+the source character's art.
 
 ### Icons
 
-A bespoke "ink" set of about thirty on the Lucide 24px grid: 1.6px round-capped
-strokes with solid fills where a woodcut would be solid, drawn from the game's
-objects. Kill → shroud, nominate → manicule, vote → raised hand, ghost vote →
-ghost, log → open book, past games → hourglass, notes → quill, script → sealed
-scroll, settings → candle, Traveller → signpost, lock → iron lock, add player →
-a seat at the ring, poisoned → vial, drunk → tankard, protected → shield,
-disguised → mask. Shipped as `packages/ui/src/icons.tsx` with Lucide's `size`
-and `strokeWidth` props so every call site is a one-line change; Lucide removed.
-Stopgap if no bespoke set: Phosphor duotone.
+A drawn set of about thirty on the Lucide 24px grid: 1.5px line, round caps,
+solid fills where an engraving would be solid, the game's own objects. Kill →
+shroud, nominate → pointing hand, vote → raised hand, ghost vote → ghost, log →
+open book, past games → hourglass, notes → quill, script → sealed scroll,
+settings → candle, Traveller → signpost, lock → iron lock, add player → a seat
+at the ring, disguised → mask. Shipped as `packages/ui/src/icons.tsx` with
+Lucide's `size` prop; Lucide removed from all three packages. Stopgap: Phosphor
+thin.
 
-### Components
+### Components and screens
 
-- **Primary button** is a parchment fill with dark text. Gold outline becomes
-  secondary emphasis; hairline stays quiet; danger is evil-300 text, never a fill.
-- **Header**: phase in Cormorant SC at 22px with a small-caps subline
-  ("12 alive · step 4 of 9"); no more 13px Cinzel.
-- **Setup steps**: I · II · III on a rule, not a segmented control.
-- **Lists**: rules between rows, no boxes. Containers only for real objects
-  (token, say-this line, QR).
-- **Reminders**: miniature round tokens carrying the source character's art,
-  16px on the ring tucked inside the circle, larger in the seat sheet with the
-  label and expiry beside them.
-- **Seat sheet**: one icon action row (Kill / Character / Disguise /
-  Traveller), reminders as tokens, notes as a line, timeline as a margin note,
-  remove as a hold on a text line at the bottom.
-- **Home**: wordmark, clock face (which also becomes the app icon), continue /
-  regulars / scripts / past games / settings as rows, "New game" primary.
-- **Grimoire centre dial**: the awake character's token and "4 of 9" at night
-  with a conic progress ring; by day, the player about to die and their votes.
-  Log and Undo leave the ring (tap / long-press on the phase title; undo toast).
-- **Shroud** drawn as a cloth over the top of the token, not a bar. Awake seat
-  lit with `candle`.
+- **Primary button**: cream fill, dark text. Hairline secondary, text-only
+  quiet, red-2 text for danger, never a red fill.
+- **Header**: phase in Caslon Display 24px with a Franklin caps subline
+  ("12 alive · step 4 of 9").
+- **Setup steps**: three labels on a rule, not a segmented control.
+- **Lists**: hairlines between rows, no boxes. Borders only on inputs, buttons
+  and sheets.
+- **Home**: wordmark, line-drawn clock face (also the app icon), rows for
+  continue / regulars / scripts / past games / settings, "New game" primary.
+- **Seat sheet**: icon action row (Kill / Character / Disguise / Traveller),
+  reminders as tokens with expiry, notes as a line, timeline as a margin note,
+  remove as a hold on a red text line at the bottom.
+- **Grimoire centre dial**: awake character's token and "4 of 9" with a flat
+  arc; by day, the player about to die and their votes. Log and Undo leave the
+  ring (tap / long-press on the phase title; undo toast).
 - **Vote on the ring** (phase IV): tap seats to raise hands, tally in the dial,
-  nomination arc on the reserved SVG layer; the name-chip grid goes.
+  hairline nomination arc on the reserved SVG layer; the name-chip grid goes.
+- **Cinematic**: keeps letterbox and timing, loses the colour wash and flames.
+- **Player app**: one grey step lighter than the Storyteller's; the vignette
+  goes.
 
 ## Decisions needed
 
-1. Type pairing: A (recommended) or B.
-2. Icons: bespoke (recommended) or Phosphor stopgap.
-3. Warm ground: yes (recommended) or keep blue-black.
-4. Primary button: parchment fill (recommended) or solid brass.
-5. Centre dial: yes (recommended).
-6. Vote on the ring: yes, as its own last phase (recommended).
+1. Flat, black, cream as the premise (recommended yes).
+2. Cream tokens (recommended) or dark discs with flat coloured rings.
+3. Caslon + Franklin (recommended) or the Cormorant alternative.
+4. Drawn icon set (recommended) or Phosphor thin stopgap.
+5. Centre dial (recommended yes).
+6. Vote on the ring (recommended yes, as its own last phase).
 
 ## Phases
 
 | Phase | Work | Touches |
 | --- | --- | --- |
-| I | Tokens: palette, fonts, small-caps and label utilities, tabular figures; palette test updated. No layout changes. | `packages/ui/src/theme.css`, `palette.ts`, both `styles.css` |
-| II | Icon set as React components; every Lucide import swapped; Lucide removed. App icons (192, 512, maskable) for both apps. | `packages/ui/src/icons.tsx`, ~20 call sites, both `public/` |
-| III | Components: buttons, header, stepper, rules-not-boxes lists, reminder tokens, sheet header, home screen; cinematic re-set. | `controls.tsx`, `Screen.tsx`, `Plan.tsx`, `SeatSheet.tsx`, `Settings.tsx`, player screens |
-| IV | Grimoire: centre dial, mini reminder tokens, shroud, awake highlight, vote-on-ring with nomination arc. | `Grimoire.tsx`, `grimoire.css`, `Run.tsx`, `DayPanel.tsx`, `SeatView.tsx` |
+| I | Tokens: palette, fonts, label utilities, tabular figures, 6px radius. Remove every gradient, the grain and the vignette. Palette test updated. | `theme.css`, `palette.ts`, both `styles.css`, `grimoire.css`, `reveal.css` |
+| II | Cream token, flat rings, shroud, acting state. Icon set as React components; every Lucide import swapped; Lucide removed. App icons for both apps. | `Token.tsx`, `grimoire.css`, `icons.tsx`, ~20 call sites, both `public/` |
+| III | Components and screens: buttons, header, stepper, rules-not-boxes lists, reminder tokens, sheet, home screen, cinematic re-set. | `controls.tsx`, `Screen.tsx`, `Plan.tsx`, `SeatSheet.tsx`, `Settings.tsx`, `cinematic.css`, player screens |
+| IV | Grimoire: centre dial, mini reminder tokens, vote on the ring with the nomination arc. | `Grimoire.tsx`, `Run.tsx`, `DayPanel.tsx`, `SeatView.tsx` |
 
 Each phase is screenshot-reviewed with `pnpm shots` before the next starts.
 Phases I–III change no behaviour or tests; IV changes the vote interaction and
