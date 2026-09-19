@@ -386,15 +386,23 @@ Join flow, two taps from scan to role:
 ```
 ST shows one QR  →  player scans, taps the OS banner  →  app opens
   →  "Who are you?" list of names; taps theirs (claimed seats grey out)
-  →  opaque token back: "Cup your hands. Press and hold."
-  →  release re-covers.  Bottom bar: [Me] [Script] [Notes]
+  →  opaque card: "Press and hold"
+  →  picture, name, team and ability together; release re-covers
+  →  under it, two named rows: "The script", "Your notes"
 ```
 
-No name typing — the grimoire already knows who's at the table. The install prompt is
+No name typing — the grimoire already knows who's at the table, and the seat list it
+sends fills in the notes so nobody types the table twice. The install prompt is
 deferred until *after* the reveal, the likeliest abandonment point.
 
+No tab bar. A player meets this app once, in a dim room, so the screen opens on the one
+thing they came for and names the other two in words rather than icons. While the
+question is "who are you?", nothing else is on screen at all.
+
 **Secrecy, by construction.** Cover is **opaque, never blurred** — a blurred token
-still leaks the blue/red ring, which is most of the secret. Visible only while the
+still leaks the blue/red ring, which is most of the secret — and it covers the whole
+card, ability included: an ability left in the open names the character as surely as
+its picture does. Visible only while the
 finger is down, via `pointerdown`/`pointerup`/`pointercancel`; no timers or toggle
 state that can be left open. Auto-recover after ~6 s even if held, so the phone can't
 be propped face-up. Re-cover on `visibilitychange` and `blur`, which matters on iOS
