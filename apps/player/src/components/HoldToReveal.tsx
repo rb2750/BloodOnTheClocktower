@@ -107,9 +107,8 @@ export function HoldToReveal({
       onPointerCancel={cover}
       onPointerLeave={cover}
       onContextMenu={(e) => e.preventDefault()}
-      // Android starts a selection from a long press even where selection is
-      // off, and the handles land over the card.
-      onSelectStart={(e) => e.preventDefault()}
+      // A long press is a drag as far as the browser is concerned, and a
+      // dragged card is a card nobody is holding.
       onDragStart={(e) => e.preventDefault()}
       role="button"
       tabIndex={0}

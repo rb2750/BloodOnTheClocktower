@@ -100,7 +100,7 @@ export type StoreActions = {
   setBluffs: (ids: string[]) => void
   setLocked: (locked: boolean) => void
   /** The game's shared room, created on first use. */
-  ensureRoom: (make: () => { id: string; key: string }) => { id: string; key: string }
+  ensureRoom: (make: () => { id: string; key: Uint8Array }) => { id: string; key: Uint8Array }
   /** A device has taken a seat. Returns false if another device holds it. */
   recordClaim: (seatId: string, deviceId: string) => boolean
   /** Roles hidden on screen, for when someone can see the phone. Not persisted. */

@@ -14,20 +14,20 @@ const TRIED = 'botc-recovered'
  * reloading again would only loop.
  */
 export class Recovery extends Component<{ children: ReactNode }, { crashed: boolean }> {
-  state = { crashed: false }
+  override state = { crashed: false }
 
   static getDerivedStateFromError() {
     return { crashed: true }
   }
 
-  componentDidCatch(error: Error, info: ErrorInfo) {
+  override componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('The app crashed.', error, info.componentStack)
     if (sessionStorage.getItem(TRIED)) return
     sessionStorage.setItem(TRIED, '1')
     void reset()
   }
 
-  render() {
+  override render() {
     if (!this.state.crashed) return this.props.children
     return (
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 px-8 text-center">
