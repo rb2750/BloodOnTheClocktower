@@ -41,6 +41,9 @@ export function phaseLabel(phase: Phase): string {
 
 const id = () => Math.random().toString(36).slice(2, 10)
 
+const toBytes = (value: unknown): Uint8Array =>
+  value instanceof Uint8Array ? value : Uint8Array.from(Object.values(value as Record<string, number>))
+
 /**
  * One undoable step.
  *
@@ -400,7 +403,7 @@ export const useStore = create<Store>()(
         setCinematicPlayed: (key) => set({ cinematicPlayed: key }),
 
         ensureRoom: (make) => {
-          const game = get().game
+          const game = getState().game
           if (!game) return make()
           if (game.room) return game.room
           const room = make()
@@ -409,7 +412,7 @@ export const useStore = create<Store>()(
         },
 
         recordClaim: (seatId, deviceId) => {
-          const game = get().game
+          const game = getState().game
           if (!game) return false
           const holder = game.claims?.[seatId]
           if (holder && holder !== deviceId) return false
@@ -596,6 +599,16 @@ export const useStore = create<Store>()(
         settings: state.settings,
         cinematicPlayed: state.cinematicPlayed,
       }),
+      // A Uint8Array does not survive JSON, so the room key comes back as an
+      // object keyed by byte index and every use of it fails.
+      merge: (persisted, current) => {
+        const state = { ...current, ...(persisted as Partial<StoreState>) } as Store
+        const room = state.game?.room
+        if (state.game && room && !(room.key instanceof Uint8Array)) {
+          state.game = { ...state.game, room: { ...room, key: toBytes(room.key) } }
+        }
+        return state
+      },
     },
   ),
 )
