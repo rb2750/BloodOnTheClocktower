@@ -21,3 +21,22 @@
   --surface: var(--color-ink-2);
   --surface-raised: var(--color-ink-3);
 }
+
+/*
+ * Nothing here is worth selecting, and a press that lasts half a second is the
+ * whole interface: on a phone that means the magnifier, a selection handle or a
+ * share sheet offering the character's name to the room. Inputs are the one
+ * place typing and selecting matter.
+ */
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
