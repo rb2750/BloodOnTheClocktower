@@ -258,7 +258,12 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
           .filter((id): id is string => Boolean(id))}
         onPick={(c) => {
           if (picking === 'true') setSeatTrueCharacter(seat.id, c.id)
-          else if (picking === 'perceived' && c.id === 'drunk') {
+          else if (picking === 'believed') {
+            // Chosen from the banner, the seat has not yet been marked as
+            // really the Drunk; chosen after picking Drunk, it already has.
+            setSeatCharacter(seat.id, c.id)
+            if (seat.trueCharacterId !== 'drunk') setSeatTrueCharacter(seat.id, 'drunk')
+          } else if (picking === 'perceived' && c.id === 'drunk') {
             // Making someone the Drunk is two choices, and the second is not
             // optional: what they believe they are.
             setSeatTrueCharacter(seat.id, 'drunk')
