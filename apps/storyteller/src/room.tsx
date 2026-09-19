@@ -46,6 +46,7 @@ function tableOf(game: ReturnType<typeof useStore.getState>['game']) {
     name: s.name,
     taken: Boolean(game?.claims?.[s.id]),
     alive: s.alive,
+    ghostVote: s.deadVoteAvailable,
   }))
 }
 
@@ -172,6 +173,17 @@ export function RoomProvider({ children }: { children: ReactNode }) {
           if (status === 'open') introduce(client, pub)
         },
         onMessage: (message: RelayMessage) => {
+          if (message.t === 'hand') {
+            // The store already knows the rules: a dead hand only counts while
+            // its one vote is unspent, and lowering it gives that vote back.
+            const game = useStore.getState().game
+            const today = game?.phase.k === 'day' ? game.phase.n : null
+            const open = game?.nominations.filter((n) => n.day === today && !n.settled).at(-1)
+            if (!open) return
+            const up = open.voterIds.includes(message.seatId)
+            if (up !== message.up) useStore.getState().toggleVote(open.id, message.seatId)
+            return
+          }
           if (message.t !== 'claim') return
           const state = useStore.getState()
           const seat = state.game?.seats.find((s) => s.id === message.seatId)

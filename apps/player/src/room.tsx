@@ -139,7 +139,13 @@ function useRelayConnection() {
           }
           if (message.t === 'seats') {
             rememberTable(message.seats.map((s) => s.name))
-            setTable(message.seats.map((s) => ({ name: s.name, alive: s.alive ?? true })))
+            setTable(
+              message.seats.map((s) => ({
+                name: s.name,
+                alive: s.alive ?? true,
+                ghostVote: s.ghostVote ?? true,
+              })),
+            )
             return setSeats(message.seats)
           }
           if (message.t === 'phase') return setPhase(message.phase, message.day)
@@ -193,7 +199,16 @@ function useRelayConnection() {
     else pendingClaim.current = seat
   }
 
-  return { seats, status, claim, claimed: seatId }
+  // A hand is sent, not kept: the Storyteller's count comes back in the next
+  // vote snapshot, and that is what the screen shows. A hand raised while the
+  // line is down is lost, exactly as a hand nobody saw would be.
+  const hand = (up: boolean) => {
+    const mine = useStore.getState().seatId
+    if (!mine || !relay.current) return
+    relay.current.send({ t: 'hand', seatId: mine, up })
+  }
+
+  return { seats, status, claim, claimed: seatId, hand }
 }
 
 
@@ -204,6 +219,7 @@ const RoomContext = createContext<Room>({
   status: 'offline',
   claim: () => {},
   claimed: null,
+  hand: () => {},
 })
 
 /** One connection for the whole app, rather than one per screen. */

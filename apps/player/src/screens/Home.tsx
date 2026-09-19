@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { characterArt, getCharacter } from '@botc/rules'
 import { ChevronRight, Plus, Token, Button, inputClass } from '@botc/ui'
 import { useStore } from '../state.js'
+import { useRelay } from '../room.js'
 import { MeScreen } from './Me.js'
 import { HoldToReveal } from '../components/HoldToReveal.js'
 import { NoteSheet } from './Notes.js'
@@ -222,9 +223,18 @@ function Changed() {
 function Vote() {
   const vote = useStore((s) => s.vote)
   const seatName = useStore((s) => s.seatName)
+  const table = useStore((s) => s.table)
+  const { hand, status } = useRelay()
   if (!vote) return null
+
   const you = vote.nominee === seatName
   const enough = vote.tally >= vote.majority
+  const me = table.find((t) => t.name === seatName)
+  const raised = seatName !== null && vote.voters.includes(seatName)
+  // Alive, or dead with the one vote still in hand. A hand already up can
+  // always come down, which is how a spent ghost vote is taken back.
+  const may = Boolean(me && (me.alive || me.ghostVote || raised))
+
   return (
     <section className="mx-5 mt-4 rounded-2xl border border-(--hairline-strong) bg-(--surface) px-4 py-3">
       <p className="caps text-(--text-faint)">{vote.settled ? 'Vote closed' : 'On the block'}</p>
@@ -238,6 +248,32 @@ function Vote() {
       </p>
       {vote.voters.length > 0 && (
         <p className="mt-1 text-[12px] text-(--text-faint)">Voting: {vote.voters.join(', ')}</p>
+      )}
+
+      {!vote.settled && me && (
+        <div className="mt-3">
+          {may ? (
+            <button
+              onClick={() => hand(!raised)}
+              disabled={status !== 'open'}
+              aria-pressed={raised}
+              className={`min-h-(--tap-min) w-full rounded-full border px-4 text-[16px] font-medium disabled:opacity-40 ${
+                raised
+                  ? 'border-(--accent) bg-(--accent) text-(--bg)'
+                  : 'border-(--hairline-strong) text-(--text)'
+              }`}
+            >
+              {raised ? 'Lower my hand' : 'Raise my hand'}
+            </button>
+          ) : (
+            <p className="caps text-(--text-faint)">Your ghost vote is spent</p>
+          )}
+          {!me.alive && may && !raised && (
+            <p className="mt-2 text-center text-[12px] text-(--text-faint)">
+              You are dead. This is your one vote for the rest of the game.
+            </p>
+          )}
+        </div>
       )}
     </section>
   )
