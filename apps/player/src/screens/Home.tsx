@@ -228,12 +228,7 @@ function Vote() {
   const seatName = useStore((s) => s.seatName)
   const table = useStore((s) => s.table)
   const { hand, status } = useRelay()
-  if (!vote) return null
-
-  const you = vote.nominee === seatName
-  const enough = vote.tally >= vote.majority
-  const me = table.find((t) => t.name === seatName)
-  const counted = seatName !== null && vote.voters.includes(seatName)
+  const counted = Boolean(vote && seatName !== null && vote.voters.includes(seatName))
   // The hand goes up on screen the instant it is tapped, and the Storyteller's
   // count settles it. If the count never comes, the hand comes down again and
   // says so, rather than lying on the screen.
@@ -251,7 +246,12 @@ function Vote() {
     }, 4000)
     return () => window.clearTimeout(t)
   }, [wanted, counted])
-  useEffect(() => setLost(false), [vote.id])
+  useEffect(() => setLost(false), [vote?.id])
+  if (!vote) return null
+
+  const you = vote.nominee === seatName
+  const enough = vote.tally >= vote.majority
+  const me = table.find((t) => t.name === seatName)
   const raised = wanted ?? counted
   // Alive, or dead with the one vote still in hand. A hand already up can
   // always come down, which is how a spent ghost vote is taken back.
