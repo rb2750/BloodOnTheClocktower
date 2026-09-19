@@ -5,6 +5,7 @@ import { PayloadError, payloadFromHash } from '@botc/protocol'
 import { useStore } from './state.js'
 import { ScriptScreen } from './screens/Script.js'
 import { HomeScreen } from './screens/Home.js'
+import { PlayerCinematic } from './components/PlayerCinematic.js'
 
 type View = 'home' | 'script'
 
@@ -67,6 +68,8 @@ export function App() {
         {view === 'home' && <HomeScreen openRoles={() => open('script')} />}
         {view === 'script' && <ScriptScreen />}
       </main>
+
+      <PlayerCinematic />
 
       <Toaster
         position="top-center"
