@@ -4,6 +4,7 @@ import { ChevronRight, Plus, Token, Button, BuildStamp, inputClass } from '@botc
 import { useStore } from '../state.js'
 import { useRelay } from '../room.js'
 import { BUILD } from '../config.js'
+import { enablePush, pushState, type PushState } from '../push.js'
 import { MeScreen } from './Me.js'
 import { HoldToReveal } from '../components/HoldToReveal.js'
 import { NoteSheet } from './Notes.js'
@@ -56,6 +57,7 @@ export function HomeScreen({ openRoles }: { openRoles: () => void }) {
       <Seat name={seatName} />
       <Vote />
       <Changed />
+      <Alerts />
       <MeScreen />
       <Whispers />
 
@@ -225,6 +227,55 @@ function Composition() {
         part(c.demon, 'Demon', 'Demons'),
       ].join(' · ')}
     </p>
+  )
+}
+
+/**
+ * The buzz. The web cannot vibrate an iPhone, so the buzz is a real
+ * notification, which iOS grants only to an app on the home screen and only
+ * after a tap that asks. This row is that tap, and says what to do first.
+ */
+function Alerts() {
+  const seatId = useStore((s) => s.seatId)
+  const { subscribe, status } = useRelay()
+  const [state, setState] = useState<PushState>(() => pushState())
+  const [busy, setBusy] = useState(false)
+  if (!seatId || state === 'unsupported' || state === 'on') return null
+
+  const turnOn = async () => {
+    setBusy(true)
+    try {
+      const sub = await enablePush()
+      if (sub) subscribe(sub)
+    } finally {
+      setBusy(false)
+      setState(pushState())
+    }
+  }
+
+  return (
+    <section className="mx-5 mt-4 rounded-2xl border border-(--hairline-strong) px-4 py-3">
+      {state === 'install-first' ? (
+        <>
+          <p className="caps text-(--text-faint)">To get a buzz</p>
+          <p className="serif mt-1 text-[15px] leading-snug text-(--text-dim)">
+            Tap Share, then Add to Home Screen, and open it from there. Then come back here and
+            turn alerts on.
+          </p>
+        </>
+      ) : state === 'denied' ? (
+        <>
+          <p className="caps text-(--text-faint)">Alerts are blocked</p>
+          <p className="serif mt-1 text-[15px] leading-snug text-(--text-dim)">
+            Allow notifications for this app in Settings to get a buzz.
+          </p>
+        </>
+      ) : (
+        <Button className="w-full" variant="primary" disabled={busy || status !== 'open'} onClick={() => void turnOn()}>
+          {busy ? 'Turning on…' : 'Turn on alerts'}
+        </Button>
+      )}
+    </section>
   )
 }
 

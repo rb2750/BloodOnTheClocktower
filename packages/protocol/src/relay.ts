@@ -104,6 +104,21 @@ export class Relay {
     void this.flush()
   }
 
+  /**
+   * A plaintext control frame for the relay itself, which it never forwards:
+   * a notification subscription, or a request to notify a phone. Sent when the
+   * line is up, else dropped; the caller re-sends on the next open.
+   */
+  sendRaw(frame: string): boolean {
+    if (this.socket?.readyState !== WebSocket.OPEN) return false
+    try {
+      this.socket.send(frame)
+      return true
+    } catch {
+      return false
+    }
+  }
+
   close(): void {
     this.closed = true
     if (this.timer) clearTimeout(this.timer)

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getCharacter, teamAlignment } from '@botc/rules'
-import { AbilityText, Button, Label, Sheet, Shroud, Heart, Ghost, Swap, Mask, Signpost, inputClass } from '@botc/ui'
+import { AbilityText, Button, Label, Sheet, Shroud, Heart, Ghost, Swap, Signpost, inputClass } from '@botc/ui'
 import { toast } from 'sonner'
 import { useStore } from '../state/store.js'
 import { CharacterToken } from './CharacterToken.js'
@@ -43,7 +43,7 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
   const removeSeat = useStore((s) => s.removeSeat)
   const undo = useStore((s) => s.undo)
 
-  const [picking, setPicking] = useState<'perceived' | 'true' | 'believed' | null>(null)
+  const [picking, setPicking] = useState<'perceived' | 'believed' | null>(null)
   const [telling, setTelling] = useState(false)
   const { reachable } = useRoom()
 
@@ -57,15 +57,13 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
   if (!game || !seat) return null
 
   const character = getCharacter(seat.characterId ?? '')
-  const trueCharacter = getCharacter(seat.trueCharacterId ?? '')
-  const shown = trueCharacter ?? character
+  const drunk = seat.trueCharacterId === 'drunk'
+  const shown = character
   const alignment = seat.alignmentOverride ?? (shown ? teamAlignment(shown.team) : undefined)
   const timeline = game.log.filter((l) => l.seatIds.includes(seat.id))
 
   const roleLine = shown
-    ? `${shown.name} · ${TEAM_LABEL[shown.team] ?? shown.team}${
-        trueCharacter ? ` · believes ${character?.name}` : ''
-      }`
+    ? `${shown.name} · ${TEAM_LABEL[shown.team] ?? shown.team}${drunk ? ' · drunk' : ''}`
     : 'No character yet'
 
   return (
@@ -93,6 +91,14 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
             >
               {roleLine}
             </div>
+          {drunk && (
+            <button
+              onClick={() => setSeatTrueCharacter(seat.id, undefined)}
+              className="caps mt-1 min-h-8 text-[10px] text-(--text-faint)"
+            >
+              Not drunk after all
+            </button>
+          )}
           </div>
         </div>
 
@@ -129,12 +135,6 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
               onClick={() => toggleDeadVote(seat.id)}
             />
           )}
-          <Action
-            icon={<Mask size={22} />}
-            label={trueCharacter ? 'Disguised' : 'Disguise'}
-            active={Boolean(trueCharacter)}
-            onClick={() => setPicking('true')}
-          />
           <Action
             icon={<Signpost size={22} />}
             label="Traveller"
@@ -240,27 +240,15 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
         open={picking !== null}
         onClose={() => setPicking(null)}
         script={game.script}
-        title={
-          picking === 'true'
-            ? 'What are they really?'
-            : picking === 'believed'
-              ? 'The Drunk believes they are the…'
-              : `${seat.name} is the…`
-        }
+        title={picking === 'believed' ? 'The Drunk believes they are the…' : `${seat.name} is the…`}
         teams={picking === 'believed' ? ['townsfolk'] : undefined}
-        subtitle={
-          picking === 'true'
-            ? 'For the Drunk, the Marionette or the Lunatic. They keep waking in the slot of the character they believe they are.'
-            : undefined
-        }
-        current={picking === 'true' ? seat.trueCharacterId : seat.characterId}
+        current={seat.characterId}
         taken={game.seats
           .filter((s) => s.id !== seat.id)
           .flatMap((s) => [s.characterId, s.trueCharacterId])
           .filter((id): id is string => Boolean(id))}
         onPick={(c) => {
-          if (picking === 'true') setSeatTrueCharacter(seat.id, c.id)
-          else if (picking === 'believed') {
+          if (picking === 'believed') {
             // Chosen from the banner, the seat has not yet been marked as
             // really the Drunk; chosen after picking Drunk, it already has.
             setSeatCharacter(seat.id, c.id)
@@ -271,24 +259,10 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
             setSeatTrueCharacter(seat.id, 'drunk')
             setPicking('believed')
             return
-          } else {
-            setSeatCharacter(seat.id, c.id)
-            if (seat.trueCharacterId === 'drunk') setSeatTrueCharacter(seat.id, undefined)
-          }
+          } else setSeatCharacter(seat.id, c.id)
           setPicking(null)
         }}
       >
-        {picking === 'true' && seat.trueCharacterId && (
-          <Button
-            className="mb-4 w-full"
-            onClick={() => {
-              setSeatTrueCharacter(seat.id, undefined)
-              setPicking(null)
-            }}
-          >
-            They really are the {character?.name}
-          </Button>
-        )}
       </CharacterPicker>
     </>
   )

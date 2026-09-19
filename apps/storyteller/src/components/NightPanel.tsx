@@ -52,9 +52,7 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
                   {entry.seats
                     .map((s) => {
                       const seat = game.seats.find((x) => x.id === s.seatId)
-                      return s.isDisguised
-                        ? `${seat?.name} (really the ${getCharacter(s.trueCharacterId ?? '')?.name})`
-                        : seat?.name
+                      return s.isDisguised ? `${seat?.name} (drunk)` : seat?.name
                     })
                     .join(', ')}
                 </div>

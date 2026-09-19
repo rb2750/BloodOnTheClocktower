@@ -127,6 +127,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
       // Never. A seat that says "drunk" is a seat whose believed role has not
       // been chosen yet, however it came to say so.
       if (seat.characterId === 'drunk') return
+      const changed = told.current.has(seat.id) && told.current.get(seat.id) !== seat.characterId
       told.current.set(seat.id, seat.characterId)
       // Sealed to this player's own key, so the broadcast is readable by
       // exactly one device at the table.
@@ -134,7 +135,10 @@ export function RoomProvider({ children }: { children: ReactNode }) {
         character: characterIndex(seat.characterId),
         script: indexesFor((state.game?.script.characterIds ?? []).filter((id) => getCharacter(id))),
         scriptName: state.game?.scriptName ?? '',
-      }).then((sealed) => client.send({ t: 'role', seatId: seat.id, sealed }))
+      }).then((sealed) => {
+        client.send({ t: 'role', seatId: seat.id, sealed })
+        if (changed) client.sendRaw(`push:${seat.id}:role`)
+      })
     }
 
     // Everything this seat was ever told, sent again under the same ids. A
@@ -246,15 +250,28 @@ export function RoomProvider({ children }: { children: ReactNode }) {
   // And the time of day. Every phone shows it, and plays the same nightfall
   // the Storyteller's screen plays, so the room moves together.
   const phase = game?.phase
+  const lastPhase = useRef<string | null>(null)
   useEffect(() => {
     const message = phaseMessage(useStore.getState().game)
-    if (relay.current && message) relay.current.send(message)
+    if (!relay.current || !message || message.t !== 'phase') return
+    relay.current.send(message)
+    if (lastPhase.current !== null && lastPhase.current !== message.phase) {
+      relay.current.sendRaw(`push:*:${/^night/i.test(message.phase) ? 'night' : 'day'}`)
+    }
+    lastPhase.current = message.phase
   }, [phase])
 
   // The vote, as it is counted. Every raised hand is a change.
   const nominations = game?.nominations
+  const lastVote = useRef<{ id: string; settled: boolean } | null>(null)
   useEffect(() => {
-    if (relay.current) relay.current.send(voteMessage(useStore.getState().game))
+    if (!relay.current) return
+    const message = voteMessage(useStore.getState().game)
+    relay.current.send(message)
+    const now = message.t === 'vote' ? message.nomination : null
+    if (now && now.id !== lastVote.current?.id) relay.current.sendRaw('push:*:vote')
+    else if (now && now.settled && lastVote.current && !lastVote.current.settled) relay.current.sendRaw('push:*:closed')
+    lastVote.current = now ? { id: now.id, settled: now.settled } : null
   }, [nominations, phase])
 
   const whisper = async (seatId: string, text: string, id: string) => {
@@ -266,6 +283,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
     const at = phase ? phaseLabel(phase) : ''
     const sealed = await sealFor(ours, theirs, { text, at })
     client.send({ t: 'whisper', seatId, id, sealed })
+    client.sendRaw(`push:${seatId}:word`)
     return true
   }
 

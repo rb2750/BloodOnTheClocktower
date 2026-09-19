@@ -22,6 +22,7 @@ import {
 import { RELAY_URL } from './config.js'
 import { useStore } from './state.js'
 import { alert } from '@botc/ui'
+import { currentPush } from './push.js'
 
 export type Seat = { id: string; name: string; taken: boolean }
 
@@ -91,6 +92,11 @@ function useRelayConnection() {
         const s = useStore.getState()
         if (s.roomId === payload.room && s.seatId && s.seatName) {
           void announceClaim({ id: s.seatId, name: s.seatName, taken: false })
+          // The relay forgets subscriptions when it restarts, so this phone
+          // tells it again every time the line comes up.
+          void currentPush().then((sub) => {
+            if (sub && relay.current) relay.current.sendRaw(`sub:${s.seatId}:${sub}`)
+          })
         }
       }
 
@@ -215,13 +221,19 @@ function useRelayConnection() {
   // A hand is sent, not kept: the Storyteller's count comes back in the next
   // vote snapshot, and that is what the screen shows. A hand raised while the
   // line is down is lost, exactly as a hand nobody saw would be.
+  /** Send the relay this phone's notification subscription, now and on every reconnect. */
+  const subscribe = (sub: string) => {
+    const mine = useStore.getState().seatId
+    if (mine && relay.current) relay.current.sendRaw(`sub:${mine}:${sub}`)
+  }
+
   const hand = (up: boolean) => {
     const mine = useStore.getState().seatId
     if (!mine || !relay.current) return
     relay.current.send({ t: 'hand', seatId: mine, up })
   }
 
-  return { seats, status, claim, claimed: seatId, hand }
+  return { seats, status, claim, claimed: seatId, hand, subscribe }
 }
 
 
@@ -233,6 +245,7 @@ const RoomContext = createContext<Room>({
   claim: () => {},
   claimed: null,
   hand: () => {},
+  subscribe: () => {},
 })
 
 /** One connection for the whole app, rather than one per screen. */

@@ -27,6 +27,7 @@ export default defineConfig({
       registerType: 'prompt',
       injectRegister: null,
       workbox: {
+        importScripts: ['push.js'],
         globPatterns: ['**/*.{js,css,html,woff2,svg}', 'icon-*.png'],
         cleanupOutdatedCaches: true,
         runtimeCaching: [
