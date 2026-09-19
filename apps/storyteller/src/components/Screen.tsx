@@ -109,7 +109,7 @@ export function Screen({
 
       {bottom && (
         <div
-          className="shrink-0 border-t border-(--hairline) bg-(--surface) px-5 pt-3 max-h-[55dvh] overflow-y-auto overscroll-contain"
+          className="shrink-0 border-t border-(--hairline) bg-(--surface) px-5 pt-3 max-h-[42dvh] overflow-y-auto overscroll-contain"
           style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 14px)' }}
         >
           {bottom}

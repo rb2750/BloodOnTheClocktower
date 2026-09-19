@@ -21,7 +21,7 @@ import {
 } from '@botc/protocol'
 import { RELAY_URL } from './config.js'
 import { useStore } from './state.js'
-import { alert } from './alert.js'
+import { alert } from '@botc/ui'
 
 export type Seat = { id: string; name: string; taken: boolean }
 
@@ -169,6 +169,7 @@ function useRelayConnection() {
             const next = message.nomination
             if (next && next.id !== before?.id) alert('vote')
             else if (next && next.settled && before && !before.settled) alert('closed')
+            else if (next && before && next.voters.join() !== before.voters.join()) alert('hand')
             return setVote(next)
           }
           if (message.t === 'role') {

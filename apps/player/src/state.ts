@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval'
 import { idsFor, type Payload, type VoteSnapshot } from '@botc/protocol'
-import { alert } from './alert.js'
+import { alert } from '@botc/ui'
 
 const idbStorage: StateStorage = {
   getItem: async (name) => (await idbGet(name)) ?? null,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getCharacter, teamAlignment } from '@botc/rules'
-import { AbilityText, Button, Label, Sheet, Shroud, Heart, Ghost, Swap, Mask, Signpost, inputClass } from '@botc/ui'
+import { AbilityText, Button, Label, Sheet, Shroud, Heart, Ghost, Swap, Mask, Signpost, Tankard, inputClass } from '@botc/ui'
 import { toast } from 'sonner'
 import { useStore } from '../state/store.js'
 import { CharacterToken } from './CharacterToken.js'
@@ -127,6 +127,21 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
               onClick={() => toggleDeadVote(seat.id)}
             />
           )}
+          {/* Drunk is a switch on the seat, not a role. On: they keep the
+              character they believe, and their ability does nothing. Off: that
+              character is simply theirs. */}
+          <Action
+            icon={<Tankard size={22} />}
+            label={seat.trueCharacterId === 'drunk' ? 'Sober up' : 'Drunk'}
+            active={seat.trueCharacterId === 'drunk'}
+            onClick={() => {
+              if (seat.trueCharacterId === 'drunk') setSeatTrueCharacter(seat.id, undefined)
+              else {
+                setSeatTrueCharacter(seat.id, 'drunk')
+                if (!seat.characterId || seat.characterId === 'drunk') setPicking('believed')
+              }
+            }}
+          />
           <Action
             icon={<Mask size={22} />}
             label={trueCharacter ? 'Disguised' : 'Disguise'}

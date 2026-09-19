@@ -50,7 +50,7 @@ function flash() {
   window.setTimeout(() => document.documentElement.classList.remove('alerting'), 900)
 }
 
-export type Alert = 'word' | 'role' | 'vote' | 'closed' | 'night' | 'day'
+export type Alert = 'word' | 'role' | 'vote' | 'closed' | 'night' | 'day' | 'hand' | 'seat'
 
 const BUZZ: Record<Alert, number | number[]> = {
   word: [60, 40, 60],
@@ -59,6 +59,8 @@ const BUZZ: Record<Alert, number | number[]> = {
   closed: 120,
   night: [30, 40, 30, 40, 30],
   day: 60,
+  hand: 25,
+  seat: [30, 30, 30],
 }
 
 const NOTES: Record<Alert, number[]> = {
@@ -68,6 +70,8 @@ const NOTES: Record<Alert, number[]> = {
   closed: [784, 523],
   night: [523, 392],
   day: [659, 988],
+  hand: [1318],
+  seat: [784, 988],
 }
 
 /** Say it every way at once. */

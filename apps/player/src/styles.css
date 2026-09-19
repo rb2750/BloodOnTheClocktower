@@ -41,19 +41,3 @@ textarea {
   user-select: text;
 }
 
-/* The alert flash: a brass edge that blooms and fades. Nothing on the page
-   moves, so it costs one composited layer for under a second. */
-html.alerting::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  pointer-events: none;
-  box-shadow: inset 0 0 0 6px var(--accent);
-  animation: alert-flash 900ms ease-out both;
-}
-@keyframes alert-flash {
-  0% { opacity: 0; }
-  15% { opacity: 1; }
-  100% { opacity: 0; }
-}

@@ -12,6 +12,7 @@ import {
   type RelayStatus,
 } from '@botc/protocol'
 import { getCharacter } from '@botc/rules'
+import { alert } from '@botc/ui'
 import { get as idbGet, set as idbSet } from 'idb-keyval'
 import { phaseLabel, useStore } from './state/store.js'
 import { RELAY_URL } from './config.js'
@@ -185,7 +186,10 @@ export function RoomProvider({ children }: { children: ReactNode }) {
             const open = game?.nominations.filter((n) => n.day === today && !n.settled).at(-1)
             if (!open) return
             const up = open.voterIds.includes(message.seatId)
-            if (up !== message.up) useStore.getState().toggleVote(open.id, message.seatId)
+            if (up !== message.up) {
+              useStore.getState().toggleVote(open.id, message.seatId)
+              alert('hand')
+            }
             return
           }
           if (message.t !== 'claim') return
@@ -193,6 +197,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
           const seat = state.game?.seats.find((s) => s.id === message.seatId)
           if (!seat || !pair.current) return
 
+          if (!keys.current.has(seat.id)) alert('seat')
           keys.current.set(seat.id, message.pub)
           void idbSet(keysStore, Object.fromEntries(keys.current))
           setReachable([...keys.current.keys()])
