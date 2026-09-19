@@ -153,7 +153,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
     <Screen
       title={
         game && game.phase.k !== 'setup' ? (
-          <button onClick={() => go('run')} className="text-(--color-brass-300)">
+          <button onClick={() => go('run')} className="text-(--accent)">
             Return to the game in progress
           </button>
         ) : (
@@ -214,7 +214,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
               onChange={(e) => setDraft(e.target.value)}
               placeholder="Add a name"
               autoComplete="off"
-              className="min-h-(--tap-min) flex-1 rounded-(--radius-surface) border border-(--hairline) bg-(--surface) px-4 text-[16px] text-(--text) outline-none placeholder:text-(--text-faint) focus:border-(--color-brass-600)"
+              className="min-h-(--tap-min) flex-1 rounded-(--radius-surface) border border-(--hairline) bg-(--surface) px-4 text-[16px] text-(--text) outline-none placeholder:text-(--text-faint) focus:border-(--hairline-strong)"
             />
             <Button type="submit" aria-label="Add player" disabled={!draft.trim()}>
               <Plus size={20} />
@@ -438,7 +438,7 @@ function Stepper({
             onClick={() => onStep(s.id)}
             className={`flex min-h-10 flex-1 items-center justify-center gap-2 rounded-(--radius-surface) border text-[13px] transition-colors disabled:opacity-35 ${
               active
-                ? 'border-(--color-brass-600) text-(--color-brass-300)'
+                ? 'border-(--hairline-strong) text-(--accent)'
                 : 'border-transparent text-(--text-faint)'
             }`}
           >
@@ -493,7 +493,7 @@ function CompositionPreview({ count }: { count: number }) {
         ))}
       </dl>
       {travellers > 0 && (
-        <p className="mt-3 text-[13px] text-(--color-brass-300)">
+        <p className="mt-3 text-[13px] text-(--accent)">
           Above fifteen players the table does not grow, so {travellers} of them must be
           Travellers. The other {compositionTotal(c)} take the fifteen-player setup.
         </p>

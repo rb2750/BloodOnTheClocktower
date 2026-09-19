@@ -53,7 +53,7 @@ export function NotesScreen() {
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Add a name"
             autoComplete="off"
-            className="min-h-(--tap-min) flex-1 rounded-(--radius-surface) border border-(--hairline) bg-(--bg) px-4 text-[16px] text-(--text) outline-none placeholder:text-(--text-faint) focus:border-(--color-brass-600)"
+            className="min-h-(--tap-min) flex-1 rounded-(--radius-surface) border border-(--hairline) bg-(--bg) px-4 text-[16px] text-(--text) outline-none placeholder:text-(--text-faint) focus:border-(--hairline-strong)"
           />
           <Button type="submit" aria-label="Add" disabled={!draft.trim()}>
             <Plus size={20} />
@@ -153,7 +153,7 @@ function NoteSheet({ name, onClose }: { name: string | null; onClose: () => void
                     <span className="text-(--text-faint)">{c.at}</span>
                     <span className="text-(--text)">{getCharacter(c.characterId)?.name}</span>
                     {i < note.claims.length - 1 && (
-                      <span className="text-[11px] text-(--color-brass-300)">then changed</span>
+                      <span className="text-[11px] text-(--accent)">then changed</span>
                     )}
                   </li>
                 ))}
@@ -190,7 +190,7 @@ function NoteSheet({ name, onClose }: { name: string | null; onClose: () => void
                 value={line}
                 onChange={(e) => setLine(e.target.value)}
                 placeholder={`What did ${note.name} say?`}
-                className="min-h-(--tap-min) flex-1 rounded-(--radius-surface) border border-(--hairline) bg-(--bg) px-4 text-[16px] text-(--text) outline-none placeholder:text-(--text-faint) focus:border-(--color-brass-600)"
+                className="min-h-(--tap-min) flex-1 rounded-(--radius-surface) border border-(--hairline) bg-(--bg) px-4 text-[16px] text-(--text) outline-none placeholder:text-(--text-faint) focus:border-(--hairline-strong)"
               />
               <Button type="submit" aria-label="Save note" disabled={!line.trim()}>
                 <Plus size={20} />

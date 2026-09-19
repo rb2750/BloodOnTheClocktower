@@ -1,10 +1,12 @@
 @import 'tailwindcss';
 
-/* Self-hosted so the app works with no network. Cinzel carries only the few
-   display moments; Inter does all UI; Garamond carries ability text. */
-@import '@fontsource/cinzel/600.css';
-@import '@fontsource-variable/inter/index.css';
-@import '@fontsource-variable/eb-garamond/index.css';
+/* Self-hosted so the app works with no network. Caslon Display carries titles
+   and role names, Caslon Text carries anything read, Franklin does all UI. */
+@import '@fontsource/libre-caslon-display/400.css';
+@import '@fontsource/libre-caslon-text/400.css';
+@import '@fontsource/libre-caslon-text/400-italic.css';
+@import '@fontsource/libre-caslon-text/700.css';
+@import '@fontsource-variable/libre-franklin/index.css';
 
 @import '@botc/ui/theme.css';
 @import '@botc/ui/grimoire.css';

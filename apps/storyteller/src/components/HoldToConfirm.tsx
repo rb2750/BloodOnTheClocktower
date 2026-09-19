@@ -53,10 +53,10 @@ export function HoldToConfirm({
       onPointerUp={stop}
       onPointerLeave={stop}
       onPointerCancel={stop}
-      className="relative flex min-h-(--tap-min) flex-1 items-center justify-center gap-2 overflow-hidden rounded-(--radius-surface) border border-(--hairline) px-4 text-[15px] text-(--color-evil-300)"
+      className="relative flex min-h-(--tap-min) flex-1 items-center justify-center gap-2 overflow-hidden rounded-(--radius-surface) border border-(--hairline) px-4 text-[15px] text-(--color-red-2)"
     >
       <span
-        className="absolute inset-y-0 left-0 bg-[color-mix(in_oklab,var(--color-evil-500)_26%,transparent)] transition-none"
+        className="absolute inset-y-0 left-0 bg-[color-mix(in_oklab,var(--color-red)_26%,transparent)] transition-none"
         style={{ width: `${progress * 100}%` }}
         aria-hidden
       />

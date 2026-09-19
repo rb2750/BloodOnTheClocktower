@@ -70,7 +70,7 @@ export function ScriptScreen() {
           <div className="space-y-4 pb-2">
             <AbilityText>{open.ability}</AbilityText>
             {open.flavor && (
-              <p className="serif m-0 border-l border-(--color-brass-600) pl-3 text-[15px] italic leading-snug text-(--text-faint)">
+              <p className="serif m-0 border-l border-(--hairline-strong) pl-3 text-[15px] italic leading-snug text-(--text-faint)">
                 {open.flavor}
               </p>
             )}
@@ -82,7 +82,7 @@ export function ScriptScreen() {
                     .filter((j) => useStore.getState().scriptIds.includes(j.with))
                     .map((j) => (
                       <li key={j.with}>
-                        <div className="text-[13px] text-(--color-brass-300)">
+                        <div className="text-[13px] text-(--accent)">
                           {getCharacter(j.with)?.name}
                         </div>
                         <p className="serif m-0 text-[15px] leading-snug text-(--text-dim)">

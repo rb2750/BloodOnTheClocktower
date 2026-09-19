@@ -58,15 +58,15 @@ export function SettingsScreen({ go }: { go: (s: ScreenName) => void }) {
                 onClick={() => setSetting(t.key, !settings[t.key])}
                 className={`mt-0.5 h-7 w-12 shrink-0 rounded-full border transition-colors ${
                   settings[t.key]
-                    ? 'border-(--color-brass-400) bg-[color-mix(in_oklab,var(--color-brass-400)_28%,transparent)]'
+                    ? 'border-(--accent) bg-[color-mix(in_oklab,var(--accent)_28%,transparent)]'
                     : 'border-(--hairline)'
                 }`}
               >
                 <span
                   className={`block size-5 rounded-full transition-transform ${
                     settings[t.key]
-                      ? 'translate-x-6 bg-(--color-brass-300)'
-                      : 'translate-x-1 bg-(--color-ink-500)'
+                      ? 'translate-x-6 bg-(--accent)'
+                      : 'translate-x-1 bg-(--hairline-strong)'
                   }`}
                 />
               </button>

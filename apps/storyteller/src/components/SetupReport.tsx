@@ -46,7 +46,7 @@ export function SetupReport({
             <div key={label}>
               <dd
                 className={`tabular display text-[22px] ${
-                  n !== was ? 'text-(--color-brass-300)' : 'text-(--text)'
+                  n !== was ? 'text-(--accent)' : 'text-(--text)'
                 }`}
               >
                 {n}
@@ -80,9 +80,9 @@ export function SetupReport({
       {resolution.pendingChoices.map((choice) => (
         <div
           key={choice.characterId}
-          className="rounded-(--radius-surface) border border-(--color-brass-600) p-4"
+          className="rounded-(--radius-surface) border border-(--hairline-strong) p-4"
         >
-          <div className="mb-3 flex items-center gap-2 text-[14px] text-(--color-brass-300)">
+          <div className="mb-3 flex items-center gap-2 text-[14px] text-(--accent)">
             <HelpCircle size={16} />
             {choice.prompt}
           </div>
@@ -93,7 +93,7 @@ export function SetupReport({
                 onClick={() => onChoose(choice.characterId, i)}
                 className={`min-h-10 rounded-full border px-4 text-[13px] ${
                   choices[choice.characterId] === i
-                    ? 'border-(--color-brass-400) text-(--color-brass-300)'
+                    ? 'border-(--accent) text-(--accent)'
                     : 'border-(--hairline) text-(--text-dim)'
                 }`}
               >
@@ -139,12 +139,12 @@ export function SetupReport({
       )}
 
       {jinxes.length > 0 && (
-        <div className="rounded-(--radius-surface) border border-(--color-brass-600) p-4">
+        <div className="rounded-(--radius-surface) border border-(--hairline-strong) p-4">
           <Label>Jinxes in play</Label>
           <ul className="space-y-2">
             {jinxes.map((j) => (
               <li key={`${j.a}-${j.b}`}>
-                <div className="text-[13px] text-(--color-brass-300)">
+                <div className="text-[13px] text-(--accent)">
                   {getCharacter(j.a)?.name} &amp; {getCharacter(j.b)?.name}
                 </div>
                 <p className="serif m-0 text-[15px] leading-snug text-(--text-dim)">{j.reason}</p>
@@ -170,15 +170,15 @@ function Callout({
 }) {
   const border =
     tone === 'bad'
-      ? 'border-(--color-evil-500)'
+      ? 'border-(--color-red)'
       : tone === 'open'
-        ? 'border-(--color-brass-600)'
+        ? 'border-(--hairline-strong)'
         : 'border-(--hairline)'
   const colour =
     tone === 'bad'
-      ? 'text-(--color-evil-300)'
+      ? 'text-(--color-red-2)'
       : tone === 'open'
-        ? 'text-(--color-brass-300)'
+        ? 'text-(--accent)'
         : 'text-(--text-dim)'
   return (
     <div className={`rounded-(--radius-surface) border ${border} p-4`}>

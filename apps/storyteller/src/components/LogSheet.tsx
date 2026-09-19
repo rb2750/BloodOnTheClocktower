@@ -4,13 +4,13 @@ import type { LogKind } from '../state/types.js'
 
 /** Colour by event type, so scanning back for "who died on night two" is fast. */
 const TONE: Record<LogKind, string> = {
-  phase: 'text-(--color-brass-300)',
+  phase: 'text-(--accent)',
   deal: 'text-(--text-faint)',
-  info: 'text-(--color-good-300)',
-  death: 'text-(--color-evil-300)',
+  info: 'text-(--color-blue-2)',
+  death: 'text-(--color-red-2)',
   effect: 'text-(--text-dim)',
   nomination: 'text-(--text)',
-  execution: 'text-(--color-evil-300)',
+  execution: 'text-(--color-red-2)',
   note: 'text-(--text-faint)',
   change: 'text-(--text-dim)',
 }
@@ -60,7 +60,7 @@ export function LogSheet({ open, onClose }: { open: boolean; onClose: () => void
                       className={
                         entry.info.truthful
                           ? ' text-(--text-faint)'
-                          : ' text-(--color-brass-300)'
+                          : ' text-(--accent)'
                       }
                     >
                       {' '}

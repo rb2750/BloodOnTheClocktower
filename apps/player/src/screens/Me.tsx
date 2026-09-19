@@ -41,7 +41,7 @@ export function MeScreen() {
             <h1 className="display text-[20px] text-(--text)">{character.name}</h1>
             <p
               className={`m-0 text-[12px] uppercase tracking-[0.16em] ${
-                alignment === 'evil' ? 'text-(--color-evil-300)' : 'text-(--color-good-300)'
+                alignment === 'evil' ? 'text-(--color-red-2)' : 'text-(--color-blue-2)'
               }`}
             >
               {/* The word as well as the colour and the ring shape: three
@@ -70,7 +70,7 @@ export function MeScreen() {
 function Empty() {
   return (
     <section className="flex min-h-full flex-col items-center justify-center gap-5 px-8 text-center">
-      <QrCode size={40} className="text-(--color-brass-600)" strokeWidth={1.4} />
+      <QrCode size={40} className="text-(--hairline-strong)" strokeWidth={1.4} />
       <h1 className="display text-[18px] text-(--text)">Scan the Storyteller&rsquo;s code</h1>
       <p className="max-w-[28ch] text-[14px] leading-snug text-(--text-faint)">
         Point your camera at the code they are holding. Your character, the script and your
@@ -118,7 +118,7 @@ function Waiting() {
 
   return (
     <section className="flex min-h-full flex-col items-center justify-center gap-5 px-8 text-center">
-      <span className="size-3 animate-pulse rounded-full bg-(--color-brass-400)" />
+      <span className="size-3 animate-pulse rounded-full bg-(--accent)" />
       <h1 className="display text-[18px] text-(--text)">
         {seatName ? `You are ${seatName}` : 'Waiting for the Storyteller'}
       </h1>

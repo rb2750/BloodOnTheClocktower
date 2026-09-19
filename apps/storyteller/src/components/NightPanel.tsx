@@ -86,7 +86,7 @@ export function NightPanel() {
               <button
                 key={label}
                 onClick={() => setPlacing({ label, characterId: entry.id })}
-                className="min-h-9 rounded-full border border-(--color-brass-600) px-3 text-[12px] text-(--color-brass-300)"
+                className="min-h-9 rounded-full border border-(--hairline-strong) px-3 text-[12px] text-(--accent)"
               >
                 place “{label}”
               </button>

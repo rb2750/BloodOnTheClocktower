@@ -63,8 +63,7 @@
     z-index: calc(1 + var(--i));
   }
 
-  /* The clock ring. Twelve hour ticks, structural rather than decorative: the
-     seats are hours and the phase is the hand. Costs no ornament. */
+  /* The ring the seats sit on: one hairline, nothing else. */
   .clock-ring {
     position: absolute;
     inset: 0;
@@ -79,25 +78,18 @@
     height: calc(var(--ry) * 2);
     translate: -50% -50%;
     border-radius: 50%;
-    border: 1px solid color-mix(in oklab, var(--color-brass-600) 20%, transparent);
+    border: 1px solid var(--hairline);
   }
 
   .clock-tick {
-    position: absolute;
-    inset: 50% auto auto 50%;
-    width: 1px;
-    height: 6px;
-    background: color-mix(in oklab, var(--color-brass-600) 38%, transparent);
-    transform-origin: 50% 50%;
-    translate: calc(-50% + (var(--rx) + var(--size) * 0.72) * cos(var(--ta)))
-      calc(-50% + (var(--ry) + var(--size) * 0.72) * sin(var(--ta)));
-    rotate: calc(var(--ta) + 0.25turn);
+    display: none;
   }
 
   /* --- The token ---------------------------------------------------------- */
-  /* One motif, repeated relentlessly: this is the button, the avatar, the card.
-     The clamp floor keeps the tap target at or above 48px even at twenty seats
-     on a small phone. */
+  /* A flat cream disc with the art on top, exactly like the physical token,
+     and a flat ring in the colour of alignment. No gradient rim and no inner
+     shading: the watercolour art supplies all the depth a token needs. The
+     clamp floor keeps the tap target at or above 48px even at twenty seats. */
   .token {
     position: relative;
     width: var(--size, 64px);
@@ -105,38 +97,29 @@
     border-radius: var(--radius-token);
     display: grid;
     place-items: center;
-    background:
-      radial-gradient(
-        circle at 50% 28%,
-        color-mix(in oklab, var(--color-ink-600) 85%, transparent),
-        var(--color-ink-800) 70%
-      );
+    background: var(--token-disc);
     isolation: isolate;
     transition:
       scale 180ms var(--ease-ui),
       filter 240ms var(--ease-ui),
-      opacity 240ms var(--ease-ui);
+      opacity 240ms var(--ease-ui),
+      background-color 240ms var(--ease-ui);
   }
 
   .token:active {
     scale: 0.95;
   }
 
-  /* Gold reads as metal only when the edge is a gradient. A flat fill reads as
-     mustard. */
+  /* The ring sits just outside the disc so it never eats into the art. Its
+     width scales with the token so a 16px reminder and a 150px reveal both
+     read as the same object. */
   .token::before {
     content: '';
     position: absolute;
-    inset: 0;
+    inset: calc(var(--size, 64px) * -0.04);
     border-radius: inherit;
-    padding: 2px;
-    background: linear-gradient(
-      105deg,
-      var(--color-brass-600),
-      var(--color-brass-300) 42%,
-      var(--color-brass-400) 78%,
-      var(--color-brass-600)
-    );
+    padding: max(1.5px, calc(var(--size, 64px) * 0.05));
+    background: var(--hairline-strong);
     -webkit-mask:
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
@@ -151,56 +134,63 @@
   /* Alignment is shape-coded as well as coloured, so it survives colour-vision
      deficiency: good is a smooth ring, evil is notched. The word is always
      present too, giving three redundant channels. */
+  .token[data-align='good']::before {
+    background: var(--color-blue);
+  }
+
   .token[data-align='evil']::before {
-    background: linear-gradient(
-      105deg,
-      #6d1f1b,
-      var(--color-evil-300) 42%,
-      var(--color-evil-500) 78%,
-      #6d1f1b
-    );
+    background: var(--color-red);
     -webkit-mask-image:
-      repeating-conic-gradient(#000 0 7deg, transparent 7deg 9deg),
+      repeating-conic-gradient(#000 0 8deg, transparent 8deg 10deg),
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
     mask-image:
-      repeating-conic-gradient(#000 0 7deg, transparent 7deg 9deg),
+      repeating-conic-gradient(#000 0 8deg, transparent 8deg 10deg),
       linear-gradient(#000 0 0) content-box,
       linear-gradient(#000 0 0);
   }
 
-  .token[data-align='good']::before {
-    background: linear-gradient(
-      105deg,
-      #24486d,
-      var(--color-good-300) 42%,
-      var(--color-good-500) 78%,
-      #24486d
-    );
+  /* Whatever is acting now: the seat awake at night, a hand raised in a vote. */
+  .token[data-now='true']::before {
+    background: var(--now);
+  }
+
+  .token[data-now='true'] {
+    outline: 2px solid var(--now);
+    outline-offset: calc(var(--size, 64px) * 0.1);
   }
 
   .token-art {
-    width: 78%;
-    height: 78%;
+    width: 74%;
+    height: 74%;
     object-fit: contain;
     pointer-events: none;
     user-select: none;
   }
 
-  /* The shroud, straight from the physical component. */
+  .token-initials {
+    font-family: var(--font-display);
+    font-size: calc(var(--size, 64px) * 0.34);
+    color: var(--color-ink-2);
+    line-height: 1;
+  }
+
+  /* Dead: a grey disc, the art desaturated, and the shroud laid over the top
+     edge, straight from the physical component. */
   .token[data-dead='true'] {
+    background: var(--color-ink-3);
     filter: grayscale(1);
-    opacity: 0.45;
+    opacity: 0.75;
   }
 
   .shroud-banner {
     position: absolute;
-    inset-block-start: -6px;
-    inset-inline: 18%;
-    height: 12px;
-    border-radius: 2px;
-    background: linear-gradient(180deg, #8d93a0, var(--color-shroud));
-    box-shadow: 0 1px 0 rgb(0 0 0 / 0.5);
+    inset-block-start: -14%;
+    inset-inline: 22%;
+    height: 34%;
+    background: var(--color-shroud);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
+    z-index: 1;
   }
 
   /* --- Seat name ---------------------------------------------------------- */
@@ -223,7 +213,11 @@
     white-space: nowrap;
     text-align: center;
     line-height: 1.15;
-    font-size: clamp(9.5px, calc(var(--size) * 0.19), 13px);
+    font-family: var(--font-sans);
+    font-size: clamp(9px, calc(var(--size) * 0.17), 11px);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     color: var(--text-dim);
   }
 
@@ -246,11 +240,14 @@
   }
 
   .chip {
+    font-family: var(--font-sans);
     font-size: 9px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     line-height: 1;
     padding: 3px 5px;
-    border-radius: 999px;
-    background: var(--color-ink-700);
+    border-radius: 3px;
+    background: var(--surface-raised);
     border: 1px solid var(--hairline);
     color: var(--text-dim);
     max-width: 62px;
@@ -259,18 +256,18 @@
   }
 
   .chip[data-kind='poisoned'] {
-    border-color: color-mix(in oklab, var(--color-evil-500) 55%, transparent);
-    color: var(--color-evil-300);
+    border-color: var(--color-red);
+    color: var(--color-red-2);
   }
 
   .chip[data-kind='protected'] {
-    border-color: color-mix(in oklab, var(--color-good-500) 55%, transparent);
-    color: var(--color-good-300);
+    border-color: var(--color-blue);
+    color: var(--color-blue-2);
   }
 
   .chip[data-kind='drunk'] {
-    border-color: color-mix(in oklab, var(--color-brass-400) 55%, transparent);
-    color: var(--color-brass-300);
+    border-color: var(--hairline-strong);
+    color: var(--text);
   }
 
   /* Nomination arrows live in one SVG layer beneath the seats: curves are the

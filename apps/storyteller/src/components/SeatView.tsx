@@ -53,7 +53,7 @@ export function SeatView({
           Storyteller is reminded every time they look at the grimoire. */}
       {trueCharacter && (
         <span
-          className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full border border-(--color-brass-400) bg-(--bg) text-[9px] text-(--color-brass-300)"
+          className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full border border-(--accent) bg-(--bg) text-[9px] text-(--accent)"
           title={`Really the ${trueCharacter.name}`}
         >
           !

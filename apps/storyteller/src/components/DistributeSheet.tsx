@@ -118,9 +118,9 @@ export function DistributeSheet({ open, onClose }: { open: boolean; onClose: () 
                   onClick={() => setIndex(i)}
                   className={`min-h-9 rounded-full border px-3 text-[12px] ${
                     handed.includes(s.id)
-                      ? 'border-(--color-brass-400) text-(--color-brass-300)'
+                      ? 'border-(--accent) text-(--accent)'
                       : i === index
-                        ? 'border-(--color-ink-500) text-(--text)'
+                        ? 'border-(--hairline-strong) text-(--text)'
                         : 'border-(--hairline) text-(--text-faint)'
                   }`}
                 >
@@ -227,7 +227,7 @@ function SharedCode({ open, onClose }: { open: boolean; onClose: () => void }) {
 
         <div className="text-center">
           <Label>Or type this at {PLAYER_ORIGIN.replace(/^https?:\/\//, '')}</Label>
-          <div className="display text-[26px] tracking-[0.3em] text-(--color-brass-300)">
+          <div className="display text-[26px] tracking-[0.3em] text-(--accent)">
             {code}
           </div>
         </div>
@@ -243,7 +243,7 @@ function SharedCode({ open, onClose }: { open: boolean; onClose: () => void }) {
                 key={s.id}
                 className={`min-h-8 rounded-full border px-3 text-[12px] leading-8 ${
                   claimed.includes(s.id)
-                    ? 'border-(--color-brass-400) text-(--color-brass-300)'
+                    ? 'border-(--accent) text-(--accent)'
                     : 'border-(--hairline) text-(--text-faint)'
                 }`}
               >
@@ -282,7 +282,7 @@ function QrImage({ value }: { value: string }) {
   }, [value])
 
   if (error) {
-    return <p className="text-[14px] text-(--color-evil-300)">That code could not be drawn.</p>
+    return <p className="text-[14px] text-(--color-red-2)">That code could not be drawn.</p>
   }
 
   return (

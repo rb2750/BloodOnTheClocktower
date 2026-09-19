@@ -1,8 +1,10 @@
 @import 'tailwindcss';
 
-@import '@fontsource/cinzel/600.css';
-@import '@fontsource-variable/inter/index.css';
-@import '@fontsource-variable/eb-garamond/index.css';
+@import '@fontsource/libre-caslon-display/400.css';
+@import '@fontsource/libre-caslon-text/400.css';
+@import '@fontsource/libre-caslon-text/400-italic.css';
+@import '@fontsource/libre-caslon-text/700.css';
+@import '@fontsource-variable/libre-franklin/index.css';
 
 @import '@botc/ui/theme.css';
 @import '@botc/ui/grimoire.css';
@@ -10,23 +12,12 @@
 @source "../../../packages/ui/src";
 
 /*
- * Same design system as the Storyteller app, differing only in surface
- * temperature. The Storyteller sits on the darkest ground: backstage, lights
- * down. The player companion is a step lighter with a faint amber vignette:
- * candlelight. A glance across the table tells you which app someone is
- * holding, without it being two designs.
+ * Same design system as the Storyteller app. The player companion sits one
+ * grey step lighter, and that is the only difference between them: a glance
+ * across the table tells you which app someone is holding.
  */
 :root {
-  --bg: var(--color-ink-800);
-}
-
-body {
-  background:
-    radial-gradient(
-      ellipse 120% 70% at 50% 0%,
-      color-mix(in oklab, var(--color-brass-600) 7%, transparent),
-      transparent 60%
-    ),
-    var(--bg);
-  background-attachment: fixed;
+  --bg: var(--color-ink-1);
+  --surface: var(--color-ink-2);
+  --surface-raised: var(--color-ink-3);
 }

@@ -1,51 +1,52 @@
 /*
- * Midnight Grimoire — the shared design system.
+ * Grimoire — the shared design system.
  *
- * The rule that resolves gothic against minimal: ornament lives in the content
- * layer, the chrome is dead plain. Nav, sheets, lists and inputs are flat with
- * hairline borders and generous space. The token, the reveal, the ring and the
- * phase header carry all the texture and brass. This is how the physical game
- * works: the table is plain, the tokens are ornate.
+ * One rule governs the look: flat. No gradient anywhere, including the token
+ * rim. No glows, no vignettes, no textures. The one shadow in the app sits
+ * under a bottom sheet, because a sheet is physically above the page.
+ *
+ * The chrome is black, cream and hairlines. Colour comes from two places only:
+ * the character art, and the blue and red of alignment. That is what the
+ * physical grimoire looks like: cream tokens with ink art on a black board.
  */
 
 @theme {
-  /* --- Ground. Blue-black, never pure black: elevation in a dark theme is
-     carried by lightness steps, and white on pure black causes halation. --- */
-  --color-ink-900: #0b0d12;
-  --color-ink-800: #161a24;
-  --color-ink-700: #222838;
-  --color-ink-600: #31394c;
-  --color-ink-500: #454e63;
+  /* --- Ground. Neutral black, not blue-black and not brown. Elevation is a
+     lightness step, never a shadow. --- */
+  --color-ink-0: #0c0c0d;
+  --color-ink-1: #141416;
+  --color-ink-2: #1c1c1f;
+  --color-ink-3: #2a2a2f;
+  --color-ink-4: #3b3b42;
 
-  /* --- Ink on paper. Warm, never #fff. --- */
-  --color-parch-100: #f4ede0;
-  --color-parch-300: #cfc4b0;
-  --color-parch-500: #9a8f7c;
+  /* --- Cream. Text, and the token disc. Never pure white. --- */
+  --color-cream: #ede8db;
+  --color-cream-2: #b8b3a7;
+  --color-cream-3: #7d796f;
 
-  /* --- Brass. The single interaction accent, used as hairlines and
-     highlights only. Large gold fills read cheap. --- */
-  --color-brass-300: #e3c46a;
-  --color-brass-400: #c9a227;
-  --color-brass-600: #8a6d18;
+  /* --- Alignment. The only hues in the chrome, and they mean one thing.
+     The base step is for rings and fills (red is 2.9:1 on ink-0, which fails
+     as text); the -2 step is for any text. --- */
+  --color-blue: #3f7cc4;
+  --color-blue-2: #8db4e2;
+  --color-red: #b33029;
+  --color-red-2: #e07c72;
 
-  /* --- Alignment. Semantic only: never a primary button, never a delete.
-     Reserving these is what makes them land when they finally appear.
-     evil-500 is ~3.6:1 on the ground, so it is for fills, rings and strokes.
-     Any evil expressed as text uses evil-300. --- */
-  --color-good-500: #4b87c9;
-  --color-good-300: #8fb8e0;
-  --color-evil-500: #b3312b;
-  --color-evil-300: #e0766d;
+  --color-shroud: #8a8f96;
+  /* Whatever is happening now: the acting seat at night, a raised hand. A
+     pale cream, not gold. */
+  --color-now: #ffe3a3;
+  --color-ok: #7f9b6b;
 
-  --color-shroud: #6b7280;
-  --color-ok: #6e8b5b;
-
-  /* --- Type. Cinzel is confined to three places: the wordmark, the role name
-     on a reveal, and phase headers. Inter does all UI. Garamond at 500 (not
-     400, which goes spindly on dark) carries ability text. --- */
-  --font-display: 'Cinzel', Georgia, serif;
-  --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
-  --font-serif: 'EB Garamond Variable', 'EB Garamond', Georgia, serif;
+  /* --- Type. Caslon is eighteenth-century English book type, which is the
+     register the game writes in: the Display cut for titles, phase names and
+     role names, the Text cut for anything read. Franklin is a period grotesque
+     that is still plainly a sans, for buttons, names and numbers. --- */
+  --font-display: 'Libre Caslon Display', 'Libre Caslon Text', Georgia, serif;
+  --font-serif: 'Libre Caslon Text', Georgia, 'Times New Roman', serif;
+  --font-sans:
+    'Libre Franklin Variable', 'Libre Franklin', 'Franklin Gothic Medium', 'Helvetica Neue',
+    Arial, sans-serif;
 
   /* --- Motion. Expensive reads as a long tail and no overshoot. --- */
   --ease-cinematic: cubic-bezier(0.16, 1, 0.16, 1);
@@ -53,8 +54,9 @@
   --ease-ui: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-exit: cubic-bezier(0.7, 0, 0.84, 0);
 
-  /* --- Two radii only. Mixed radii are a reliable cheapness tell. --- */
-  --radius-surface: 0.75rem;
+  /* --- Two radii. Small on surfaces so nothing reads as a pill or a bubble;
+     tokens are the only circles. --- */
+  --radius-surface: 6px;
   --radius-token: 999px;
 }
 
@@ -62,29 +64,32 @@
   color-scheme: dark;
 
   /* Semantic aliases, so components never reach for a raw step. */
-  --bg: var(--color-ink-900);
-  --surface: var(--color-ink-800);
-  --surface-raised: var(--color-ink-700);
-  --hairline: var(--color-ink-600);
-  --text: var(--color-parch-100);
-  --text-dim: var(--color-parch-300);
-  --text-faint: var(--color-parch-500);
-  --accent: var(--color-brass-400);
+  --bg: var(--color-ink-0);
+  --surface: var(--color-ink-1);
+  --surface-raised: var(--color-ink-2);
+  --hairline: var(--color-ink-3);
+  --hairline-strong: var(--color-ink-4);
+  --text: var(--color-cream);
+  --text-dim: var(--color-cream-2);
+  --text-faint: var(--color-cream-3);
+  /* The interaction accent is the cream itself: a filled primary button, an
+     active chip. There is no coloured accent. */
+  --accent: var(--color-cream);
+  --now: var(--color-now);
+  /* The token disc. Dimmed in very dark venues (below). */
+  --token-disc: var(--color-cream);
 
   /* Tap targets. 48px floor everywhere, 64px for live night controls. */
   --tap-min: 48px;
   --tap-live: 64px;
-
-  /* A single 128px noise tile, rasterised once by the browser and then reused.
-     feTurbulence is only ruinous when animated; as a static background it is
-     painted once and never again. */
-  --grain-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='128' height='128' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
 }
 
-/* "Max dim" for very dark venues: drop the text, keep the structure. */
+/* "Extra dim" for very dark venues: drop the text and the token discs a step,
+   keep the structure. */
 :root[data-dim='true'] {
-  --text: #c6c0b4;
-  --text-dim: #a49a89;
+  --text: var(--color-cream-2);
+  --text-dim: #a09b90;
+  --token-disc: #cfcabd;
 }
 
 /*
@@ -93,8 +98,7 @@
  * Tailwind v4 emits its utilities into cascade layers. Unlayered CSS beats
  * every layered rule regardless of specificity, so an unlayered
  * `button { font: inherit; color: inherit }` silently overrides `text-[12px]`
- * and `text-(--text-faint)` on every button in the app. That failure is
- * invisible in the build and cost a round of screenshots to find.
+ * and `text-(--text-faint)` on every button in the app.
  */
 @layer base {
   * {
@@ -112,9 +116,8 @@
     background: var(--bg);
     color: var(--text);
     font-family: var(--font-sans);
-    /* Light type on dark optically gains weight, so sit below the usual 400. */
-    font-weight: 380;
-    font-size: 17px;
+    font-weight: 400;
+    font-size: 16px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -123,37 +126,36 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Film grain. A single pre-baked tile at low opacity, multiplied over the
-     whole page. This does more for "expensive" than anything else here, and it
-     costs one paint because nothing about it animates during normal use. */
-  .grain::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    pointer-events: none;
-    opacity: 0.035;
-    background-image: var(--grain-url);
-    background-size: 128px 128px;
-    mix-blend-mode: overlay;
-  }
-
+  /* Display type: titles, phase names, role names, the tally. Caslon at its
+     one weight, sentence case, no tracking. Uppercase belongs to labels. */
   h1,
   h2,
   h3,
   .display {
     font-family: var(--font-display);
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    line-height: 1.1;
     margin: 0;
   }
 
+  /* Reading type: abilities, reminders, anything said aloud. */
   .serif {
     font-family: var(--font-serif);
-    font-weight: 500;
+    font-weight: 400;
     text-transform: none;
     letter-spacing: 0;
+  }
+
+  /* A label: Franklin caps with tracking, the way a Caslon book sets its
+     running heads. Always small, always quiet. */
+  .caps {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
   }
 
   /* Numbers that change in place must not jitter. */
@@ -172,16 +174,14 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-brass-400);
+    outline: 2px solid var(--color-cream);
     outline-offset: 2px;
     border-radius: 4px;
   }
 
   /* --- Reduced motion ---------------------------------------------------- */
   /* The phase change is a functional signal, not decoration, so it is replaced
-     with a crossfade rather than removed. Grain is frozen rather than deleted:
-     it is the element most likely to trigger discomfort, but removing it would
-     change the look. */
+     with a crossfade rather than removed. */
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

@@ -25,11 +25,11 @@ export function Button({
     // Brass as a lit edge and a tint, not a slab. A full-width solid gold fill
     // is the single most reliable way to make a dark theme look cheap.
     primary:
-      'border border-(--color-brass-400) bg-[color-mix(in_oklab,var(--color-brass-400)_14%,transparent)] text-(--color-brass-300) font-medium active:bg-[color-mix(in_oklab,var(--color-brass-400)_22%,transparent)]',
+      'border border-(--accent) bg-[color-mix(in_oklab,var(--accent)_14%,transparent)] text-(--accent) font-medium active:bg-[color-mix(in_oklab,var(--accent)_22%,transparent)]',
     quiet:
-      'border border-(--hairline) text-(--text) hover:border-(--color-ink-500) active:bg-(--surface-raised)',
+      'border border-(--hairline) text-(--text) hover:border-(--hairline-strong) active:bg-(--surface-raised)',
     // Destructive actions are styled as secondary, never as the loud option.
-    danger: 'border border-(--hairline) text-(--color-evil-300) hover:border-(--color-evil-500)',
+    danger: 'border border-(--hairline) text-(--color-red-2) hover:border-(--color-red)',
   }[variant]
 
   return (
@@ -55,7 +55,7 @@ export function Chip({
       aria-pressed={active}
       className={`min-h-9 rounded-full border px-3 text-[13px] transition-colors ${
         active
-          ? 'border-(--color-brass-400) bg-[color-mix(in_oklab,var(--color-brass-400)_16%,transparent)] text-(--color-brass-300)'
+          ? 'border-(--accent) bg-[color-mix(in_oklab,var(--accent)_16%,transparent)] text-(--accent)'
           : 'border-(--hairline) text-(--text-dim)'
       }`}
       {...rest}

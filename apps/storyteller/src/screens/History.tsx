@@ -56,8 +56,8 @@ export function HistoryScreen({ go }: { go: (s: ScreenName) => void }) {
                   <span
                     className={
                       g.phase.k === 'ended' && g.phase.winner === 'good'
-                        ? 'text-[13px] text-(--color-good-300)'
-                        : 'text-[13px] text-(--color-evil-300)'
+                        ? 'text-[13px] text-(--color-blue-2)'
+                        : 'text-[13px] text-(--color-red-2)'
                     }
                   >
                     {g.phase.k === 'ended'

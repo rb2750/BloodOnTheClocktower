@@ -41,8 +41,8 @@ export default defineConfig({
         short_name: 'Grimoire',
         description:
           'A Storyteller companion for Blood on the Clocktower. Unofficial and non-commercial.',
-        theme_color: '#0b0d12',
-        background_color: '#0b0d12',
+        theme_color: '#0c0c0d',
+        background_color: '#0c0c0d',
         display: 'standalone',
         orientation: 'portrait',
         icons: [

@@ -19,10 +19,10 @@ export function ReminderText({ source }: { source: string }) {
           return (
             <span
               key={i}
-              className="mx-1 inline-flex translate-y-[2px] items-center gap-1 rounded-full border border-(--color-brass-600) px-2 py-[1px] align-middle text-[11px] uppercase tracking-wider text-(--color-brass-300)"
+              className="mx-1 inline-flex translate-y-[2px] items-center gap-1 rounded-full border border-(--hairline-strong) px-2 py-[1px] align-middle text-[11px] uppercase tracking-wider text-(--accent)"
             >
               <span
-                className="inline-block size-2 rounded-full border border-(--color-brass-400)"
+                className="inline-block size-2 rounded-full border border-(--accent)"
                 aria-hidden
               />
               reminder
@@ -32,7 +32,7 @@ export function ReminderText({ source }: { source: string }) {
         return (
           <strong
             key={i}
-            className="mx-[2px] rounded bg-(--surface-raised) px-[5px] py-[1px] font-sans text-[13px] font-medium uppercase tracking-wide text-(--color-parch-100)"
+            className="mx-[2px] rounded bg-(--surface-raised) px-[5px] py-[1px] font-sans text-[13px] font-medium uppercase tracking-wide text-(--text)"
           >
             {node.value}
           </strong>

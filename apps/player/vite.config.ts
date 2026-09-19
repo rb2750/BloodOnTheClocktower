@@ -33,8 +33,8 @@ export default defineConfig({
         short_name: 'Ravenswood',
         description:
           'Your character, the script, and your notes. For Blood on the Clocktower. Unofficial and non-commercial.',
-        theme_color: '#12151c',
-        background_color: '#12151c',
+        theme_color: '#141416',
+        background_color: '#141416',
         display: 'standalone',
         orientation: 'portrait',
         icons: [

@@ -154,7 +154,7 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
             onChange={(e) => setSeatNotes(seat.id, e.target.value)}
             rows={2}
             placeholder="What you told them, what they claimed…"
-            className="w-full resize-none rounded-(--radius-surface) border border-(--hairline) bg-(--bg) p-3 text-[15px] outline-none placeholder:text-(--text-faint) focus:border-(--color-brass-600)"
+            className="w-full resize-none rounded-(--radius-surface) border border-(--hairline) bg-(--bg) p-3 text-[15px] outline-none placeholder:text-(--text-faint) focus:border-(--hairline-strong)"
           />
         </div>
 

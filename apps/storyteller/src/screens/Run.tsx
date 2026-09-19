@@ -45,7 +45,7 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
           <button
             onClick={() => setLocked(!locked)}
             aria-label={locked ? 'Unlock grimoire' : 'Lock grimoire'}
-            className={locked ? 'text-(--color-brass-300)' : 'text-(--text-faint)'}
+            className={locked ? 'text-(--accent)' : 'text-(--text-faint)'}
           >
             {locked ? <Lock size={18} /> : <LockOpen size={18} />}
           </button>

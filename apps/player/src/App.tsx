@@ -70,7 +70,7 @@ export function App() {
               onClick={() => setTab(t.id)}
               aria-current={active ? 'page' : undefined}
               className={`flex min-h-(--tap-min) flex-1 flex-col items-center justify-center gap-1 pt-2 text-[11px] transition-colors disabled:opacity-30 ${
-                active ? 'text-(--color-brass-300)' : 'text-(--text-faint)'
+                active ? 'text-(--accent)' : 'text-(--text-faint)'
               }`}
             >
               <t.icon size={19} strokeWidth={active ? 2.25 : 1.9} />

@@ -7,8 +7,10 @@ export type TokenProps = {
   name: string
   alignment?: Alignment | 'unknown'
   dead?: boolean
-  /** Ghost vote already spent, shown as a broken shroud banner. */
+  /** Ghost vote already spent, shown as a faded shroud. */
   voteSpent?: boolean
+  /** Acting right now: awake at night, or a hand raised in a vote. */
+  now?: boolean
   size?: string
   className?: string
   style?: CSSProperties
@@ -32,6 +34,7 @@ export function Token({
   alignment = 'unknown',
   dead = false,
   voteSpent = false,
+  now = false,
   size,
   className = '',
   style,
@@ -42,6 +45,7 @@ export function Token({
       className={`token ${className}`}
       data-align={alignment === 'unknown' ? undefined : alignment}
       data-dead={dead || undefined}
+      data-now={now || undefined}
       style={size ? ({ ...style, ['--size' as string]: size } as CSSProperties) : style}
     >
       {dead && (
@@ -54,12 +58,7 @@ export function Token({
       {src ? (
         <img className="token-art" src={src} alt="" loading="lazy" decoding="async" />
       ) : (
-        <span
-          className="display"
-          style={{ fontSize: 'calc(var(--size) * 0.3)', color: 'var(--text-dim)' }}
-        >
-          {initials(name)}
-        </span>
+        <span className="token-initials">{initials(name)}</span>
       )}
       {children}
     </div>

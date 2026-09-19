@@ -195,7 +195,7 @@ function VoteInProgress({
         <Label>
           {nominator} nominated {nominee}
         </Label>
-        <span className="tabular display text-[20px] text-(--color-brass-300)">{tally}</span>
+        <span className="tabular display text-[20px] text-(--accent)">{tally}</span>
       </div>
 
       <SayThis>{votesNeededPhrase(nominee, aliveCount, blockVotes)}</SayThis>
@@ -211,7 +211,7 @@ function VoteInProgress({
               onClick={() => onToggle(seat.id)}
               className={`min-h-9 rounded-full border px-3 text-[12px] transition-colors disabled:opacity-25 ${
                 voting
-                  ? 'border-(--color-brass-400) bg-[color-mix(in_oklab,var(--color-brass-400)_16%,transparent)] text-(--color-brass-300)'
+                  ? 'border-(--accent) bg-[color-mix(in_oklab,var(--accent)_16%,transparent)] text-(--accent)'
                   : 'border-(--hairline) text-(--text-dim)'
               }`}
             >
@@ -234,7 +234,7 @@ function VoteInProgress({
 function SayThis({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2 rounded-(--radius-surface) border border-(--hairline) bg-(--bg) px-3 py-2">
-      <Quote size={13} className="mt-1 shrink-0 text-(--color-brass-600)" />
+      <Quote size={13} className="mt-1 shrink-0 text-(--hairline-strong)" />
       <p className="serif m-0 text-[17px] leading-snug text-(--text)">{children}</p>
     </div>
   )

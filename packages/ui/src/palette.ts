@@ -4,23 +4,21 @@
  * test checks that every token here appears there.
  */
 export const PALETTE = {
-  'ink-900': '#0b0d12',
-  'ink-800': '#161a24',
-  'ink-700': '#222838',
-  'ink-600': '#31394c',
-  'ink-500': '#454e63',
-  'parch-100': '#f4ede0',
-  'parch-300': '#cfc4b0',
-  'parch-500': '#9a8f7c',
-  'brass-300': '#e3c46a',
-  'brass-400': '#c9a227',
-  'brass-600': '#8a6d18',
-  'good-500': '#4b87c9',
-  'good-300': '#8fb8e0',
-  'evil-500': '#b3312b',
-  'evil-300': '#e0766d',
-  shroud: '#6b7280',
-  ok: '#6e8b5b',
+  'ink-0': '#0c0c0d',
+  'ink-1': '#141416',
+  'ink-2': '#1c1c1f',
+  'ink-3': '#2a2a2f',
+  'ink-4': '#3b3b42',
+  cream: '#ede8db',
+  'cream-2': '#b8b3a7',
+  'cream-3': '#7d796f',
+  blue: '#3f7cc4',
+  'blue-2': '#8db4e2',
+  red: '#b33029',
+  'red-2': '#e07c72',
+  shroud: '#8a8f96',
+  now: '#ffe3a3',
+  ok: '#7f9b6b',
 } as const
 
 export type PaletteToken = keyof typeof PALETTE

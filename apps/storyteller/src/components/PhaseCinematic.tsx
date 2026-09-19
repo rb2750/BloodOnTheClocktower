@@ -90,17 +90,6 @@ export function PhaseCinematic() {
     >
       <div className="cinematic-wash" />
 
-      {shown.phase === 'day' && (
-        <>
-          <span className="cinematic-flame" style={{ left: '-14vw', top: '8vh' }} />
-          <span
-            className="cinematic-flame"
-            style={{ right: '-16vw', bottom: '6vh', ['--flicker' as string]: '4.3s' }}
-          />
-        </>
-      )}
-
-      <div className="cinematic-vignette" />
       <span className="cinematic-bar" data-edge="top" />
       <span className="cinematic-bar" data-edge="bottom" />
 
