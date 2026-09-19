@@ -1,0 +1,32 @@
+@import 'tailwindcss';
+
+@import '@fontsource/cinzel/600.css';
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource-variable/eb-garamond/index.css';
+
+@import '@botc/ui/theme.css';
+@import '@botc/ui/grimoire.css';
+
+@source "../../../packages/ui/src";
+
+/*
+ * Same design system as the Storyteller app, differing only in surface
+ * temperature. The Storyteller sits on the darkest ground: backstage, lights
+ * down. The player companion is a step lighter with a faint amber vignette:
+ * candlelight. A glance across the table tells you which app someone is
+ * holding, without it being two designs.
+ */
+:root {
+  --bg: var(--color-ink-800);
+}
+
+body {
+  background:
+    radial-gradient(
+      ellipse 120% 70% at 50% 0%,
+      color-mix(in oklab, var(--color-brass-600) 7%, transparent),
+      transparent 60%
+    ),
+    var(--bg);
+  background-attachment: fixed;
+}

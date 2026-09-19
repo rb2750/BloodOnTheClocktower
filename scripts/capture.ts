@@ -16,11 +16,15 @@ import { mkdir, rm, readdir, readFile, rename } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { chromium, type Browser, type Page } from '@playwright/test'
+import { characterIndex, encodePayload, indexesFor } from '../packages/protocol/src/index.js'
+import { editionScript } from '../packages/rules/src/index.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 // Playwright ships a minimal ffmpeg (webm + PNG only); we no longer need it.
 const PORT = 4178
+const PLAYER_PORT = 4180
 const URL = `http://localhost:${PORT}/`
+const PLAYER_URL = `http://localhost:${PLAYER_PORT}/`
 
 const STAMP = new Date().toISOString().slice(0, 10)
 const OUT = join(ROOT, 'design', STAMP)
@@ -36,15 +40,15 @@ const PLAYERS = [
   'Kit', 'Lena', 'Mo', 'Nadia', 'Otto', 'Priya', 'Quinn', 'Rosa', 'Sam', 'Tariq',
 ]
 
-async function serve(): Promise<ChildProcess> {
+async function serve(pkg: string, port: number, url: string): Promise<ChildProcess> {
   const proc = spawn(
     'pnpm',
-    ['--filter', '@botc/storyteller', 'exec', 'vite', 'preview', '--port', String(PORT), '--host'],
+    ['--filter', pkg, 'exec', 'vite', 'preview', '--port', String(port), '--host'],
     { cwd: ROOT, stdio: 'ignore' },
   )
   for (let i = 0; i < 60; i++) {
     try {
-      const res = await fetch(URL)
+      const res = await fetch(url)
       if (res.ok) return proc
     } catch {
       /* not up yet */
@@ -52,7 +56,94 @@ async function serve(): Promise<ChildProcess> {
     await new Promise((r) => setTimeout(r, 500))
   }
   proc.kill()
-  throw new Error('Preview server did not start.')
+  throw new Error(`Preview server for ${pkg} did not start.`)
+}
+
+/** The Storyteller's QR sheet, and what a player sees after scanning it. */
+async function player(browser: Browser) {
+  const dir = join(OUT, 'player')
+  await mkdir(dir, { recursive: true })
+
+  // The Storyteller side: the code being held out to a player.
+  const stContext = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 3,
+    isMobile: true,
+    hasTouch: true,
+  })
+  const st = await stContext.newPage()
+  await setUpGame(st, 8)
+  await st.getByRole('button', { name: /Hand out characters/ }).click()
+  await st.waitForTimeout(600)
+  await st.screenshot({ path: join(dir, '01-storyteller-qr.png') })
+  await stContext.close()
+
+  // The player side. The payload is built here rather than decoded out of the
+  // rendered QR: it is the same codec the app uses, and it keeps the capture
+  // from depending on camera emulation.
+  const payload = encodePayload({
+    kind: 'seat',
+    character: characterIndex('fortuneteller'),
+    seat: 3,
+    script: indexesFor(editionScript('tb', 'Trouble Brewing').characterIds),
+  })
+
+  const mobile = {
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 3,
+    isMobile: true,
+    hasTouch: true,
+  } as const
+
+  // Before scanning anything.
+  const cold = await browser.newContext(mobile)
+  const coldPage = await cold.newPage()
+  await coldPage.goto(PLAYER_URL)
+  await coldPage.waitForTimeout(400)
+  await coldPage.screenshot({ path: join(dir, '02-before-scan.png') })
+  await cold.close()
+
+  // A fresh context, navigating straight to the code. Going from `/` to
+  // `/#payload` in the same page is a same-document navigation, so nothing
+  // would remount and the capture would silently show the empty state.
+  const context = await browser.newContext(mobile)
+  const page = await context.newPage()
+  await page.goto(`${PLAYER_URL}#${payload}`)
+  await page.waitForSelector('.reveal', { timeout: 15000 })
+  await page.waitForTimeout(400)
+  await page.screenshot({ path: join(dir, '03-covered.png') })
+
+  // Hold the token to reveal it, and capture while the finger is still down.
+  const reveal = page.locator('.reveal')
+  const box = await reveal.boundingBox()
+  if (box) {
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await page.mouse.down()
+    await page.waitForTimeout(500)
+    await page.screenshot({ path: join(dir, '04-revealed.png') })
+    await page.mouse.up()
+    await page.waitForTimeout(400)
+    await page.screenshot({ path: join(dir, '05-recovered.png') })
+  }
+
+  await page.getByRole('button', { name: 'Script' }).click()
+  await page.waitForTimeout(500)
+  await page.screenshot({ path: join(dir, '06-script.png') })
+
+  await page.getByRole('button', { name: 'Notes' }).click()
+  await page.waitForTimeout(300)
+  for (const name of ['Alice', 'Bran', 'Cora', 'Dev']) {
+    await page.getByPlaceholder('Add a name').fill(name)
+    await page.getByPlaceholder('Add a name').press('Enter')
+  }
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: join(dir, '07-notes.png') })
+
+  await page.getByRole('button', { name: /Alice/ }).first().click()
+  await page.waitForTimeout(600)
+  await page.screenshot({ path: join(dir, '08-note-sheet.png') })
+
+  await context.close()
 }
 
 /** Walk the app from cold to a live game, capturing along the way. */
@@ -320,7 +411,8 @@ async function buildStrip(
 async function main() {
   const which = process.argv[2] ?? 'all'
   await mkdir(OUT, { recursive: true })
-  const server = await serve()
+  const server = await serve('@botc/storyteller', PORT, URL)
+  const playerServer = await serve('@botc/player', PLAYER_PORT, PLAYER_URL)
   // The environment ships Chromium already; never download one.
   const browser = await chromium.launch({
     executablePath: '/opt/pw-browsers/chromium',
@@ -333,10 +425,12 @@ async function main() {
       await seatCounts(browser)
     }
     if (which === 'all' || which === 'motion') await motion(browser)
+    if (which === 'all' || which === 'player') await player(browser)
     console.log(`\nCaptures written to design/${STAMP}`)
   } finally {
     await browser.close()
     server.kill()
+    playerServer.kill()
   }
 }
 

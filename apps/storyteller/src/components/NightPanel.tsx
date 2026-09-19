@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { getCharacter, placesReminder } from '@botc/rules'
 import { Button, ReminderText, Sheet, Label } from '@botc/ui'
-import { ChevronLeft, ChevronRight, Eye, Sunrise } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Eye, QrCode, Sunrise } from 'lucide-react'
 import { useStore } from '../state/store.js'
 import { CharacterToken } from './CharacterToken.js'
+import { DistributeSheet } from './DistributeSheet.js'
 
 /**
  * The guided night walk.
@@ -19,6 +20,7 @@ export function NightPanel() {
   const toDay = useStore((s) => s.toDay)
   const addEffect = useStore((s) => s.addEffect)
   const [placing, setPlacing] = useState<{ label: string; characterId: string } | null>(null)
+  const [distributing, setDistributing] = useState(false)
 
   const order = useMemo(() => nightOrder(), [nightOrder, game])
   if (!game || game.phase.k !== 'night') return null
@@ -67,6 +69,16 @@ export function NightPanel() {
           </p>
         )}
 
+        {/* Handing out characters belongs at dusk on the first night, which is
+            exactly when it happens at a table. Offered here rather than buried
+            in a menu, and only when it is the thing you are about to do. */}
+        {game.phase.n === 1 && step === 0 && (
+          <Button className="mt-3 w-full" onClick={() => setDistributing(true)}>
+            <QrCode size={17} />
+            Hand out characters
+          </Button>
+        )}
+
         {/* Reminder tokens the current step wants placed, one tap each. */}
         {entry && entry.reminderTokens.length > 0 && placesReminder(entry.reminder) && (
           <div className="mt-3 flex flex-wrap gap-2">
@@ -110,6 +122,8 @@ export function NightPanel() {
           )}
         </div>
       </div>
+
+      <DistributeSheet open={distributing} onClose={() => setDistributing(false)} />
 
       {/* Placing a token is a two-tap flow: pick the token, pick the seat. */}
       <Sheet
