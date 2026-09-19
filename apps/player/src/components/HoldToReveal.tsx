@@ -10,6 +10,8 @@ import './reveal.css'
  *
  *  - The cover is **opaque, not blurred**. A blurred character token still
  *    leaks its blue or red ring, and alignment is most of the secret.
+ *  - It covers the whole card, picture, name and ability together. An ability
+ *    left in the open names the character as surely as its picture does.
  *  - Visible only while the pointer is down. No timer, no toggle, nothing that
  *    can be left open, which also makes "pass me your phone" useless.
  *  - It re-covers itself after a few seconds even if held, so the phone cannot
@@ -23,11 +25,13 @@ const AUTO_COVER_MS = 6000
 
 export function HoldToReveal({
   children,
-  label = 'Cup your hands. Press and hold.',
+  label = 'Press and hold',
+  hint = 'Cup your hands so nobody else can see.',
   onFirstReveal,
 }: {
   children: ReactNode
   label?: string
+  hint?: string
   onFirstReveal?: () => void
 }) {
   const [revealed, setRevealed] = useState(false)
@@ -94,6 +98,7 @@ export function HoldToReveal({
       <div className="reveal-cover" aria-hidden={revealed}>
         <span className="reveal-seal" />
         <span className="reveal-label">{label}</span>
+        <span className="reveal-hint">{hint}</span>
       </div>
     </div>
   )
