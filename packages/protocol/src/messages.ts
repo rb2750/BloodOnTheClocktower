@@ -11,7 +11,7 @@ import { CHARACTERS } from '@botc/rules'
  */
 export type RelayMessage =
   | { t: 'hello'; pub: string }
-  | { t: 'seats'; seats: { id: string; name: string; taken: boolean }[] }
+  | { t: 'seats'; seats: { id: string; name: string; taken: boolean; alive?: boolean }[] }
   | { t: 'claim'; seatId: string; deviceId: string; pub: string }
   | { t: 'role'; seatId: string; sealed: string }
   /** A private line from the Storyteller, sealed to one player's own key. */

@@ -39,6 +39,22 @@ const RoomContext = createContext<Room>({
 
 export const useRoom = () => useContext(RoomContext)
 
+function tableOf(game: ReturnType<typeof useStore.getState>['game']) {
+  return (game?.seats ?? []).map((s) => ({
+    id: s.id,
+    name: s.name,
+    taken: Boolean(game?.claims?.[s.id]),
+    alive: s.alive,
+  }))
+}
+
+function phaseMessage(game: ReturnType<typeof useStore.getState>['game']): RelayMessage | null {
+  const phase = game?.phase
+  if (!phase || phase.k === 'setup') return null
+  const day = phase.k === 'ended' ? 0 : phase.n
+  return { t: 'phase', phase: phaseLabel(phase), day }
+}
+
 export function RoomProvider({ children }: { children: ReactNode }) {
   const game = useStore((s) => s.game)
   const ensureRoom = useStore((s) => s.ensureRoom)
@@ -103,14 +119,9 @@ export function RoomProvider({ children }: { children: ReactNode }) {
       // And the table as it stands, because the effect below only fires on a
       // change, and by then a phone waiting to sit down has nothing to tap.
       const now = useStore.getState().game
-      client.send({
-        t: 'seats',
-        seats: (now?.seats ?? []).map((s) => ({
-          id: s.id,
-          name: s.name,
-          taken: Boolean(now?.claims?.[s.id]),
-        })),
-      })
+      client.send({ t: 'seats', seats: tableOf(now) })
+      const opening = phaseMessage(now)
+      if (opening) client.send(opening)
     }
 
     void run()
@@ -129,11 +140,16 @@ export function RoomProvider({ children }: { children: ReactNode }) {
   const claims = game?.claims
   useEffect(() => {
     if (!relay.current || !seats) return
-    relay.current.send({
-      t: 'seats',
-      seats: seats.map((s) => ({ id: s.id, name: s.name, taken: Boolean(claims?.[s.id]) })),
-    })
+    relay.current.send({ t: 'seats', seats: tableOf(useStore.getState().game) })
   }, [seats, claims])
+
+  // And the time of day. Every phone shows it, and plays the same nightfall
+  // the Storyteller's screen plays, so the room moves together.
+  const phase = game?.phase
+  useEffect(() => {
+    const message = phaseMessage(useStore.getState().game)
+    if (relay.current && message) relay.current.send(message)
+  }, [phase])
 
   const whisper = async (seatId: string, text: string) => {
     const client = relay.current

@@ -41,6 +41,7 @@ function useRelayConnection() {
   const setRole = useStore((s) => s.setRole)
   const setPhase = useStore((s) => s.setPhase)
   const rememberTable = useStore((s) => s.rememberTable)
+  const setTable = useStore((s) => s.setTable)
   const addMessage = useStore((s) => s.addMessage)
 
   const [seats, setSeats] = useState<Seat[]>([])
@@ -112,6 +113,7 @@ function useRelayConnection() {
           }
           if (message.t === 'seats') {
             rememberTable(message.seats.map((s) => s.name))
+            setTable(message.seats.map((s) => ({ name: s.name, alive: s.alive ?? true })))
             return setSeats(message.seats)
           }
           if (message.t === 'phase') return setPhase(message.phase, message.day)
@@ -146,7 +148,7 @@ function useRelayConnection() {
       relay.current?.close()
       relay.current = null
     }
-  }, [payload, setRole, setPhase, rememberTable, addMessage, announceClaim])
+  }, [payload, setRole, setPhase, rememberTable, setTable, addMessage, announceClaim])
 
   const claim = (seat: Seat) => {
     if (!payload || payload.kind !== 'room') return

@@ -20,10 +20,17 @@ const Note =
           ? SheetCombined
           : NoteSheet
 
-/** Everyone at the table, in seat order, from the list the Storyteller sent. */
-function useTable() {
+/**
+ * Everyone at the table, in seat order, as the Storyteller last described it.
+ * A game played with one code per player never sends a table, so the names
+ * the player typed in stand in, all of them alive as far as this phone knows.
+ */
+function useTable(): { name: string; alive: boolean }[] {
+  const table = useStore((s) => s.table)
   const notes = useStore((s) => s.notes)
-  return Object.keys(notes)
+  const seatName = useStore((s) => s.seatName)
+  if (table.length > 0) return table.filter((t) => t.name !== seatName)
+  return Object.keys(notes).map((name) => ({ name, alive: true }))
 }
 
 function claimOf(name: string, notes: ReturnType<typeof useStore.getState>['notes']) {
@@ -43,6 +50,7 @@ export function HomeScreen({ openRoles }: { openRoles: () => void }) {
 
   return (
     <>
+      <Clock />
       <Seat name={seatName} />
       <MeScreen />
       <Whispers />
@@ -50,10 +58,14 @@ export function HomeScreen({ openRoles }: { openRoles: () => void }) {
       {payload && (characterId || seatName) && (
         <div className="mt-6 mb-10">
           <div className="relative mx-auto aspect-square w-[min(86vw,340px)]">
-            {table.map((name, i) => {
+            {table.map(({ name, alive }, i) => {
               // Seat one sits at the bottom, where the player is, so the ring
               // matches the room rather than a clock face.
               const angle = (i / table.length) * 2 * Math.PI + Math.PI / 2
+              const note = notes[name]
+              const noted = Boolean(
+                note && (note.claims.length || note.stamps.length || note.lines.length),
+              )
               return (
                 <button
                   key={name}
@@ -64,7 +76,13 @@ export function HomeScreen({ openRoles }: { openRoles: () => void }) {
                     top: `${50 + 40 * Math.sin(angle)}%`,
                   }}
                 >
-                  <Person name={name} claim={claimOf(name, notes)} size="52px" />
+                  <Person
+                    name={name}
+                    claim={claimOf(name, notes)}
+                    dead={!alive}
+                    noted={noted}
+                    size="52px"
+                  />
                 </button>
               )
             })}
@@ -180,9 +198,19 @@ function AddSomeone({ empty }: { empty: boolean }) {
   )
 }
 
+/** The time of day, as the Storyteller's phone has it. Big, because it is the
+ *  one thing a player glances at most and the one thing this app was not
+ *  showing at all. */
+function Clock() {
+  const phase = useStore((s) => s.phase)
+  const known = useStore((s) => s.phaseKnown)
+  if (!known) return null
+  return <h1 className="display px-5 pt-6 text-center text-[30px] leading-none text-(--text)">{phase}</h1>
+}
+
 function Seat({ name }: { name: string | null }) {
   if (!name) return null
-  return <p className="caps px-5 pt-5 text-center text-(--text-faint)">You are {name}</p>
+  return <p className="caps px-5 pt-2 text-center text-(--text-faint)">You are {name}</p>
 }
 
 /**
@@ -195,16 +223,33 @@ function Seat({ name }: { name: string | null }) {
 function Person({
   name,
   claim,
+  dead = false,
+  noted = false,
   size,
 }: {
   name: string
   claim?: ReturnType<typeof getCharacter>
+  dead?: boolean
+  noted?: boolean
   size: string
 }) {
   return (
     <>
-      <Token name={name} size={size} />
-      <span className="max-w-[10ch] truncate text-[12px] text-(--text-dim)">{name}</span>
+      <span className="relative">
+        <Token name={name} size={size} dead={dead} />
+        {/* A mark for "you have written something here": brass, because red
+            and blue mean alignment and nothing else. */}
+        {noted && (
+          <span className="absolute -top-0.5 -right-0.5 size-3 rounded-full border-2 border-(--bg) bg-(--accent)" />
+        )}
+      </span>
+      <span
+        className={`max-w-[10ch] truncate text-[12px] ${
+          dead ? 'text-(--text-faint) line-through' : 'text-(--text-dim)'
+        }`}
+      >
+        {name}
+      </span>
       {claim && (
         <span className="max-w-[12ch] text-center text-[11px] leading-tight text-(--text-faint)">
           says {claim.name}

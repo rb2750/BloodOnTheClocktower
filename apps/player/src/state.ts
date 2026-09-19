@@ -50,10 +50,17 @@ export type PlayerState = {
   /** Storyteller-driven phase, when a relay is connected. */
   phase: string
   day: number
+  /** Whether the Storyteller has ever said what time it is. Until they have,
+   *  "Day 1" is only a label for notes, not something to show or play. */
+  phaseKnown: boolean
   /** Notes keyed by the other players' names. */
   notes: Record<string, PlayerNote>
   /** Private words from the Storyteller, oldest first. */
   messages: { id: string; text: string; at: string }[]
+  /** The table in seat order, and who is still alive, as the Storyteller last said. */
+  table: { name: string; alive: boolean }[]
+  /** The last phase change this phone played, so a reload does not replay it. */
+  cinematicPlayed: string | null
   /** Stable id for this device, so a claimed seat survives a reload. */
   deviceId: string
   hasRevealed: boolean
@@ -66,6 +73,8 @@ export type PlayerActions = {
   setPhase: (phase: string, day: number) => void
   markRevealed: () => void
   addMessage: (id: string, text: string, at: string) => void
+  setTable: (table: { name: string; alive: boolean }[]) => void
+  setCinematicPlayed: (key: string) => void
 
   ensureNote: (name: string) => void
   rememberTable: (names: string[]) => void
@@ -92,8 +101,11 @@ export const useStore = create<PlayerState & PlayerActions>()(
       seatName: null,
       phase: 'Day 1',
       day: 1,
+      phaseKnown: false,
       notes: {},
       messages: [],
+      table: [],
+      cinematicPlayed: null,
       deviceId: newId(),
       hasRevealed: false,
 
@@ -122,6 +134,9 @@ export const useStore = create<PlayerState & PlayerActions>()(
             characterId: null,
             hasRevealed: false,
             messages: [],
+            table: [],
+            cinematicPlayed: null,
+            phaseKnown: false,
           }
         }),
 
@@ -140,7 +155,11 @@ export const useStore = create<PlayerState & PlayerActions>()(
           return { seatId, seatName, roomId, notes }
         }),
 
-      setPhase: (phase, day) => set({ phase, day }),
+      setPhase: (phase, day) => set({ phase, day, phaseKnown: true }),
+
+      setTable: (table) => set({ table }),
+
+      setCinematicPlayed: (key) => set({ cinematicPlayed: key }),
 
       markRevealed: () => set({ hasRevealed: true }),
 
@@ -242,6 +261,9 @@ export const useStore = create<PlayerState & PlayerActions>()(
           seatName: null,
           notes: {},
           messages: [],
+          table: [],
+          cinematicPlayed: null,
+          phaseKnown: false,
           hasRevealed: false,
           deviceId: get().deviceId,
         }),
