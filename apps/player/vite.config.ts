@@ -11,7 +11,7 @@ export default defineConfig({
     react(),
     tailwind(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       injectRegister: null,
       workbox: {
         globPatterns: ['**/*.{js,css,html,woff2,svg}', 'icon-*.png'],

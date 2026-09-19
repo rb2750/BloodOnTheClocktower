@@ -12,7 +12,7 @@ export default defineConfig({
     react(),
     tailwind(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       // Reloading mid-game would be a disaster, so the app never reloads itself:
       // it raises a toast and lets the Storyteller choose the moment.
       injectRegister: null,
