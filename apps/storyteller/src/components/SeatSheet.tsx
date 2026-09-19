@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getCharacter, teamAlignment } from '@botc/rules'
-import { AbilityText, Button, Label, Sheet, Shroud, Heart, Ghost, Swap, Mask, Signpost, Tankard, inputClass } from '@botc/ui'
+import { AbilityText, Button, Label, Sheet, Shroud, Heart, Ghost, Swap, Mask, Signpost, inputClass } from '@botc/ui'
 import { toast } from 'sonner'
 import { useStore } from '../state/store.js'
 import { CharacterToken } from './CharacterToken.js'
@@ -117,9 +117,11 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
               })
             }}
           />
-          {seat.alive ? (
-            <Action icon={<Swap size={22} />} label="Character" onClick={() => setPicking('perceived')} />
-          ) : (
+          {/* A character can change at any point in the game, alive or dead:
+              picking Drunk asks what they believe; picking anything else makes
+              them simply that, drunk no longer. */}
+          <Action icon={<Swap size={22} />} label="Character" onClick={() => setPicking('perceived')} />
+          {!seat.alive && (
             <Action
               icon={<Ghost size={22} />}
               label={seat.deadVoteAvailable ? 'Ghost vote' : 'Vote spent'}
@@ -127,23 +129,6 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
               onClick={() => toggleDeadVote(seat.id)}
             />
           )}
-          {/* Drunk is a switch on the seat, not a role. On: they keep the
-              character they believe, and their ability does nothing. Off: that
-              character is simply theirs. */}
-          <Action
-            icon={<Tankard size={22} />}
-            label={seat.trueCharacterId === 'drunk' ? 'Sober up' : 'Drunk'}
-            active={seat.trueCharacterId === 'drunk'}
-            onClick={() => {
-              if (seat.trueCharacterId === 'drunk') setSeatTrueCharacter(seat.id, undefined)
-              else {
-                setSeatTrueCharacter(seat.id, 'drunk')
-                // The Drunk believes a Townsfolk. Anything else, or nothing,
-                // means the choice is still owed.
-                if (getCharacter(seat.characterId ?? '')?.team !== 'townsfolk') setPicking('believed')
-              }
-            }}
-          />
           <Action
             icon={<Mask size={22} />}
             label={trueCharacter ? 'Disguised' : 'Disguise'}
@@ -286,7 +271,10 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
             setSeatTrueCharacter(seat.id, 'drunk')
             setPicking('believed')
             return
-          } else setSeatCharacter(seat.id, c.id)
+          } else {
+            setSeatCharacter(seat.id, c.id)
+            if (seat.trueCharacterId === 'drunk') setSeatTrueCharacter(seat.id, undefined)
+          }
           setPicking(null)
         }}
       >
