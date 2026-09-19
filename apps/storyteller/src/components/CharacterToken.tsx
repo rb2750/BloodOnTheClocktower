@@ -7,6 +7,7 @@ export function CharacterToken({
   size,
   dead,
   voteSpent,
+  now,
   alignment,
   className,
   style,
@@ -15,6 +16,7 @@ export function CharacterToken({
   size?: string
   dead?: boolean
   voteSpent?: boolean
+  now?: boolean
   /** Overrides the character's usual alignment, for a Bounty Hunter or a Traveller. */
   alignment?: 'good' | 'evil'
   className?: string
@@ -28,6 +30,7 @@ export function CharacterToken({
       alignment={align ?? 'unknown'}
       dead={dead}
       voteSpent={voteSpent}
+      now={now}
       size={size}
       className={className}
       style={style}

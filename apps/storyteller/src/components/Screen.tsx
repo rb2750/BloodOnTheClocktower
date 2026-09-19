@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useRef, type ReactNode } from 'react'
 import { ChevronLeft } from '@botc/ui'
 
 /**
@@ -13,6 +13,7 @@ export function Screen({
   title,
   subtitle,
   onTitle,
+  onTitleHold,
   onBack,
   trailing,
   children,
@@ -24,6 +25,8 @@ export function Screen({
   subtitle?: ReactNode
   /** Makes the title a button, for the log. */
   onTitle?: () => void
+  /** A long press on the title. Undo lives here during a game. */
+  onTitleHold?: () => void
   onBack?: () => void
   trailing?: ReactNode
   children: ReactNode
@@ -32,6 +35,21 @@ export function Screen({
    *  the live grimoire, which should never leave a dead gap above the controls. */
   fill?: boolean
 }) {
+  const holdTimer = useRef<number | null>(null)
+  const held = useRef(false)
+  const startHold = () => {
+    if (!onTitleHold) return
+    held.current = false
+    holdTimer.current = window.setTimeout(() => {
+      held.current = true
+      onTitleHold()
+    }, 600)
+  }
+  const endHold = () => {
+    if (holdTimer.current !== null) window.clearTimeout(holdTimer.current)
+    holdTimer.current = null
+  }
+
   const heading = (
     <>
       <h1 className="display text-[22px] leading-none text-(--text)">{title}</h1>
@@ -56,7 +74,21 @@ export function Screen({
           <span className="size-11" />
         )}
         {onTitle ? (
-          <button onClick={onTitle} className="flex-1 text-center">
+          <button
+            onClick={() => {
+              if (held.current) {
+                held.current = false
+                return
+              }
+              onTitle()
+            }}
+            onPointerDown={startHold}
+            onPointerUp={endHold}
+            onPointerLeave={endHold}
+            onPointerCancel={endHold}
+            onContextMenu={(e) => e.preventDefault()}
+            className="flex-1 select-none text-center"
+          >
             {heading}
           </button>
         ) : (

@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { getCharacter, placesReminder } from '@botc/rules'
 import { Button, ReminderText, Sheet, Label, ChevronLeft, ChevronRight, Qr, Dawn } from '@botc/ui'
 import { useStore } from '../state/store.js'
-import { CharacterToken } from './CharacterToken.js'
 import { DistributeSheet } from './DistributeSheet.js'
 
 /**
@@ -27,7 +26,6 @@ export function NightPanel() {
   const step = Math.min(game.phase.step, Math.max(order.length - 1, 0))
   const entry = order[step]
   const isLast = step >= order.length - 1
-  const character = entry?.kind === 'character' ? getCharacter(entry.id) : undefined
 
   return (
     <>
@@ -43,7 +41,6 @@ export function NightPanel() {
 
         {entry ? (
           <div className="flex gap-3">
-            {character && <CharacterToken character={character} size="52px" />}
             <div className="min-w-0 flex-1">
               <div className="display text-[22px] leading-none text-(--text)">{entry.name}</div>
               {entry.seats.length > 0 && (
@@ -92,6 +89,18 @@ export function NightPanel() {
             ))}
           </div>
         )}
+
+        {/* How far through the night, one tick per step. */}
+        <div className="mt-3 flex gap-[3px]" aria-hidden>
+          {order.map((o, i) => (
+            <span
+              key={o.key}
+              className={`h-[2px] flex-1 ${
+                i < step ? 'bg-(--text-dim)' : i === step ? 'bg-(--now)' : 'bg-(--hairline)'
+              }`}
+            />
+          ))}
+        </div>
 
         <div className="mt-4 flex gap-2">
           <Button

@@ -1,11 +1,12 @@
 # Grimoire redesign proposal
 
-> **Status: proposal, second draft, not implemented.** Written 2026-09-19 after
+> **Status: implemented on this branch in four commits.** Written 2026-09-19 after
 > rebuilding and screenshotting the current UI at three viewports. The first
 > draft (warm umber ground, brass, gradients) was rejected as cheap-looking and
 > is withdrawn. The full visual version, with live type specimens, the drawn
 > icon set and four screen mockups, is a private artifact; this file is the text
-> record so the decisions live with the code.
+> record so the decisions live with the code. Departures during the build are
+> noted at the end.
 
 ## Diagnosis
 
@@ -133,3 +134,18 @@ thin.
 Each phase is screenshot-reviewed with `pnpm shots` before the next starts.
 Phases I–III change no behaviour or tests; IV changes the vote interaction and
 its end-to-end test.
+
+## What changed during the build
+
+- **Undo** moved into the log sheet (a tap on the phase title) and a long
+  press on the phase title, with the undo toast unchanged. **Add a Traveller**
+  moved into the log sheet too, since the centre of the ring is now the dial.
+- The **night rail** under the reminder text shows one tick per step; the
+  dial shows the same progress as an arc, and the acting seat is lit.
+- **Vote on the ring** replaced the voter chip grid outright rather than
+  sitting beside it; the nomination arc is measured from the seat elements so
+  it follows the ring at every player count.
+- The design system's raw token names changed (`ink-0..4`, `cream`,
+  `blue`, `red`, `now`); components reach only for the semantic aliases.
+- Both apps now ship the icon files their manifests referenced. They are
+  rendered by `pnpm icons` from the same clock face and seal the UI draws.

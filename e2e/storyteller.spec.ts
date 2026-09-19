@@ -46,7 +46,7 @@ test('deals a seven-player game and walks the first night to dawn', async ({ pag
   await page.getByRole('button', { name: /Call for eyes open/ }).click()
   await page.locator('.cinematic').click({ timeout: 5000 }).catch(() => {})
   // The phase name appears in several places at once, so anchor on the header.
-  await expect(page.getByRole('button', { name: /Day 1 · \d+ alive/ })).toBeVisible({
+  await expect(page.getByRole('button', { name: /Day 1\s+\d+ alive/ })).toBeVisible({
     timeout: 10_000,
   })
 })
@@ -65,8 +65,39 @@ test('kills a player, then undoes it', async ({ page }) => {
   await page.keyboard.press('Escape')
   await expect(page.getByRole('button', { name: /^Kill$/ })).toBeHidden()
 
-  await page.locator('.circle').getByRole('button', { name: 'Undo' }).click()
+  // Undo lives in the log, which opens from the phase title.
+  await page.getByRole('button', { name: /Night 1\s+\d+ alive/ }).click()
+  await page.getByRole('dialog').getByRole('button', { name: /^Undo$/ }).click()
   await expect(page.locator('.token[data-dead="true"]')).toHaveCount(0)
+})
+
+test('takes a vote by tapping seats on the ring', async ({ page }) => {
+  await dealGame(page)
+  await startNight(page)
+  for (let i = 0; i < 20; i++) {
+    const next = page.getByRole('button', { name: 'Next' })
+    if (!(await next.isVisible().catch(() => false))) break
+    await next.click()
+  }
+  await page.getByRole('button', { name: /Call for eyes open/ }).click()
+  await page.locator('.cinematic').click({ timeout: 5000 }).catch(() => {})
+
+  await page.getByRole('button', { name: /^Nominate$/ }).click()
+  await page.getByRole('button', { name: /Alice/ }).first().click()
+  await page.getByRole('button', { name: /Cora/ }).first().click()
+
+  // During the vote the ring is the ballot: a tap raises a hand, a second
+  // tap lowers it, and the seat sheet stays closed.
+  const seats = page.locator('.circle > li button')
+  await seats.nth(1).click()
+  await seats.nth(2).click()
+  await expect(page.locator('.token[data-now="true"]')).toHaveCount(2)
+  await expect(page.getByRole('button', { name: /^Kill$/ })).toBeHidden()
+  await seats.nth(2).click()
+  await expect(page.locator('.token[data-now="true"]')).toHaveCount(1)
+
+  await page.getByRole('button', { name: /Hands down/ }).click()
+  await expect(page.locator('.token[data-now="true"]')).toHaveCount(0)
 })
 
 test('keeps the game across a reload', async ({ page }) => {
@@ -78,7 +109,7 @@ test('keeps the game across a reload', async ({ page }) => {
   await page.waitForTimeout(600) // let IndexedDB settle
   await page.reload()
 
-  await expect(page.getByRole('button', { name: /Night 1 · \d+ alive/ })).toBeVisible({
+  await expect(page.getByRole('button', { name: /Night 1\s+\d+ alive/ })).toBeVisible({
     timeout: 10_000,
   })
   await expect(page.locator('.circle > li')).toHaveCount(PLAYERS.length)

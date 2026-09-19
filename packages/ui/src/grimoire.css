@@ -280,3 +280,66 @@
     overflow: visible;
   }
 }
+
+@layer components {
+  /* --- The dial ----------------------------------------------------------- */
+  /* The centre of the ring: a hairline circle with a flat arc for progress. */
+  .dial {
+    position: relative;
+    width: 104px;
+    height: 104px;
+    border-radius: 50%;
+    border: 1px solid var(--hairline);
+    display: grid;
+    place-items: center;
+    background: var(--bg);
+  }
+
+  .dial-arc {
+    position: absolute;
+    inset: -1px;
+    border-radius: 50%;
+    background: conic-gradient(var(--text-dim) 0 calc(var(--fraction, 0) * 1turn), transparent 0);
+    -webkit-mask: radial-gradient(circle, transparent 50px, #000 51px);
+    mask: radial-gradient(circle, transparent 50px, #000 51px);
+    transition: --fraction 300ms var(--ease-ui);
+  }
+
+  .dial[data-now='true'] .dial-arc {
+    background: conic-gradient(var(--now) 0 calc(var(--fraction, 0) * 1turn), transparent 0);
+  }
+
+  .dial-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .dial-caption {
+    font-size: 9.5px;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+
+  /* Mini reminder tokens sit where the text chips did: inside the ring. */
+  .chips .token {
+    --size: 16px;
+  }
+
+  .chips .token::before {
+    padding: 1.5px;
+  }
+
+  /* The nomination: a hairline arc from nominator to nominee. */
+  .nomination-arc {
+    fill: none;
+    stroke: var(--now);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+  }
+
+  .nomination-arc-head {
+    fill: var(--now);
+  }
+}

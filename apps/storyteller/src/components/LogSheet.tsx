@@ -1,4 +1,5 @@
-import { Sheet } from '@botc/ui'
+import { Button, Sheet, Ring, Undo } from '@botc/ui'
+import { toast } from 'sonner'
 import { useStore } from '../state/store.js'
 import type { LogKind } from '../state/types.js'
 
@@ -24,6 +25,9 @@ const TONE: Record<LogKind, string> = {
  */
 export function LogSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const game = useStore((s) => s.game)
+  const addSeat = useStore((s) => s.addSeat)
+  const undo = useStore((s) => s.undo)
+  const canUndo = useStore((s) => s.undoStack.length > 0)
   if (!game) return null
 
   const entries = [...game.log].reverse()
@@ -36,6 +40,35 @@ export function LogSheet({ open, onClose }: { open: boolean; onClose: () => void
       title="What has happened"
       subtitle={`${game.scriptName} · ${game.seats.length} players`}
     >
+      <div className="mb-4 flex gap-2">
+        <Button
+          className="flex-1"
+          disabled={!canUndo}
+          onClick={() => {
+            const label = undo()
+            if (label) toast(`Undid: ${label.toLowerCase()}`)
+          }}
+        >
+          <Undo size={18} />
+          Undo
+        </Button>
+        {/* Travellers join mid-game, so a seat can be added at any point. */}
+        <Button
+          className="flex-1"
+          onClick={() => {
+            const name = window.prompt('Who is joining?')?.trim()
+            if (!name) return
+            addSeat(name, true)
+            onClose()
+            toast(`${name} joined as a Traveller.`, {
+              action: { label: 'Undo', onClick: () => undo() },
+            })
+          }}
+        >
+          <Ring size={18} />
+          Add a Traveller
+        </Button>
+      </div>
       {entries.length === 0 ? (
         <p className="py-6 text-center text-[14px] text-(--text-faint)">Nothing yet.</p>
       ) : (

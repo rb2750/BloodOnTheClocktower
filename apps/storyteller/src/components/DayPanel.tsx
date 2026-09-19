@@ -18,7 +18,6 @@ export function DayPanel({ onOpenSeat }: { onOpenSeat: (id: string) => void }) {
   const game = useStore((s) => s.game)
   const toNight = useStore((s) => s.toNight)
   const nominate = useStore((s) => s.nominate)
-  const toggleVote = useStore((s) => s.toggleVote)
   const settleNomination = useStore((s) => s.settleNomination)
   const execute = useStore((s) => s.execute)
   const expireEffects = useStore((s) => s.expireEffects)
@@ -47,7 +46,6 @@ export function DayPanel({ onOpenSeat }: { onOpenSeat: (id: string) => void }) {
             blockVotes={block.votes}
             voters={open.voterIds}
             seats={game.seats}
-            onToggle={(seatId) => toggleVote(open.id, seatId)}
             onClose={() => settleNomination(open.id)}
           />
         ) : (
@@ -175,7 +173,6 @@ function VoteInProgress({
   blockVotes,
   voters,
   seats,
-  onToggle,
   onClose,
 }: {
   nominee: string
@@ -185,7 +182,6 @@ function VoteInProgress({
   blockVotes: number
   voters: string[]
   seats: Seat[]
-  onToggle: (seatId: string) => void
   onClose: () => void
 }) {
   return (
@@ -199,27 +195,13 @@ function VoteInProgress({
 
       <SayThis>{votesNeededPhrase(nominee, aliveCount, blockVotes)}</SayThis>
 
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {seats.map((seat) => {
-          const voting = voters.includes(seat.id)
-          const canVote = seat.alive || seat.deadVoteAvailable
-          return (
-            <button
-              key={seat.id}
-              disabled={!canVote && !voting}
-              onClick={() => onToggle(seat.id)}
-              className={`min-h-9 rounded-full border px-3 text-[12px] font-medium transition-colors disabled:opacity-25 ${
-                voting
-                  ? 'border-(--now) bg-(--now) text-(--bg)'
-                  : 'border-(--hairline-strong) text-(--text-dim)'
-              }`}
-            >
-              {seat.name}
-              {!seat.alive && <span className="ml-1 opacity-60">ghost</span>}
-            </button>
-          )
-        })}
-      </div>
+      <p className="caps mt-3 text-(--text-faint)">
+        {voters.length === 0
+          ? 'Tap a seat on the ring to raise a hand.'
+          : voters
+              .map((id) => seats.find((s) => s.id === id)?.name ?? '?')
+              .join(', ')}
+      </p>
 
       <Button live variant="primary" className="mt-4 w-full" onClick={onClose}>
         Hands down
