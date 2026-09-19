@@ -55,6 +55,25 @@ function phaseMessage(game: ReturnType<typeof useStore.getState>['game']): Relay
   return { t: 'phase', phase: phaseLabel(phase), day }
 }
 
+function voteMessage(game: ReturnType<typeof useStore.getState>['game']): RelayMessage {
+  const today = game?.phase.k === 'day' ? game.phase.n : null
+  const nomination = game?.nominations.filter((n) => n.day === today).at(-1)
+  if (!game || !nomination) return { t: 'vote', nomination: null }
+  const name = (id: string) => game.seats.find((s) => s.id === id)?.name ?? '?'
+  return {
+    t: 'vote',
+    nomination: {
+      id: nomination.id,
+      nominator: name(nomination.nominatorId),
+      nominee: name(nomination.nomineeId),
+      voters: nomination.voterIds.map(name),
+      tally: nomination.tally,
+      majority: nomination.majority,
+      settled: nomination.settled,
+    },
+  }
+}
+
 export function RoomProvider({ children }: { children: ReactNode }) {
   const game = useStore((s) => s.game)
   const ensureRoom = useStore((s) => s.ensureRoom)
@@ -122,6 +141,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
       client.send({ t: 'seats', seats: tableOf(now) })
       const opening = phaseMessage(now)
       if (opening) client.send(opening)
+      client.send(voteMessage(now))
     }
 
     void run()
@@ -150,6 +170,12 @@ export function RoomProvider({ children }: { children: ReactNode }) {
     const message = phaseMessage(useStore.getState().game)
     if (relay.current && message) relay.current.send(message)
   }, [phase])
+
+  // The vote, as it is counted. Every raised hand is a change.
+  const nominations = game?.nominations
+  useEffect(() => {
+    if (relay.current) relay.current.send(voteMessage(useStore.getState().game))
+  }, [nominations, phase])
 
   const whisper = async (seatId: string, text: string) => {
     const client = relay.current

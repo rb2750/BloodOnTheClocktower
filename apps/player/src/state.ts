@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval'
-import { idsFor, type Payload } from '@botc/protocol'
+import { idsFor, type Payload, type VoteSnapshot } from '@botc/protocol'
 
 const idbStorage: StateStorage = {
   getItem: async (name) => (await idbGet(name)) ?? null,
@@ -61,6 +61,8 @@ export type PlayerState = {
   table: { name: string; alive: boolean }[]
   /** The last phase change this phone played, so a reload does not replay it. */
   cinematicPlayed: string | null
+  /** Today's nomination as the Storyteller is counting it. */
+  vote: VoteSnapshot | null
   /** Stable id for this device, so a claimed seat survives a reload. */
   deviceId: string
   hasRevealed: boolean
@@ -74,6 +76,7 @@ export type PlayerActions = {
   markRevealed: () => void
   addMessage: (id: string, text: string, at: string) => void
   setTable: (table: { name: string; alive: boolean }[]) => void
+  setVote: (vote: VoteSnapshot | null) => void
   setCinematicPlayed: (key: string) => void
 
   ensureNote: (name: string) => void
@@ -106,6 +109,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
       messages: [],
       table: [],
       cinematicPlayed: null,
+      vote: null,
       deviceId: newId(),
       hasRevealed: false,
 
@@ -137,6 +141,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
             table: [],
             cinematicPlayed: null,
             phaseKnown: false,
+            vote: null,
           }
         }),
 
@@ -158,6 +163,8 @@ export const useStore = create<PlayerState & PlayerActions>()(
       setPhase: (phase, day) => set({ phase, day, phaseKnown: true }),
 
       setTable: (table) => set({ table }),
+
+      setVote: (vote) => set({ vote }),
 
       setCinematicPlayed: (key) => set({ cinematicPlayed: key }),
 
@@ -194,8 +201,12 @@ export const useStore = create<PlayerState & PlayerActions>()(
       addClaim: (name, characterId) =>
         set((s) => {
           const note = s.notes[name] ?? { name, claims: [], stamps: [], lines: [] }
+          // Tapping the one already chosen takes it back: a mis-tap must cost
+          // one more tap, not a trip through a menu.
+          if (note.claims.at(-1)?.characterId === characterId) {
+            return { notes: { ...s.notes, [name]: { ...note, claims: note.claims.slice(0, -1) } } }
+          }
           // A changed claim is itself information, so both are kept.
-          if (note.claims.at(-1)?.characterId === characterId) return s
           return {
             notes: {
               ...s.notes,
@@ -264,6 +275,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
           table: [],
           cinematicPlayed: null,
           phaseKnown: false,
+          vote: null,
           hasRevealed: false,
           deviceId: get().deviceId,
         }),

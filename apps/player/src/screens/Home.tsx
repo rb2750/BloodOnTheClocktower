@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getCharacter } from '@botc/rules'
+import { characterArt, getCharacter } from '@botc/rules'
 import { ChevronRight, Plus, Token, Button, inputClass } from '@botc/ui'
 import { useStore } from '../state.js'
 import { MeScreen } from './Me.js'
@@ -52,6 +52,7 @@ export function HomeScreen({ openRoles }: { openRoles: () => void }) {
     <>
       <Clock />
       <Seat name={seatName} />
+      <Vote />
       <MeScreen />
       <Whispers />
 
@@ -198,6 +199,35 @@ function AddSomeone({ empty }: { empty: boolean }) {
   )
 }
 
+/**
+ * The vote as the Storyteller is counting it, at the top because a nomination
+ * is the loudest thing that happens in a day. It says how many hands are up,
+ * how many are needed, and who has voted, which is all public at the table.
+ */
+function Vote() {
+  const vote = useStore((s) => s.vote)
+  const seatName = useStore((s) => s.seatName)
+  if (!vote) return null
+  const you = vote.nominee === seatName
+  const enough = vote.tally >= vote.majority
+  return (
+    <section className="mx-5 mt-4 rounded-2xl border border-(--hairline-strong) bg-(--surface) px-4 py-3">
+      <p className="caps text-(--text-faint)">{vote.settled ? 'Vote closed' : 'On the block'}</p>
+      <p className="display mt-1 text-[22px] leading-tight text-(--text)">
+        {you ? `${vote.nominator} nominates you` : `${vote.nominator} nominates ${vote.nominee}`}
+      </p>
+      <p className="serif mt-1 text-[15px] leading-snug text-(--text-dim)">
+        {vote.settled
+          ? `${vote.tally} ${vote.tally === 1 ? 'vote' : 'votes'}, ${enough ? 'enough to execute' : 'not enough'}.`
+          : `${vote.tally} of ${vote.majority} needed to execute.`}
+      </p>
+      {vote.voters.length > 0 && (
+        <p className="mt-1 text-[12px] text-(--text-faint)">Voting: {vote.voters.join(', ')}</p>
+      )}
+    </section>
+  )
+}
+
 /** The time of day, as the Storyteller's phone has it. Big, because it is the
  *  one thing a player glances at most and the one thing this app was not
  *  showing at all. */
@@ -214,11 +244,11 @@ function Seat({ name }: { name: string | null }) {
 }
 
 /**
- * A person is drawn as their initials and nothing else.
+ * A person wears what you think they are, and nothing the app knows.
  *
- * Never their character. The app is only ever told one role, your own, and a
- * face on somebody else would read as though the app knew theirs. What it can
- * show is what *you* wrote down, in your words, underneath: "says Chef".
+ * The app is only ever told one role, your own. The picture on somebody else is
+ * the claim *you* wrote down, drawn without an alignment ring because hearsay
+ * has no colour, and named underneath so it never reads as fact.
  */
 function Person({
   name,
@@ -236,7 +266,13 @@ function Person({
   return (
     <>
       <span className="relative">
-        <Token name={name} size={size} dead={dead} />
+        <Token
+          src={claim ? characterArt(claim, 'g') : undefined}
+          name={name}
+          alignment="unknown"
+          size={size}
+          dead={dead}
+        />
         {/* A mark for "you have written something here": brass, because red
             and blue mean alignment and nothing else. */}
         {noted && (

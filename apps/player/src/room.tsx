@@ -42,6 +42,7 @@ function useRelayConnection() {
   const setPhase = useStore((s) => s.setPhase)
   const rememberTable = useStore((s) => s.rememberTable)
   const setTable = useStore((s) => s.setTable)
+  const setVote = useStore((s) => s.setVote)
   const addMessage = useStore((s) => s.addMessage)
 
   const [seats, setSeats] = useState<Seat[]>([])
@@ -117,6 +118,16 @@ function useRelayConnection() {
             return setSeats(message.seats)
           }
           if (message.t === 'phase') return setPhase(message.phase, message.day)
+          if (message.t === 'vote') {
+            // A short buzz when a vote opens, a longer one when it closes, so a
+            // phone face down on the table still says "look up". Nothing for a
+            // raised hand: that would buzz the room every few seconds.
+            const before = useStore.getState().vote
+            const next = message.nomination
+            if (next && next.id !== before?.id) navigator.vibrate?.([40, 50, 40])
+            else if (next && next.settled && before && !before.settled) navigator.vibrate?.(120)
+            return setVote(next)
+          }
           if (message.t === 'role') {
             // Every device receives every role message. Only ours will open,
             // because only we hold the private half it was sealed to.
@@ -148,7 +159,7 @@ function useRelayConnection() {
       relay.current?.close()
       relay.current = null
     }
-  }, [payload, setRole, setPhase, rememberTable, setTable, addMessage, announceClaim])
+  }, [payload, setRole, setPhase, rememberTable, setTable, setVote, addMessage, announceClaim])
 
   const claim = (seat: Seat) => {
     if (!payload || payload.kind !== 'room') return

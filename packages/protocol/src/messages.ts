@@ -17,7 +17,20 @@ export type RelayMessage =
   /** A private line from the Storyteller, sealed to one player's own key. */
   | { t: 'whisper'; seatId: string; id: string; sealed: string }
   | { t: 'phase'; phase: string; day: number }
+  /** Today's nomination, as the Storyteller is counting it, or none. Hands are
+   *  raised in the open, so who voted is public and travels as names. */
+  | { t: 'vote'; nomination: VoteSnapshot | null }
   | { t: 'death'; seatId: string; alive: boolean }
+
+export type VoteSnapshot = {
+  id: string
+  nominator: string
+  nominee: string
+  voters: string[]
+  tally: number
+  majority: number
+  settled: boolean
+}
 
 /** What a sealed `whisper` contains once opened. */
 export type SealedWhisper = { text: string; at: string }
