@@ -4,6 +4,7 @@ import { Button, Sheet, Label, Point, Moon, Quote } from '@botc/ui'
 import { toast } from 'sonner'
 import { useStore, currentBlock } from '../state/store.js'
 import type { Seat } from '../state/types.js'
+import { GameOverHint } from './GameOverHint.js'
 
 /**
  * The day.
@@ -14,7 +15,7 @@ import type { Seat } from '../state/types.js'
  * say exactly how many votes are needed to tie and to take the block. Official
  * Storyteller advice asks for that line and no other tool produces it.
  */
-export function DayPanel({ onOpenSeat }: { onOpenSeat: (id: string) => void }) {
+export function DayPanel({ onOpenSeat, onEnd }: { onOpenSeat: (id: string) => void; onEnd: () => void }) {
   const game = useStore((s) => s.game)
   const toNight = useStore((s) => s.toNight)
   const nominate = useStore((s) => s.nominate)
@@ -66,6 +67,8 @@ export function DayPanel({ onOpenSeat }: { onOpenSeat: (id: string) => void }) {
                   ? 'Those players are tied, so nobody is about to die.'
                   : 'I am about to call for nominations.'}
             </SayThis>
+
+            <GameOverHint onEnd={onEnd} />
 
             <div className="mt-4 flex gap-2">
               <Button live className="flex-1" onClick={() => setNominating({})}>

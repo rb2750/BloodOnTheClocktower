@@ -23,7 +23,7 @@ async function startNight(page: Page) {
   await page.getByRole('button', { name: /Begin the first night/ }).click()
   // Skip the cinematic rather than waiting it out.
   await page.locator('.cinematic').click({ timeout: 5000 }).catch(() => {})
-  await expect(page.getByText(/Step \d+ of \d+/)).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByText(/Step \d+ of \d+/).first()).toBeVisible({ timeout: 10_000 })
 }
 
 test('deals a seven-player game and walks the first night to dawn', async ({ page }) => {
@@ -45,6 +45,7 @@ test('deals a seven-player game and walks the first night to dawn', async ({ pag
   }
   await page.getByRole('button', { name: /Call for eyes open/ }).click()
   await page.locator('.cinematic').click({ timeout: 5000 }).catch(() => {})
+  await expect(page.locator('.cinematic')).toHaveCount(0)
   // The phase name appears in several places at once, so anchor on the header.
   await expect(page.getByRole('button', { name: /Day 1\s+\d+ alive/ })).toBeVisible({
     timeout: 10_000,
@@ -81,6 +82,7 @@ test('takes a vote by tapping seats on the ring', async ({ page }) => {
   }
   await page.getByRole('button', { name: /Call for eyes open/ }).click()
   await page.locator('.cinematic').click({ timeout: 5000 }).catch(() => {})
+  await expect(page.locator('.cinematic')).toHaveCount(0)
 
   await page.getByRole('button', { name: /^Nominate$/ }).click()
   await page.getByRole('button', { name: /Alice/ }).first().click()

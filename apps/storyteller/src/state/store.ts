@@ -96,9 +96,16 @@ export type StoreActions = {
 
   setBluffs: (ids: string[]) => void
   setLocked: (locked: boolean) => void
+  /** The game's shared room, created on first use. */
+  ensureRoom: (make: () => { id: string; key: string }) => { id: string; key: string }
+  /** A device has taken a seat. Returns false if another device holds it. */
+  recordClaim: (seatId: string, deviceId: string) => boolean
   /** Roles hidden on screen, for when someone can see the phone. Not persisted. */
   concealed: boolean
   setConcealed: (concealed: boolean) => void
+  /** The last phase the cinematic played for, so a reload does not replay it. */
+  cinematicPlayed: string | null
+  setCinematicPlayed: (key: string) => void
 
   startFirstNight: () => void
   toNight: () => void
@@ -389,6 +396,27 @@ export const useStore = create<Store>()(
 
         concealed: false,
         setConcealed: (concealed) => set({ concealed }),
+        cinematicPlayed: null,
+        setCinematicPlayed: (key) => set({ cinematicPlayed: key }),
+
+        ensureRoom: (make) => {
+          const game = get().game
+          if (!game) return make()
+          if (game.room) return game.room
+          const room = make()
+          set({ game: { ...game, room } })
+          return room
+        },
+
+        recordClaim: (seatId, deviceId) => {
+          const game = get().game
+          if (!game) return false
+          const holder = game.claims?.[seatId]
+          if (holder && holder !== deviceId) return false
+          if (holder === deviceId) return true
+          set({ game: { ...game, claims: { ...(game.claims ?? {}), [seatId]: deviceId } } })
+          return true
+        },
 
         setLocked: (locked) =>
           commit(locked ? 'Lock grimoire' : 'Unlock grimoire', (draft) => {
@@ -566,6 +594,7 @@ export const useStore = create<Store>()(
         savedScripts: state.savedScripts,
         history: state.history,
         settings: state.settings,
+        cinematicPlayed: state.cinematicPlayed,
       }),
     },
   ),

@@ -36,8 +36,8 @@
        usable in the worst case: twenty players on a small phone. */
     --size: clamp(
       44px,
-      min(calc(267cqw / (var(--n) + 6.2)), calc(210cqh / (var(--n) + 6.2))),
-      92px
+      min(calc(300cqw / (var(--n) + 6.8)), calc(236cqh / (var(--n) + 6.8))),
+      108px
     );
     /* How far a seat reaches past the ring: half a token, plus the name label
        that sits outside it. Everything scales with the token, so one number
@@ -48,7 +48,7 @@
        space is what buys the spacing between seats at high player counts. */
     --pad: calc(var(--size) * 1.05);
     --rx: calc(50cqw - var(--pad));
-    --ry: min(calc(50cqh - var(--pad)), calc(var(--rx) * 1.6));
+    --ry: min(calc(50cqh - var(--pad)), calc(var(--rx) * 1.42));
   }
 
   .circle > li {
@@ -98,6 +98,7 @@
     display: grid;
     place-items: center;
     background: var(--token-disc);
+    overflow: hidden;
     isolation: isolate;
     transition:
       scale 180ms var(--ease-ui),
@@ -116,9 +117,10 @@
   .token::before {
     content: '';
     position: absolute;
-    inset: calc(var(--size, 64px) * -0.04);
+    inset: 0;
+    z-index: 2;
     border-radius: inherit;
-    padding: max(1.5px, calc(var(--size, 64px) * 0.05));
+    padding: max(1.5px, calc(var(--size, 64px) * 0.06));
     background: var(--hairline-strong);
     -webkit-mask:
       linear-gradient(#000 0 0) content-box,
@@ -160,10 +162,13 @@
     outline-offset: calc(var(--size, 64px) * 0.1);
   }
 
+  /* The art files carry generous blank margins, so the image is scaled past
+     the disc and clipped to it; the illustration itself then fills the token. */
   .token-art {
-    width: 74%;
-    height: 74%;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
+    scale: 1.32;
     pointer-events: none;
     user-select: none;
   }
@@ -185,9 +190,10 @@
 
   .shroud-banner {
     position: absolute;
-    inset-block-start: -14%;
+    inset-block-start: 0;
     inset-inline: 22%;
-    height: 34%;
+    height: 30%;
+    z-index: 3;
     background: var(--color-shroud);
     clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
     z-index: 1;
@@ -205,19 +211,20 @@
        outward is empty space, and there is more of it the further out you go. */
     position: absolute;
     inset: 50% auto auto 50%;
-    translate: calc(-50% + min(var(--size) * 0.74, 36px) * cos(var(--a)))
-      calc(-50% + min(var(--size) * 0.74, 36px) * sin(var(--a)));
-    max-width: min(calc(var(--size) * 1.6), 76px);
+    /* Further out sideways than up or down: a name is wide and short, so it
+       needs more clearance beside a token than above or below one. */
+    translate: calc(-50% + (var(--size) * 0.5 + 30px) * cos(var(--a)))
+      calc(-50% + (var(--size) * 0.5 + 15px) * sin(var(--a)));
+    max-width: min(calc(var(--size) * 1.7), 84px);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     text-align: center;
     line-height: 1.15;
     font-family: var(--font-sans);
-    font-size: clamp(9px, calc(var(--size) * 0.17), 11px);
+    font-size: clamp(10px, calc(var(--size) * 0.2), 13px);
     font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    letter-spacing: 0.01em;
     color: var(--text-dim);
   }
 
@@ -286,8 +293,8 @@
   /* The centre of the ring: a hairline circle with a flat arc for progress. */
   .dial {
     position: relative;
-    width: 104px;
-    height: 104px;
+    width: 128px;
+    height: 128px;
     border-radius: 50%;
     border: 1px solid var(--hairline);
     display: grid;
@@ -300,8 +307,8 @@
     inset: -1px;
     border-radius: 50%;
     background: conic-gradient(var(--text-dim) 0 calc(var(--fraction, 0) * 1turn), transparent 0);
-    -webkit-mask: radial-gradient(circle, transparent 50px, #000 51px);
-    mask: radial-gradient(circle, transparent 50px, #000 51px);
+    -webkit-mask: radial-gradient(circle, transparent 62px, #000 63px);
+    mask: radial-gradient(circle, transparent 62px, #000 63px);
     transition: --fraction 300ms var(--ease-ui);
   }
 
@@ -317,9 +324,20 @@
   }
 
   .dial-caption {
-    font-size: 9.5px;
-    color: var(--text-faint);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    color: var(--text-dim);
     white-space: nowrap;
+  }
+
+  .dial-phase {
+    font-family: var(--font-display);
+    font-size: 15px;
+    color: var(--text-faint);
+    line-height: 1;
   }
 
   /* Mini reminder tokens sit where the text chips did: inside the ring. */
@@ -356,6 +374,7 @@
   .token-seal {
     position: absolute;
     inset: 12%;
+    z-index: 1;
     border-radius: 50%;
     border: 1px solid var(--hairline-strong);
   }

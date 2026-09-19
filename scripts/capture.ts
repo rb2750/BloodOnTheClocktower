@@ -170,8 +170,10 @@ async function setUpGame(page: Page, playerCount: number, shoot?: (name: string)
   await shoot?.('04-deal')
 
   await page.getByRole('button', { name: /Begin the first night/ }).click()
-  // Let the cinematic finish rather than capturing it mid-flight here.
+  // The cinematic stays up until it is tapped, so tap it once it has played.
   await page.waitForTimeout(2600)
+  await page.locator('.cinematic').click({ timeout: 3000 }).catch(() => {})
+  await page.waitForSelector('.cinematic', { state: 'detached', timeout: 5000 }).catch(() => {})
 }
 
 async function screens(browser: Browser) {
@@ -220,6 +222,9 @@ async function screens(browser: Browser) {
     }
     await page.getByRole('button', { name: /Call for eyes open/ }).click()
     await page.waitForTimeout(2600)
+    await page.locator('.cinematic').click({ timeout: 3000 }).catch(() => {})
+    await page.waitForSelector('.cinematic', { state: 'detached', timeout: 5000 }).catch(() => {})
+    await page.waitForTimeout(2600)
     await shoot('08-day')
 
     // A nomination and a live vote.
@@ -230,6 +235,22 @@ async function screens(browser: Browser) {
     await page.getByRole('button', { name: /Cora/ }).first().click()
     await page.waitForTimeout(500)
     await shoot('09-vote')
+
+    // The end: hands down, then end the game from the actions sheet, which
+    // opens the recap.
+    await page.getByRole('button', { name: /Hands down/ }).click()
+    await page.getByRole('button', { name: /Day 1\s+\d+ alive/ }).click()
+    await page.getByRole('button', { name: /End the game/ }).click()
+    await page.getByRole('button', { name: /^Good wins$/ }).click()
+    await page.waitForSelector('text=The recap')
+    await page.waitForTimeout(400)
+    await shoot('10-recap')
+    await page.evaluate(() => document.querySelector('main')?.scrollTo(0, 900))
+    await page.waitForTimeout(200)
+    await shoot('11-recap-honours')
+    await page.evaluate(() => document.querySelector('main')?.scrollTo(0, 99999))
+    await page.waitForTimeout(200)
+    await shoot('12-recap-story')
 
     await context.close()
   }
@@ -290,6 +311,9 @@ async function motion(browser: Browser) {
         await page.waitForTimeout(40)
       }
       await page.getByRole('button', { name: /Call for eyes open/ }).click()
+    await page.waitForTimeout(2600)
+    await page.locator('.cinematic').click({ timeout: 3000 }).catch(() => {})
+    await page.waitForSelector('.cinematic', { state: 'detached', timeout: 5000 }).catch(() => {})
     }
     await page.waitForTimeout(3200)
     await context.close()
@@ -339,6 +363,9 @@ async function motion(browser: Browser) {
         await page.waitForTimeout(40)
       }
       await page.getByRole('button', { name: /Call for eyes open/ }).click()
+    await page.waitForTimeout(2600)
+    await page.locator('.cinematic').click({ timeout: 3000 }).catch(() => {})
+    await page.waitForSelector('.cinematic', { state: 'detached', timeout: 5000 }).catch(() => {})
     } else {
       await page.getByRole('button', { name: /Begin the first night/ }).click()
     }

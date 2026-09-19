@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import './cinematic.css'
 import { useStore, phaseLabel } from '../state/store.js'
 
-const FULL_MS = 2100
-const LEAVE_MS = 420
+const LEAVE_MS = 520
+
 
 type Shown = { phase: 'night' | 'day'; title: string; sub: string; key: string }
 
@@ -16,15 +16,17 @@ type Shown = { phase: 'night' | 'day'; title: string; sub: string; key: string }
  * animation fills part of that mandated pause, which makes it functional rather
  * than decorative.
  *
- * It is always skippable with a tap, because a beautiful transition becomes a
- * tax by the fifth night.
+ * It stays up until it is tapped: the Storyteller decides when the table is
+ * ready, and a transition that dismisses itself mid-sentence is worse than
+ * none. A tap at any point skips to the end.
  */
 export function PhaseCinematic() {
   const game = useStore((s) => s.game)
   const enabled = useStore((s) => s.settings.cinematics)
+  const played = useStore((s) => s.cinematicPlayed)
+  const setPlayed = useStore((s) => s.setCinematicPlayed)
   const [shown, setShown] = useState<Shown | null>(null)
   const [leaving, setLeaving] = useState(false)
-  const lastKey = useRef<string | null>(null)
   const timers = useRef<number[]>([])
 
   const phase = game?.phase
@@ -32,8 +34,8 @@ export function PhaseCinematic() {
   useEffect(() => {
     if (!phase || (phase.k !== 'night' && phase.k !== 'day')) return
     const key = `${phase.k}-${phase.n}`
-    if (lastKey.current === key) return
-    lastKey.current = key
+    if (played === key) return
+    setPlayed(key)
     if (!enabled) return
 
     setShown({
@@ -48,7 +50,7 @@ export function PhaseCinematic() {
           : 'Wait ten seconds, then call for eyes open and announce the dead.',
     })
     setLeaving(false)
-  }, [phase, enabled])
+  }, [phase, enabled, played, setPlayed])
 
   const dismiss = () => {
     if (leaving) return
@@ -60,14 +62,6 @@ export function PhaseCinematic() {
       }, LEAVE_MS),
     )
   }
-
-  useEffect(() => {
-    if (!shown || leaving) return
-    const t = window.setTimeout(dismiss, FULL_MS)
-    timers.current.push(t)
-    return () => window.clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shown?.key, leaving])
 
   useEffect(
     () => () => {
@@ -98,7 +92,7 @@ export function PhaseCinematic() {
         <div className="sub">{shown.sub}</div>
       </div>
 
-      <div className="cinematic-skip">tap to continue</div>
+      <div className="cinematic-skip">Tap when you are ready</div>
     </div>
   )
 }

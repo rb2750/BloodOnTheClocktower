@@ -28,11 +28,11 @@ export function Dial({ concealed = false }: { concealed?: boolean }) {
     const character = entry?.kind === 'character' ? getCharacter(entry.id) : undefined
     const fraction = order.length > 0 ? (step + 1) / order.length : 0
     return (
-      <DialFrame fraction={fraction} caption={entry ? `${step + 1} of ${order.length}` : 'dawn'}>
+      <DialFrame fraction={fraction} caption={entry ? `Step ${step + 1} of ${order.length}` : 'Dawn'}>
         {character ? (
-          <CharacterToken character={character} size="44px" back={concealed} />
+          <CharacterToken character={character} size="52px" back={concealed} />
         ) : (
-          <Token name="" size="44px">
+          <Token name="" size="52px">
             <span className="text-(--color-ink-2)">
               {entry?.id === 'dawn' ? <Dawn size={22} /> : <Moon size={22} />}
             </span>
@@ -46,8 +46,8 @@ export function Dial({ concealed = false }: { concealed?: boolean }) {
     const open = game.nominations.find((n) => n.day === game.phase.n && !n.settled)
     if (open) {
       return (
-        <DialFrame fraction={Math.min(1, open.tally / Math.max(open.majority, 1))} caption={`of ${open.majority} to die`} now>
-          <span className="tabular display text-[34px] leading-none text-(--now)">{open.tally}</span>
+        <DialFrame fraction={Math.min(1, open.tally / Math.max(open.majority, 1))} caption={`needs ${open.majority}`} now>
+          <span className="tabular display text-[44px] leading-none text-(--now)">{open.tally}</span>
         </DialFrame>
       )
     }
@@ -55,14 +55,14 @@ export function Dial({ concealed = false }: { concealed?: boolean }) {
     if (blockSeat) {
       const c = getCharacter(blockSeat.characterId ?? '')
       return (
-        <DialFrame fraction={0} caption={`${blockSeat.name} · ${block.votes}`}>
-          <CharacterToken character={c} size="44px" back={concealed} />
+        <DialFrame fraction={0} caption={`${blockSeat.name} · ${block.votes} votes`}>
+          <CharacterToken character={c} size="52px" back={concealed} />
         </DialFrame>
       )
     }
     return (
-      <DialFrame fraction={0} caption={block.tied ? 'tied' : 'no one'}>
-        <span className="caps text-(--text-faint)">Day {game.phase.n}</span>
+      <DialFrame fraction={0} caption={block.tied ? 'Tied, nobody dies' : 'Nobody on the block'}>
+        <span className="display text-[30px] leading-none text-(--text)">Day {game.phase.n}</span>
       </DialFrame>
     )
   }
@@ -92,7 +92,7 @@ function DialFrame({
       <span className="dial-arc" aria-hidden />
       <div className="dial-body">
         {children}
-        <span className="caps dial-caption">{caption}</span>
+        <span className="dial-caption">{caption}</span>
       </div>
     </div>
   )

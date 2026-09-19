@@ -1,4 +1,4 @@
-import { Button, Sheet, Ring, Undo } from '@botc/ui'
+import { Button, Sheet, Ring, Undo, Qr, Shroud } from '@botc/ui'
 import { toast } from 'sonner'
 import { useStore } from '../state/store.js'
 import type { LogKind } from '../state/types.js'
@@ -23,7 +23,17 @@ const TONE: Record<LogKind, string> = {
  * remember nothing about it. At eleven at night, "who died on night two, and
  * why" has to be answerable.
  */
-export function LogSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function LogSheet({
+  open,
+  onClose,
+  onHandOut,
+  onEnd,
+}: {
+  open: boolean
+  onClose: () => void
+  onHandOut: () => void
+  onEnd: () => void
+}) {
   const game = useStore((s) => s.game)
   const addSeat = useStore((s) => s.addSeat)
   const undo = useStore((s) => s.undo)
@@ -67,6 +77,16 @@ export function LogSheet({ open, onClose }: { open: boolean; onClose: () => void
         >
           <Ring size={18} />
           Add a Traveller
+        </Button>
+      </div>
+      <div className="mb-5 flex gap-2">
+        <Button className="flex-1" onClick={onHandOut}>
+          <Qr size={18} />
+          Show the code
+        </Button>
+        <Button variant="danger" className="flex-1" onClick={onEnd}>
+          <Shroud size={18} />
+          End the game
         </Button>
       </div>
       {entries.length === 0 ? (

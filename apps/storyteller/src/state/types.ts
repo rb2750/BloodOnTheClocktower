@@ -105,5 +105,11 @@ export type Game = {
   log: LogEntry[]
   /** Locks the grimoire so the tablet can be set down or passed safely. */
   locked: boolean
+  /** The shared room, once a code has been shown. Kept for the whole game so
+   *  the same code works at any point and a re-scan finds the same room. */
+  room?: { id: string; key: string }
+  /** Which device claimed each seat, so nobody can take a seat that is spoken
+   *  for and the same phone is recognised on a later scan. */
+  claims?: Record<string, string>
   finishedAt?: number
 }

@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { getCharacter } from '@botc/rules'
 import { Button, Label, Rows, Row, Export } from '@botc/ui'
 import { useStore } from '../state/store.js'
 import { Screen } from '../components/Screen.js'
 import type { Screen as ScreenName } from '../App.js'
-import type { Game } from '../state/types.js'
+import { RecapScreen } from './Recap.js'
 
 export function HistoryScreen({ go }: { go: (s: ScreenName) => void }) {
   const history = useStore((s) => s.history)
@@ -23,7 +22,7 @@ export function HistoryScreen({ go }: { go: (s: ScreenName) => void }) {
     URL.revokeObjectURL(url)
   }
 
-  if (game) return <Recap game={game} onBack={() => setOpenId(null)} />
+  if (game) return <RecapScreen game={game} go={go} onBack={() => setOpenId(null)} />
 
   return (
     <Screen
@@ -78,56 +77,3 @@ export function HistoryScreen({ go }: { go: (s: ScreenName) => void }) {
   )
 }
 
-/**
- * The end-of-game walkthrough, in the order things actually happened. This is
- * the part the Storyteller reads out while everyone reveals.
- */
-function Recap({ game, onBack }: { game: Game; onBack: () => void }) {
-  let lastPhase = ''
-  return (
-    <Screen title={game.scriptName} onBack={onBack}>
-      <section className="pb-8">
-        <Label>Who was who</Label>
-        <ul className="mb-6 space-y-1">
-          {game.seats.map((seat) => {
-            const real = getCharacter(seat.trueCharacterId ?? seat.characterId ?? '')
-            const believed = getCharacter(seat.characterId ?? '')
-            return (
-              <li
-                key={seat.id}
-                className="flex items-baseline justify-between border-b border-(--hairline) py-2 first:border-t"
-              >
-                <span className="text-[14px]">{seat.name}</span>
-                <span className="text-[13px] text-(--text-dim)">
-                  {real?.name ?? '—'}
-                  {seat.trueCharacterId && believed && (
-                    <span className="text-(--text-faint)"> (thought: {believed.name})</span>
-                  )}
-                </span>
-              </li>
-            )
-          })}
-        </ul>
-
-        <Label>How it went</Label>
-        <ol className="space-y-1">
-          {game.log.map((entry) => {
-            const showPhase = entry.phase !== lastPhase
-            lastPhase = entry.phase
-            return (
-              <li key={entry.id}>
-                {showPhase && (
-                  <div className="mb-1 mt-4 flex items-center gap-2 first:mt-0">
-                    <span className="caps text-(--text-faint)">{entry.phase}</span>
-                    <span className="h-px flex-1 bg-(--hairline)" />
-                  </div>
-                )}
-                <div className="text-[14px] leading-snug text-(--text-dim)">{entry.text}</div>
-              </li>
-            )
-          })}
-        </ol>
-      </section>
-    </Screen>
-  )
-}

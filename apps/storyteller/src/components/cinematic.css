@@ -21,11 +21,11 @@
   /* The veil is opaque by the time the title lands, so the swap underneath is
      never seen. */
   background: var(--bg);
-  animation: veil-in 260ms var(--ease-veil) both;
+  animation: veil-in 400ms var(--ease-veil) both;
 }
 
 .cinematic[data-leaving='true'] {
-  animation: veil-out 420ms var(--ease-exit) both;
+  animation: veil-out 520ms var(--ease-exit) both;
 }
 
 @keyframes veil-in {
@@ -53,7 +53,7 @@
   position: absolute;
   inset: 0;
   clip-path: circle(0% at 50% 45%);
-  animation: wash 1100ms var(--ease-cinematic) 120ms both;
+  animation: wash 1800ms var(--ease-cinematic) 200ms both;
 }
 
 /* Flat: night is the ground, day is one step lighter. The wipe is the event. */
@@ -81,7 +81,7 @@
   inset-inline: 0;
   height: 14vh;
   background: #05070b;
-  animation: bar-in 760ms var(--ease-cinematic) both;
+  animation: bar-in 1200ms var(--ease-cinematic) both;
 }
 
 .cinematic-bar[data-edge='top'] {
@@ -108,7 +108,7 @@
   position: relative;
   text-align: center;
   padding-inline: 2rem;
-  animation: title-in 1400ms var(--ease-cinematic) 380ms both;
+  animation: title-in 2200ms var(--ease-cinematic) 600ms both;
 }
 
 .cinematic-title .line {
@@ -125,7 +125,7 @@
   font-weight: 400;
   font-size: clamp(15px, 4vw, 18px);
   color: var(--text-faint);
-  animation: fade-in 900ms var(--ease-cinematic) 820ms both;
+  animation: fade-in 1400ms var(--ease-cinematic) 1500ms both;
 }
 
 @keyframes title-in {
@@ -159,7 +159,7 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-faint);
-  animation: fade-in 600ms linear 700ms both;
+  animation: fade-in 900ms linear 2600ms both;
 }
 
 /*

@@ -141,11 +141,15 @@ export function DistributeSheet({ open, onClose }: { open: boolean; onClose: () 
 
 function SharedCode({ open, onClose }: { open: boolean; onClose: () => void }) {
   const game = useStore((s) => s.game)
-  const [room] = useState(() => ({
-    id: generateRoomId(),
-    key: generateKeyMaterial(),
-  }))
-  const [claimed, setClaimed] = useState<string[]>([])
+  const ensureRoom = useStore((s) => s.ensureRoom)
+  const recordClaim = useStore((s) => s.recordClaim)
+  // One room per game, kept in the game itself: the same code works at dusk
+  // on night one and again on day three, and a phone that scans it twice is
+  // sent back to the seat it already holds.
+  const [room] = useState(() =>
+    ensureRoom(() => ({ id: generateRoomId(), key: generateKeyMaterial() })),
+  )
+  const claimed = Object.keys(game?.claims ?? {})
   const [status, setStatus] = useState<RelayStatus>('offline')
   const relay = useRef<Relay | null>(null)
   const pair = useRef<CryptoKeyPair | null>(null)
@@ -172,9 +176,11 @@ function SharedCode({ open, onClose }: { open: boolean; onClose: () => void }) {
         onStatus: setStatus,
         onMessage: (message: RelayMessage) => {
           if (message.t !== 'claim') return
-          const seat = seats.find((s) => s.id === message.seatId)
+          const seat = useStore.getState().game?.seats.find((s) => s.id === message.seatId)
           if (!seat?.characterId || !pair.current) return
-          setClaimed((c) => (c.includes(seat.id) ? c : [...c, seat.id]))
+          // A seat belongs to the first device that takes it. Anyone else
+          // tapping that name gets nothing, which is the whole point.
+          if (!recordClaim(seat.id, message.deviceId)) return
           // Sealed to this player's own key, so the broadcast is readable by
           // exactly one device at the table.
           void sealFor(pair.current, message.pub, {
@@ -224,7 +230,7 @@ function SharedCode({ open, onClose }: { open: boolean; onClose: () => void }) {
       open={open}
       onOpenChange={(o) => !o && onClose()}
       title="Everyone scan this"
-      subtitle="Then they tap their own name. Each player only ever sees their own character."
+      subtitle="Then they tap their own name and confirm it. Each player only ever sees their own character, and a phone that scans again is sent back to its own seat."
     >
       <div className="flex flex-col items-center gap-5 pb-2">
         <QrImage value={payloadUrl(PLAYER_ORIGIN, payload)} />
@@ -245,10 +251,10 @@ function SharedCode({ open, onClose }: { open: boolean; onClose: () => void }) {
             {seats.map((s) => (
               <span
                 key={s.id}
-                className={`min-h-8 rounded-full border px-3 text-[12px] leading-8 ${
+                className={`min-h-8 rounded-full border px-3 text-[12px] font-medium leading-8 ${
                   claimed.includes(s.id)
-                    ? 'border-(--accent) text-(--accent)'
-                    : 'border-(--hairline) text-(--text-faint)'
+                    ? 'border-(--accent) bg-(--accent) text-(--bg)'
+                    : 'border-(--hairline-strong) text-(--text-faint)'
                 }`}
               >
                 {s.name}

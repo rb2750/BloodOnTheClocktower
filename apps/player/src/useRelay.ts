@@ -73,6 +73,13 @@ export function useRelay() {
             if (waiting) {
               pendingClaim.current = null
               void announceClaim(waiting)
+              return
+            }
+            // Scanned this room before: sit back down without asking. The
+            // Storyteller's side only honours it because it is the same device.
+            const remembered = useStore.getState()
+            if (remembered.roomId === payload.room && remembered.seatId && remembered.seatName) {
+              void announceClaim({ id: remembered.seatId, name: remembered.seatName, taken: false })
             }
             return
           }
@@ -112,7 +119,8 @@ export function useRelay() {
   }, [payload, setRole, setPhase, announceClaim])
 
   const claim = (seat: Seat) => {
-    useStore.getState().setSeat(seat.id, seat.name)
+    if (!payload || payload.kind !== 'room') return
+    useStore.getState().setSeat(seat.id, seat.name, payload.room)
     if (storytellerKey.current) void announceClaim(seat)
     else pendingClaim.current = seat
   }

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { getCharacter, placesReminder } from '@botc/rules'
 import { Button, ReminderText, Sheet, Label, ChevronLeft, ChevronRight, Qr, Dawn } from '@botc/ui'
 import { useStore } from '../state/store.js'
-import { DistributeSheet } from './DistributeSheet.js'
+import { GameOverHint } from './GameOverHint.js'
 
 /**
  * The guided night walk.
@@ -11,14 +11,13 @@ import { DistributeSheet } from './DistributeSheet.js'
  * twice and show tokens. So this panel says what to *do* and what to *show* —
  * never a sentence to read aloud. Speech belongs to the day.
  */
-export function NightPanel() {
+export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd: () => void }) {
   const game = useStore((s) => s.game)
   const nightOrder = useStore((s) => s.nightOrder)
   const setNightStep = useStore((s) => s.setNightStep)
   const toDay = useStore((s) => s.toDay)
   const addEffect = useStore((s) => s.addEffect)
   const [placing, setPlacing] = useState<{ label: string; characterId: string } | null>(null)
-  const [distributing, setDistributing] = useState(false)
   const concealed = useStore((s) => s.concealed)
 
   const order = useMemo(() => nightOrder(), [nightOrder, game])
@@ -70,7 +69,7 @@ export function NightPanel() {
             exactly when it happens at a table. Offered here rather than buried
             in a menu, and only when it is the thing you are about to do. */}
         {game.phase.n === 1 && step === 0 && (
-          <Button className="mt-3 w-full" onClick={() => setDistributing(true)}>
+          <Button className="mt-3 w-full" onClick={onHandOut}>
             <Qr size={17} />
             Hand out characters
           </Button>
@@ -90,6 +89,8 @@ export function NightPanel() {
             ))}
           </div>
         )}
+
+        <GameOverHint onEnd={onEnd} />
 
         {/* How far through the night, one tick per step. */}
         <div className="mt-3 flex gap-[3px]" aria-hidden>
@@ -132,7 +133,7 @@ export function NightPanel() {
         </div>
       </div>
 
-      <DistributeSheet open={distributing} onClose={() => setDistributing(false)} />
+      <GameOverHint onEnd={onEnd} />
 
       {/* Placing a token is a two-tap flow: pick the token, pick the seat. */}
       <Sheet

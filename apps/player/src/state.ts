@@ -41,6 +41,9 @@ export type PlayerState = {
   /** The script, so every character can be looked up. */
   scriptIds: string[]
   scriptName: string
+  /** The room that seat was claimed in, so a re-scan of the same code is
+   *  recognised and a different game starts fresh. */
+  roomId: string | null
   /** The seat we claimed in a shared room. */
   seatId: string | null
   seatName: string | null
@@ -57,7 +60,7 @@ export type PlayerState = {
 export type PlayerActions = {
   applyPayload: (payload: Payload) => void
   setRole: (characterId: string, scriptIds: string[], scriptName: string) => void
-  setSeat: (seatId: string, seatName: string) => void
+  setSeat: (seatId: string, seatName: string, roomId: string) => void
   setPhase: (phase: string, day: number) => void
   markRevealed: () => void
 
@@ -80,6 +83,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
       characterId: null,
       scriptIds: [],
       scriptName: '',
+      roomId: null,
       seatId: null,
       seatName: null,
       phase: 'Day 1',
@@ -101,13 +105,17 @@ export const useStore = create<PlayerState & PlayerActions>()(
               seatId: s.seatId,
             }
           }
-          return { payload }
+          // A code for the room we already sat down in keeps our seat; a code
+          // for another game clears it, along with the character that came
+          // with it.
+          if (s.roomId === payload.room) return { payload }
+          return { payload, roomId: null, seatId: null, seatName: null, characterId: null, hasRevealed: false }
         }),
 
       setRole: (characterId, scriptIds, scriptName) =>
         set({ characterId, scriptIds, scriptName }),
 
-      setSeat: (seatId, seatName) => set({ seatId, seatName }),
+      setSeat: (seatId, seatName, roomId) => set({ seatId, seatName, roomId }),
 
       setPhase: (phase, day) => set({ phase, day }),
 
@@ -185,6 +193,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
           characterId: null,
           scriptIds: [],
           scriptName: '',
+          roomId: null,
           seatId: null,
           seatName: null,
           notes: {},

@@ -1,4 +1,4 @@
-import { Book, Candle, Hourglass, Ring, Rows, Row, Button } from '@botc/ui'
+import { Book, Candle, Hourglass, Ring, Rows, Row, Button, Scroll } from '@botc/ui'
 import { useStore, phaseLabel } from '../state/store.js'
 import type { Screen as ScreenName } from '../App.js'
 
@@ -13,7 +13,8 @@ export function HomeScreen({ go }: { go: (s: ScreenName) => void }) {
   const roster = useStore((s) => s.roster)
   const savedScripts = useStore((s) => s.savedScripts)
   const history = useStore((s) => s.history)
-  const live = game && game.phase.k !== 'setup'
+  const live = game && (game.phase.k === 'night' || game.phase.k === 'day')
+  const ended = game?.phase.k === 'ended'
 
   return (
     <div className="flex h-full flex-col bg-(--bg)">
@@ -37,6 +38,11 @@ export function HomeScreen({ go }: { go: (s: ScreenName) => void }) {
               trailing={`${phaseLabel(game.phase)} · continue`}
               onClick={() => go('run')}
             >
+              {game.scriptName}
+            </Row>
+          )}
+          {ended && (
+            <Row leading={<Scroll size={20} />} trailing="recap" onClick={() => go('recap')}>
               {game.scriptName}
             </Row>
           )}

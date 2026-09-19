@@ -11,6 +11,8 @@ import { DayPanel } from '../components/DayPanel.js'
 import { PhaseCinematic } from '../components/PhaseCinematic.js'
 import { LogSheet } from '../components/LogSheet.js'
 import { Dial } from '../components/Dial.js'
+import { DistributeSheet } from '../components/DistributeSheet.js'
+import { EndGameSheet } from '../components/EndGameSheet.js'
 import { useRingDrag } from '../hooks/useRingDrag.js'
 import type { Screen as ScreenName } from '../App.js'
 
@@ -28,6 +30,8 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
 
   const [openSeat, setOpenSeat] = useState<string | null>(null)
   const [logOpen, setLogOpen] = useState(false)
+  const [distributing, setDistributing] = useState(false)
+  const [ending, setEnding] = useState(false)
 
   // Whoever is acting right now: the seats woken at this night step, or the
   // hands raised in an open vote.
@@ -126,9 +130,9 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
         // take exactly the space that is left.
         bottom={
           game.phase.k === 'night' ? (
-            <NightPanel />
+            <NightPanel onHandOut={() => setDistributing(true)} onEnd={() => setEnding(true)} />
           ) : game.phase.k === 'day' ? (
-            <DayPanel onOpenSeat={setOpenSeat} />
+            <DayPanel onOpenSeat={setOpenSeat} onEnd={() => setEnding(true)} />
           ) : null
         }
       >
@@ -178,7 +182,20 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
       </Screen>
 
       <SeatSheet seatId={openSeat} onClose={() => setOpenSeat(null)} />
-      <LogSheet open={logOpen} onClose={() => setLogOpen(false)} />
+      <LogSheet
+        open={logOpen}
+        onClose={() => setLogOpen(false)}
+        onHandOut={() => {
+          setLogOpen(false)
+          setDistributing(true)
+        }}
+        onEnd={() => {
+          setLogOpen(false)
+          setEnding(true)
+        }}
+      />
+      <DistributeSheet open={distributing} onClose={() => setDistributing(false)} />
+      <EndGameSheet open={ending} onClose={() => setEnding(false)} />
       <PhaseCinematic />
     </>
   )
