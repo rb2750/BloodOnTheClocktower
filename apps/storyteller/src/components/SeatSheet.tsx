@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getCharacter, teamAlignment } from '@botc/rules'
 import { AbilityText, Button, Label, Sheet, Shroud, Heart, Ghost, Swap, Mask, Signpost, inputClass } from '@botc/ui'
 import { toast } from 'sonner'
@@ -46,6 +46,12 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
   const [picking, setPicking] = useState<'perceived' | 'true' | 'believed' | null>(null)
   const [telling, setTelling] = useState(false)
   const { reachable } = useRoom()
+
+  // A seat that still says "drunk" is owed a choice, and the sheet opens on it.
+  const owed = game?.seats.find((s) => s.id === seatId)?.characterId === 'drunk'
+  useEffect(() => {
+    if (owed) setPicking('believed')
+  }, [owed, seatId])
 
   const seat = game?.seats.find((s) => s.id === seatId)
   if (!game || !seat) return null

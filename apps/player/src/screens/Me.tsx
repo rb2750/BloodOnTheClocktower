@@ -21,7 +21,10 @@ export function MeScreen() {
   const character = getCharacter(characterId ?? '')
 
   if (!payload) return <Empty />
-  if (!character) return <Waiting />
+  // A phone told it is the Drunk has been told nothing: the Storyteller has
+  // not yet chosen what it should believe. Show the waiting screen, never the
+  // token, however the word arrived and even if it was stored last night.
+  if (!character || character.id === 'drunk') return <Waiting />
 
   const alignment = teamAlignment(character.team)
 
@@ -117,7 +120,7 @@ function Waiting() {
       <p className="serif max-w-[28ch] text-[15px] leading-snug text-(--text-faint)">
         {status === 'offline'
           ? 'Not connected. If they are handing out codes one at a time, scan the one meant for you.'
-          : 'They will send your character over in a moment. Keep this open.'}
+          : 'The Storyteller is choosing your character. Keep this open.'}
       </p>
       <div className="mt-2">
         <Label>Meanwhile</Label>

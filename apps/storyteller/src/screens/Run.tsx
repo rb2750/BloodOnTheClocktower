@@ -181,6 +181,25 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
         </Grimoire>
       </Screen>
 
+      {/* A believed role owed to the Drunk is the one thing that can ruin a
+          game from this screen, so it is said here, in red, until it is done. */}
+      {game.seats.some((s) => s.characterId === 'drunk') && (
+        <div className="fixed inset-x-0 top-0 z-40 flex flex-wrap items-center gap-2 border-b border-(--color-red-2) bg-(--bg) px-4 py-2">
+          <span className="caps text-(--color-red-2)">The Drunk needs a role to believe</span>
+          {game.seats
+            .filter((s) => s.characterId === 'drunk')
+            .map((s) => (
+              <button
+                key={s.id}
+                onClick={() => setOpenSeat(s.id)}
+                className="min-h-9 rounded-full border border-(--color-red-2) px-3 text-[13px] text-(--text)"
+              >
+                choose for {s.name}
+              </button>
+            ))}
+        </div>
+      )}
+
       <SeatSheet seatId={openSeat} onClose={() => setOpenSeat(null)} />
       <LogSheet
         open={logOpen}

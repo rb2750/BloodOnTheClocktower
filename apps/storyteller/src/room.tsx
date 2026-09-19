@@ -123,6 +123,9 @@ export function RoomProvider({ children }: { children: ReactNode }) {
       const state = useStore.getState()
       const seat = state.game?.seats.find((s) => s.id === seatId)
       if (!ours || !theirs || !seat?.characterId) return
+      // Never. A seat that says "drunk" is a seat whose believed role has not
+      // been chosen yet, however it came to say so.
+      if (seat.characterId === 'drunk') return
       told.current.set(seat.id, seat.characterId)
       // Sealed to this player's own key, so the broadcast is readable by
       // exactly one device at the table.
