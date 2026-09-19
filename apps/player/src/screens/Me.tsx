@@ -94,14 +94,12 @@ function Waiting() {
         <p className="serif mx-auto mb-6 max-w-[30ch] text-center text-[14px] leading-snug text-(--text-faint)">
           Tap your own name. You will only ever be shown your own character.
         </p>
+        {/* No seat is ever closed. A player who cleared their browser data, or
+            came back on a different phone, must be able to sit down again, and
+            a locked-out player mid-game is worse than the theft it prevents. */}
         <Rows>
           {seats.map((seat) => (
-            <Row
-              key={seat.id}
-              disabled={seat.taken}
-              onClick={() => claim(seat)}
-              trailing={seat.taken ? 'taken' : undefined}
-            >
+            <Row key={seat.id} onClick={() => claim(seat)}>
               {seat.name}
             </Row>
           ))}

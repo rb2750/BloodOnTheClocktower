@@ -411,12 +411,14 @@ export const useStore = create<Store>()(
           return room
         },
 
+        // A seat goes to whoever last said it was theirs. Refusing a second
+        // device locks out anyone who cleared their browser data or swapped
+        // phones mid-game, and that costs more than it saves: the role is sent
+        // sealed to the device that asked, so the table still cannot read it.
         recordClaim: (seatId, deviceId) => {
           const game = getState().game
           if (!game) return false
-          const holder = game.claims?.[seatId]
-          if (holder && holder !== deviceId) return false
-          if (holder === deviceId) return true
+          if (game.claims?.[seatId] === deviceId) return true
           set({ game: { ...game, claims: { ...(game.claims ?? {}), [seatId]: deviceId } } })
           return true
         },
