@@ -7,6 +7,8 @@ import { CharacterToken } from './CharacterToken.js'
 import { HoldToConfirm } from './HoldToConfirm.js'
 import { ReminderChip, ReminderOption } from './ReminderChip.js'
 import { CharacterPicker } from './CharacterPicker.js'
+import { WhisperSheet } from './WhisperSheet.js'
+import { useRoom } from '../room.js'
 import type { EffectKind } from '../state/types.js'
 
 /** Effects a Storyteller reaches for constantly, each with the right expiry. */
@@ -42,6 +44,8 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
   const undo = useStore((s) => s.undo)
 
   const [picking, setPicking] = useState<'perceived' | 'true' | null>(null)
+  const [telling, setTelling] = useState(false)
+  const { reachable } = useRoom()
 
   const seat = game?.seats.find((s) => s.id === seatId)
   if (!game || !seat) return null
@@ -139,6 +143,16 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
         </div>
 
         <div className="mt-5">
+          <Label>Privately</Label>
+          <Button className="w-full" onClick={() => setTelling(true)}>
+            <Signpost size={17} />
+            {reachable.includes(seat.id)
+              ? `Tell ${seat.name} something`
+              : `Tell ${seat.name} something · phone not joined`}
+          </Button>
+        </div>
+
+        <div className="mt-5">
           <Label>Reminders</Label>
           <div className="flex flex-wrap gap-2">
             {seat.effects.map((e) => (
@@ -211,6 +225,8 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
           />
         </div>
       </Sheet>
+
+      <WhisperSheet seatId={telling ? seat.id : null} onClose={() => setTelling(false)} />
 
       <CharacterPicker
         open={picking !== null}

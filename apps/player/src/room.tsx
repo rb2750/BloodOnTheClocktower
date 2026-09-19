@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import {
   Relay,
   exportPublicKey,
@@ -8,6 +16,7 @@ import {
   type RelayMessage,
   type RelayStatus,
   type SealedRole,
+  type SealedWhisper,
 } from '@botc/protocol'
 import { RELAY_URL } from './config.js'
 import { useStore } from './state.js'
@@ -15,19 +24,24 @@ import { useStore } from './state.js'
 export type Seat = { id: string; name: string; taken: boolean }
 
 /**
- * Connects to the shared room, if there is one.
+ * Connects to the shared room, if there is one, and stays connected.
+ *
+ * It used to live inside the seat picker, which meant a phone stopped listening
+ * the moment it had a character. The Storyteller can send a private word at any
+ * point in the game, so the connection lasts as long as the app is open.
  *
  * A per-player code carries everything already, so this does nothing in that
- * case. When there is no relay configured, or it cannot be reached, the hook
- * reports `offline` and the app keeps working with whatever it has.
+ * case. When there is no relay configured, or it cannot be reached, it reports
+ * `offline` and the app keeps working with whatever it has.
  */
-export function useRelay() {
+function useRelayConnection() {
   const payload = useStore((s) => s.payload)
   const seatId = useStore((s) => s.seatId)
   const deviceId = useStore((s) => s.deviceId)
   const setRole = useStore((s) => s.setRole)
   const setPhase = useStore((s) => s.setPhase)
   const rememberTable = useStore((s) => s.rememberTable)
+  const addMessage = useStore((s) => s.addMessage)
 
   const [seats, setSeats] = useState<Seat[]>([])
   const [status, setStatus] = useState<RelayStatus>('offline')
@@ -84,6 +98,18 @@ export function useRelay() {
             }
             return
           }
+          if (message.t === 'whisper') {
+            // Every phone in the room receives it; only one can open it.
+            const mine = useStore.getState().seatId
+            const theirs = storytellerKey.current
+            if (message.seatId !== mine || !theirs || !pair.current) return
+            void openSealed<SealedWhisper>(pair.current, theirs, message.sealed)
+              .then((word) => addMessage(message.id, word.text, word.at))
+              .catch(() => {
+                /* Sealed for somebody else. Nothing to do and nothing to say. */
+              })
+            return
+          }
           if (message.t === 'seats') {
             rememberTable(message.seats.map((s) => s.name))
             return setSeats(message.seats)
@@ -120,7 +146,7 @@ export function useRelay() {
       relay.current?.close()
       relay.current = null
     }
-  }, [payload, setRole, setPhase, rememberTable, announceClaim])
+  }, [payload, setRole, setPhase, rememberTable, addMessage, announceClaim])
 
   const claim = (seat: Seat) => {
     if (!payload || payload.kind !== 'room') return
@@ -131,3 +157,21 @@ export function useRelay() {
 
   return { seats, status, claim, claimed: seatId }
 }
+
+
+type Room = ReturnType<typeof useRelayConnection>
+
+const RoomContext = createContext<Room>({
+  seats: [],
+  status: 'offline',
+  claim: () => {},
+  claimed: null,
+})
+
+/** One connection for the whole app, rather than one per screen. */
+export function RoomProvider({ children }: { children: ReactNode }) {
+  const room = useRelayConnection()
+  return <RoomContext.Provider value={room}>{children}</RoomContext.Provider>
+}
+
+export const useRelay = () => useContext(RoomContext)

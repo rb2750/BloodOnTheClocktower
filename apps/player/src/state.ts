@@ -52,6 +52,8 @@ export type PlayerState = {
   day: number
   /** Notes keyed by the other players' names. */
   notes: Record<string, PlayerNote>
+  /** Private words from the Storyteller, oldest first. */
+  messages: { id: string; text: string; at: string }[]
   /** Stable id for this device, so a claimed seat survives a reload. */
   deviceId: string
   hasRevealed: boolean
@@ -63,6 +65,7 @@ export type PlayerActions = {
   setSeat: (seatId: string, seatName: string, roomId: string) => void
   setPhase: (phase: string, day: number) => void
   markRevealed: () => void
+  addMessage: (id: string, text: string, at: string) => void
 
   ensureNote: (name: string) => void
   rememberTable: (names: string[]) => void
@@ -90,6 +93,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
       phase: 'Day 1',
       day: 1,
       notes: {},
+      messages: [],
       deviceId: newId(),
       hasRevealed: false,
 
@@ -110,7 +114,15 @@ export const useStore = create<PlayerState & PlayerActions>()(
           // for another game clears it, along with the character that came
           // with it.
           if (s.roomId === payload.room) return { payload }
-          return { payload, roomId: null, seatId: null, seatName: null, characterId: null, hasRevealed: false }
+          return {
+            payload,
+            roomId: null,
+            seatId: null,
+            seatName: null,
+            characterId: null,
+            hasRevealed: false,
+            messages: [],
+          }
         }),
 
       setRole: (characterId, scriptIds, scriptName) =>
@@ -131,6 +143,15 @@ export const useStore = create<PlayerState & PlayerActions>()(
       setPhase: (phase, day) => set({ phase, day }),
 
       markRevealed: () => set({ hasRevealed: true }),
+
+      // The relay replays what it holds when a phone comes back, so the same
+      // word can arrive twice; it is kept once, under the id it was sent with.
+      addMessage: (id, text, at) =>
+        set((s) =>
+          s.messages.some((m) => m.id === id)
+            ? s
+            : { messages: [...s.messages, { id, text, at }] },
+        ),
 
       ensureNote: (name) =>
         set((s) =>
@@ -220,6 +241,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
           seatId: null,
           seatName: null,
           notes: {},
+          messages: [],
           hasRevealed: false,
           deviceId: get().deviceId,
         }),

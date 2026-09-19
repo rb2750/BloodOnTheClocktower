@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Toaster } from 'sonner'
 import { useStore } from './state/store.js'
+import { RoomProvider } from './room.js'
 import { HomeScreen } from './screens/Home.js'
 import { PlanScreen } from './screens/Plan.js'
 import { RunScreen } from './screens/Run.js'
@@ -46,7 +47,7 @@ export function App() {
   }, [game, screen])
 
   return (
-    <>
+    <RoomProvider>
       {screen === 'home' && <HomeScreen go={setScreen} />}
       {screen === 'plan' && <PlanScreen go={setScreen} />}
       {screen === 'run' && <RunScreen go={setScreen} />}
@@ -64,6 +65,6 @@ export function App() {
           },
         }}
       />
-    </>
+    </RoomProvider>
   )
 }

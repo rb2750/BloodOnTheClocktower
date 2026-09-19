@@ -1,23 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import QRCode from 'qrcode'
 import { getCharacter } from '@botc/rules'
 import {
-  Relay,
   characterIndex,
-  exportPublicKey,
   generateKeyMaterial,
   generateRoomId,
-  generateSealingPair,
   indexesFor,
   payloadUrl,
   roomCode,
-  sealFor,
   type Payload,
-  type RelayMessage,
-  type RelayStatus,
 } from '@botc/protocol'
 import { Button, Label, Sheet, ChevronLeft, ChevronRight, Check } from '@botc/ui'
 import { useStore } from '../state/store.js'
+import { useRoom } from '../room.js'
 import { PLAYER_ORIGIN, RELAY_URL } from '../config.js'
 
 /**
@@ -142,7 +137,7 @@ export function DistributeSheet({ open, onClose }: { open: boolean; onClose: () 
 function SharedCode({ open, onClose }: { open: boolean; onClose: () => void }) {
   const game = useStore((s) => s.game)
   const ensureRoom = useStore((s) => s.ensureRoom)
-  const recordClaim = useStore((s) => s.recordClaim)
+  const { status } = useRoom()
   // One room per game, kept in the game itself: the same code works at dusk
   // on night one and again on day three, and a phone that scans it twice is
   // sent back to the seat it already holds.
@@ -150,75 +145,7 @@ function SharedCode({ open, onClose }: { open: boolean; onClose: () => void }) {
     ensureRoom(() => ({ id: generateRoomId(), key: generateKeyMaterial() })),
   )
   const claimed = Object.keys(game?.claims ?? {})
-  const [status, setStatus] = useState<RelayStatus>('offline')
-  const relay = useRef<Relay | null>(null)
-  const pair = useRef<CryptoKeyPair | null>(null)
-
   const seats = game?.seats ?? []
-  const scriptName = game?.scriptName ?? ''
-  const scriptIds = game?.script.characterIds ?? []
-
-  useEffect(() => {
-    if (!open || !RELAY_URL) return
-    let cancelled = false
-
-    const run = async () => {
-      const ours = await generateSealingPair()
-      if (cancelled) return
-      pair.current = ours
-      const pub = await exportPublicKey(ours)
-
-      const client = new Relay({
-        url: RELAY_URL,
-        room: room.id,
-        key: room.key,
-        role: 'host',
-        onStatus: setStatus,
-        onMessage: (message: RelayMessage) => {
-          if (message.t !== 'claim') return
-          const seat = useStore.getState().game?.seats.find((s) => s.id === message.seatId)
-          if (!seat?.characterId || !pair.current) return
-          // A seat belongs to the first device that takes it. Anyone else
-          // tapping that name gets nothing, which is the whole point.
-          if (!recordClaim(seat.id, message.deviceId)) return
-          // Sealed to this player's own key, so the broadcast is readable by
-          // exactly one device at the table.
-          void sealFor(pair.current, message.pub, {
-            character: characterIndex(seat.characterId),
-            script: indexesFor(scriptIds.filter((id) => getCharacter(id))),
-            scriptName,
-          }).then((sealed) => client.send({ t: 'role', seatId: seat.id, sealed }))
-        },
-      })
-
-      relay.current = client
-      await client.start()
-      // Publish who we are and who is at the table. Re-sent on every change so
-      // a late joiner does not have to wait for the next one.
-      client.send({ t: 'hello', pub })
-      client.send({
-        t: 'seats',
-        seats: seats.map((s) => ({ id: s.id, name: s.name, taken: false })),
-      })
-    }
-
-    void run()
-    return () => {
-      cancelled = true
-      relay.current?.close()
-      relay.current = null
-    }
-    // Seats are captured at the moment the sheet opens, which is when roles are
-    // handed out; re-running on every seat edit would churn the connection.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, room.id])
-
-  useEffect(() => {
-    relay.current?.send({
-      t: 'seats',
-      seats: seats.map((s) => ({ id: s.id, name: s.name, taken: claimed.includes(s.id) })),
-    })
-  }, [claimed, seats])
 
   if (!game) return null
 

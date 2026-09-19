@@ -14,8 +14,13 @@ export type RelayMessage =
   | { t: 'seats'; seats: { id: string; name: string; taken: boolean }[] }
   | { t: 'claim'; seatId: string; deviceId: string; pub: string }
   | { t: 'role'; seatId: string; sealed: string }
+  /** A private line from the Storyteller, sealed to one player's own key. */
+  | { t: 'whisper'; seatId: string; id: string; sealed: string }
   | { t: 'phase'; phase: string; day: number }
   | { t: 'death'; seatId: string; alive: boolean }
+
+/** What a sealed `whisper` contains once opened. */
+export type SealedWhisper = { text: string; at: string }
 
 /** What a sealed `role` message contains once opened. */
 export type SealedRole = {

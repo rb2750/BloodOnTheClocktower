@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import { getCharacter, placesReminder } from '@botc/rules'
-import { Button, ReminderText, Sheet, Label, ChevronLeft, ChevronRight, Qr, Dawn } from '@botc/ui'
+import { Button, ReminderText, Sheet, Label, ChevronLeft, ChevronRight, Qr, Dawn, Signpost } from '@botc/ui'
 import { useStore } from '../state/store.js'
+import { useRoom } from '../room.js'
+import { WhisperSheet } from './WhisperSheet.js'
 import { GameOverHint } from './GameOverHint.js'
 
 /**
@@ -18,6 +20,8 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
   const toDay = useStore((s) => s.toDay)
   const addEffect = useStore((s) => s.addEffect)
   const [placing, setPlacing] = useState<{ label: string; characterId: string } | null>(null)
+  const [telling, setTelling] = useState<string | null>(null)
+  const { reachable } = useRoom()
   const concealed = useStore((s) => s.concealed)
 
   const order = useMemo(() => nightOrder(), [nightOrder, game])
@@ -73,6 +77,30 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
             <Qr size={17} />
             Hand out characters
           </Button>
+        )}
+
+        {/* Most steps exist to tell somebody something, and this is that step's
+            own list of who is awake, so the word goes where it belongs without
+            hunting for the seat. */}
+        {entry && entry.seats.length > 0 && reachable.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {entry.seats
+              .filter((s) => reachable.includes(s.seatId))
+              .map((s) => {
+                const seat = game.seats.find((x) => x.id === s.seatId)
+                if (!seat) return null
+                return (
+                  <button
+                    key={s.seatId}
+                    onClick={() => setTelling(s.seatId)}
+                    className="flex min-h-9 items-center gap-1.5 rounded-full border border-(--hairline-strong) px-3 text-[13px] font-medium text-(--text)"
+                  >
+                    <Signpost size={14} />
+                    tell {seat.name}
+                  </button>
+                )
+              })}
+          </div>
         )}
 
         {/* Reminder tokens the current step wants placed, one tap each. */}
@@ -175,6 +203,7 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
           ))}
         </div>
       </Sheet>
+      <WhisperSheet seatId={telling} onClose={() => setTelling(null)} />
     </>
   )
 }

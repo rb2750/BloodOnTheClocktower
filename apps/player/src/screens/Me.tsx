@@ -2,7 +2,7 @@ import { characterArt, getCharacter, teamAlignment } from '@botc/rules'
 import { AbilityText, Label, Rows, Row, Token, Qr } from '@botc/ui'
 import { useStore } from '../state.js'
 import { HoldToReveal } from '../components/HoldToReveal.js'
-import { useRelay } from '../useRelay.js'
+import { useRelay } from '../room.js'
 
 const TEAM_LABEL: Record<string, string> = {
   townsfolk: 'Townsfolk',

@@ -3,7 +3,22 @@ import { getCharacter } from '@botc/rules'
 import { ChevronRight, Plus, Token, Button, inputClass } from '@botc/ui'
 import { useStore } from '../state.js'
 import { MeScreen } from './Me.js'
+import { HoldToReveal } from '../components/HoldToReveal.js'
 import { NoteSheet } from './Notes.js'
+import { SheetOne, SheetShort, SheetTeams, SheetCombined } from './NoteSheets.js'
+
+// Preview only: ?sheet=1|2|3 to compare the three note sheets.
+const SHEET = new URLSearchParams(window.location.search).get('sheet') ?? ''
+const Note =
+  SHEET === '1'
+    ? SheetOne
+    : SHEET === '2'
+      ? SheetShort
+      : SHEET === '3'
+        ? SheetTeams
+        : SHEET === '4'
+          ? SheetCombined
+          : NoteSheet
 
 /** Everyone at the table, in seat order, from the list the Storyteller sent. */
 function useTable() {
@@ -30,6 +45,7 @@ export function HomeScreen({ openRoles }: { openRoles: () => void }) {
     <>
       <Seat name={seatName} />
       <MeScreen />
+      <Whispers />
 
       {payload && (characterId || seatName) && (
         <div className="mt-6 mb-10">
@@ -79,8 +95,42 @@ export function HomeScreen({ openRoles }: { openRoles: () => void }) {
         </div>
       )}
 
-      <NoteSheet name={open} onClose={() => setOpen(null)} />
+      <Note name={open} onClose={() => setOpen(null)} />
     </>
+  )
+}
+
+/**
+ * What the Storyteller told you, under the same cover as your character.
+ *
+ * The fact that you were told something is not a secret: they wake people and
+ * the table watches it happen. What was said is, so it never sits in the open,
+ * and the newest one is on top because that is the one being asked about.
+ */
+function Whispers() {
+  const messages = useStore((s) => s.messages)
+  if (messages.length === 0) return null
+  const newest = messages.at(-1)!
+
+  return (
+    <section className="mt-6 px-5">
+      <div className="mb-2 flex items-baseline justify-between">
+        <p className="caps text-(--text-faint)">The Storyteller told you</p>
+        <span className="caps text-(--text-faint)">
+          {messages.length === 1 ? newest.at : `${messages.length} things`}
+        </span>
+      </div>
+      <HoldToReveal label="Press and hold" hint="Only you should read this.">
+        <div className="flex flex-col gap-3 px-2 text-center">
+          {[...messages].reverse().map((m) => (
+            <p key={m.id} className="serif text-[16px] leading-snug text-(--text)">
+              {m.text}
+              <span className="caps ml-2 text-[10px] text-(--text-faint)">{m.at}</span>
+            </p>
+          ))}
+        </div>
+      </HoldToReveal>
+    </section>
   )
 }
 
