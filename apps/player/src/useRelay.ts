@@ -27,6 +27,7 @@ export function useRelay() {
   const deviceId = useStore((s) => s.deviceId)
   const setRole = useStore((s) => s.setRole)
   const setPhase = useStore((s) => s.setPhase)
+  const rememberTable = useStore((s) => s.rememberTable)
 
   const [seats, setSeats] = useState<Seat[]>([])
   const [status, setStatus] = useState<RelayStatus>('offline')
@@ -83,7 +84,10 @@ export function useRelay() {
             }
             return
           }
-          if (message.t === 'seats') return setSeats(message.seats)
+          if (message.t === 'seats') {
+            rememberTable(message.seats.map((s) => s.name))
+            return setSeats(message.seats)
+          }
           if (message.t === 'phase') return setPhase(message.phase, message.day)
           if (message.t === 'role') {
             // Every device receives every role message. Only ours will open,
@@ -116,7 +120,7 @@ export function useRelay() {
       relay.current?.close()
       relay.current = null
     }
-  }, [payload, setRole, setPhase, announceClaim])
+  }, [payload, setRole, setPhase, rememberTable, announceClaim])
 
   const claim = (seat: Seat) => {
     if (!payload || payload.kind !== 'room') return

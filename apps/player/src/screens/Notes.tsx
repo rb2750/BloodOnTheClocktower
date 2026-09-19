@@ -33,31 +33,14 @@ export function NotesScreen() {
     <>
       <section className="px-5 pb-8 pt-5">
         <div className="mb-4 flex items-baseline justify-between">
-          <Label>Everyone at the table</Label>
+          <h1 className="display text-[26px] leading-none text-(--text)">Your notes</h1>
           <span className="caps text-(--text-faint)">{phase}</span>
         </div>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            const name = draft.trim()
-            if (!name) return
-            ensureNote(name)
-            setDraft('')
-          }}
-          className="mb-4 flex gap-2"
-        >
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="Add a name"
-            autoComplete="off"
-            className={`${inputClass} flex-1`}
-          />
-          <Button type="submit" aria-label="Add" disabled={!draft.trim()}>
-            <Plus size={20} />
-          </Button>
-        </form>
+
+        <p className="serif mb-4 text-[14px] leading-snug text-(--text-faint)">
+          Tap anyone to record what they claim, and what you make of it.
+        </p>
 
         {names.length === 0 ? (
           <p className="serif px-4 py-10 text-center text-[15px] leading-snug text-(--text-faint)">
@@ -100,6 +83,30 @@ export function NotesScreen() {
             })}
           </ul>
         )}
+        <div className="mt-6">
+          <Label>Someone missing?</Label>
+        <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              const name = draft.trim()
+              if (!name) return
+              ensureNote(name)
+              setDraft('')
+            }}
+            className="flex gap-2"
+          >
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Add a name"
+              autoComplete="off"
+              className={`${inputClass} flex-1`}
+            />
+            <Button type="submit" aria-label="Add" disabled={!draft.trim()}>
+              <Plus size={20} />
+            </Button>
+          </form>
+        </div>
       </section>
 
       <NoteSheet name={open} onClose={() => setOpen(null)} />

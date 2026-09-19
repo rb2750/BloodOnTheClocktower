@@ -65,6 +65,7 @@ export type PlayerActions = {
   markRevealed: () => void
 
   ensureNote: (name: string) => void
+  rememberTable: (names: string[]) => void
   addClaim: (name: string, characterId: string) => void
   toggleStamp: (name: string, stamp: string) => void
   addLine: (name: string, text: string) => void
@@ -115,7 +116,17 @@ export const useStore = create<PlayerState & PlayerActions>()(
       setRole: (characterId, scriptIds, scriptName) =>
         set({ characterId, scriptIds, scriptName }),
 
-      setSeat: (seatId, seatName, roomId) => set({ seatId, seatName, roomId }),
+      setSeat: (seatId, seatName, roomId) =>
+        set((s) => {
+          // The table was remembered before we knew which seat was ours, so
+          // drop the note we made about ourselves, unless it was written in.
+          const mine = s.notes[seatName]
+          const untouched =
+            mine && mine.claims.length === 0 && mine.stamps.length === 0 && mine.lines.length === 0
+          const notes = { ...s.notes }
+          if (untouched) delete notes[seatName]
+          return { seatId, seatName, roomId, notes }
+        }),
 
       setPhase: (phase, day) => set({ phase, day }),
 
@@ -127,6 +138,18 @@ export const useStore = create<PlayerState & PlayerActions>()(
             ? s
             : { notes: { ...s.notes, [name]: { name, claims: [], stamps: [], lines: [] } } },
         ),
+
+      // The Storyteller already typed everyone in, so nobody should have to
+      // type them again. Our own seat is left out: notes are about other people.
+      rememberTable: (names) =>
+        set((s) => {
+          const notes = { ...s.notes }
+          for (const name of names) {
+            if (name === s.seatName || notes[name]) continue
+            notes[name] = { name, claims: [], stamps: [], lines: [] }
+          }
+          return { notes }
+        }),
 
       addClaim: (name, characterId) =>
         set((s) => {
