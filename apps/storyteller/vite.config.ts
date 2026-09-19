@@ -17,6 +17,11 @@ export default defineConfig({
       // it raises a toast and lets the Storyteller choose the moment.
       injectRegister: null,
       workbox: {
+        // The player companion is a separate app inside this one's scope, so
+        // the navigation fallback must not answer for it. Without this, a phone
+        // that has opened the Storyteller once is served the Storyteller again
+        // when it scans a code.
+        navigateFallbackDenylist: [new RegExp(`^${base}player/`)],
         // The shell, fonts and icons are precached so the app boots offline.
         // Character art is ~8MB across 355 files, which would make the first
         // install painfully slow, so it is cached on demand instead: a game
