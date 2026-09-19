@@ -47,6 +47,7 @@ function tableOf(game: ReturnType<typeof useStore.getState>['game']) {
     taken: Boolean(game?.claims?.[s.id]),
     alive: s.alive,
     ghostVote: s.deadVoteAvailable,
+    traveller: s.isTraveller,
   }))
 }
 

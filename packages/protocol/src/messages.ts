@@ -11,7 +11,7 @@ import { CHARACTERS } from '@botc/rules'
  */
 export type RelayMessage =
   | { t: 'hello'; pub: string }
-  | { t: 'seats'; seats: { id: string; name: string; taken: boolean; alive?: boolean; ghostVote?: boolean }[] }
+  | { t: 'seats'; seats: { id: string; name: string; taken: boolean; alive?: boolean; ghostVote?: boolean; traveller?: boolean }[] }
   | { t: 'claim'; seatId: string; deviceId: string; pub: string }
   /** A player raising or lowering their hand on the open nomination. */
   | { t: 'hand'; seatId: string; up: boolean }

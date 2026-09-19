@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { characterArt, getCharacter } from '@botc/rules'
+import { baseComposition, characterArt, getCharacter } from '@botc/rules'
 import { ChevronRight, Plus, Token, Button, BuildStamp, inputClass } from '@botc/ui'
 import { useStore } from '../state.js'
 import { useRelay } from '../room.js'
@@ -61,6 +61,7 @@ export function HomeScreen({ openRoles }: { openRoles: () => void }) {
 
       {payload && (characterId || seatName) && (
         <div className="mt-6 mb-10">
+          <Composition />
           <div className="relative mx-auto aspect-square w-[min(86vw,340px)]">
             {table.map(({ name, alive }, i) => {
               // Seat one sits at the bottom, where the player is, so the ring
@@ -201,6 +202,29 @@ function AddSomeone({ empty }: { empty: boolean }) {
         <Plus size={20} />
       </Button>
     </form>
+  )
+}
+
+/**
+ * What this many players means, the line printed on the setup sheet: public,
+ * and the first thing a new player asks. Travellers do not count, and a
+ * Baron or the like changes the true numbers, which is not this line's job.
+ */
+function Composition() {
+  const table = useStore((s) => s.table)
+  const seated = table.filter((t) => !t.traveller).length
+  if (seated < 5) return null
+  const c = baseComposition(seated)
+  const part = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
+  return (
+    <p className="caps mb-3 px-5 text-center text-(--text-faint)">
+      {[
+        part(c.townsfolk, 'Townsfolk', 'Townsfolk'),
+        part(c.outsider, 'Outsider', 'Outsiders'),
+        part(c.minion, 'Minion', 'Minions'),
+        part(c.demon, 'Demon', 'Demons'),
+      ].join(' · ')}
+    </p>
   )
 }
 

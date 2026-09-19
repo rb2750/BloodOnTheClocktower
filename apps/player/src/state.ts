@@ -59,7 +59,7 @@ export type PlayerState = {
   messages: { id: string; text: string; at: string }[]
   /** The table in seat order, who is alive, and who still holds a vote, as the
    *  Storyteller last said. A dead player has one vote for the rest of the game. */
-  table: { name: string; alive: boolean; ghostVote: boolean }[]
+  table: { name: string; alive: boolean; ghostVote: boolean; traveller: boolean }[]
   /** The last phase change this phone played, so a reload does not replay it. */
   cinematicPlayed: string | null
   /** Today's nomination as the Storyteller is counting it. */
@@ -80,7 +80,7 @@ export type PlayerActions = {
   setPhase: (phase: string, day: number) => void
   markRevealed: () => void
   addMessage: (id: string, text: string, at: string) => void
-  setTable: (table: { name: string; alive: boolean; ghostVote: boolean }[]) => void
+  setTable: (table: { name: string; alive: boolean; ghostVote: boolean; traveller: boolean }[]) => void
   setVote: (vote: VoteSnapshot | null) => void
   setStorytellerKey: (key: string) => void
   setCinematicPlayed: (key: string) => void

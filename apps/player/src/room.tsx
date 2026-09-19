@@ -144,6 +144,7 @@ function useRelayConnection() {
                 name: s.name,
                 alive: s.alive ?? true,
                 ghostVote: s.ghostVote ?? true,
+                traveller: s.traveller ?? false,
               })),
             )
             return setSeats(message.seats)
