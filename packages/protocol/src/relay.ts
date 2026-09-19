@@ -26,7 +26,12 @@ export type RelayOptions = {
 
 export type RelayStatus = 'connecting' | 'open' | 'offline'
 
-const BACKOFF_MS = [1000, 2000, 4000, 8000, 15000, 30000]
+// Short, because a phone that dimmed for a moment must be back before the
+// next hand goes up. The relay is a dumb pipe and cheap to knock on.
+const BACKOFF_MS = [300, 600, 1200, 2500, 5000]
+/** A tiny plaintext knock the relay answers and never forwards. */
+const PING_MS = 15000
+const PONG_WAIT_MS = 5000
 
 export class Relay {
   private socket: WebSocket | null = null
@@ -35,12 +40,64 @@ export class Relay {
   private attempt = 0
   private closed = false
   private timer: ReturnType<typeof setTimeout> | null = null
+  private heartbeat: ReturnType<typeof setInterval> | null = null
+  private pongDue: ReturnType<typeof setTimeout> | null = null
+  private wake = () => this.reconnectNow()
 
   constructor(private options: RelayOptions) {}
 
   async start(): Promise<void> {
     this.key = await importKey(this.options.key)
+    // Coming back to the app, or the network coming back, is the moment the
+    // line matters most, so those are reconnects now rather than after a wait.
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', this.wake)
+      window.addEventListener('online', this.wake)
+      window.addEventListener('focus', this.wake)
+      window.addEventListener('pageshow', this.wake)
+    }
     this.connect()
+  }
+
+  private reconnectNow() {
+    if (this.closed) return
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      // Might be half dead after a sleep: ask, and let the pong decide.
+      this.ping()
+      return
+    }
+    if (this.timer) {
+      clearTimeout(this.timer)
+      this.timer = null
+    }
+    this.attempt = 0
+    this.socket?.close()
+    this.socket = null
+    this.connect()
+  }
+
+  private ping() {
+    const socket = this.socket
+    if (!socket || socket.readyState !== WebSocket.OPEN) return
+    try {
+      socket.send('ping')
+    } catch {
+      return
+    }
+    if (this.pongDue) clearTimeout(this.pongDue)
+    this.pongDue = setTimeout(() => {
+      // No answer: the socket is open in name only. Drop it and start again.
+      this.pongDue = null
+      socket.close()
+    }, PONG_WAIT_MS)
+  }
+
+  private stopHeartbeat() {
+    if (this.heartbeat) clearInterval(this.heartbeat)
+    if (this.pongDue) clearTimeout(this.pongDue)
+    this.heartbeat = null
+    this.pongDue = null
   }
 
   /** Queue a message. Returns immediately, whether or not anything is connected. */
@@ -52,6 +109,13 @@ export class Relay {
   close(): void {
     this.closed = true
     if (this.timer) clearTimeout(this.timer)
+    this.stopHeartbeat()
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.wake)
+      window.removeEventListener('online', this.wake)
+      window.removeEventListener('focus', this.wake)
+      window.removeEventListener('pageshow', this.wake)
+    }
     this.socket?.close()
     this.socket = null
   }
@@ -75,15 +139,24 @@ export class Relay {
     socket.addEventListener('open', () => {
       this.attempt = 0
       this.options.onStatus?.('open')
+      this.stopHeartbeat()
+      this.heartbeat = setInterval(() => this.ping(), PING_MS)
       void this.flush()
     })
 
     socket.addEventListener('message', (event) => {
-      void this.receive(String(event.data))
+      const body = String(event.data)
+      if (body === 'pong') {
+        if (this.pongDue) clearTimeout(this.pongDue)
+        this.pongDue = null
+        return
+      }
+      void this.receive(body)
     })
 
     socket.addEventListener('close', () => {
-      this.socket = null
+      if (this.socket === socket) this.socket = null
+      this.stopHeartbeat()
       this.options.onStatus?.('offline')
       this.retry()
     })

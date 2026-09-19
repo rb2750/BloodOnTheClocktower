@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { characterArt, getCharacter } from '@botc/rules'
 import { ChevronRight, Plus, Token, Button, BuildStamp, inputClass } from '@botc/ui'
 import { useStore } from '../state.js'
@@ -233,7 +233,26 @@ function Vote() {
   const you = vote.nominee === seatName
   const enough = vote.tally >= vote.majority
   const me = table.find((t) => t.name === seatName)
-  const raised = seatName !== null && vote.voters.includes(seatName)
+  const counted = seatName !== null && vote.voters.includes(seatName)
+  // The hand goes up on screen the instant it is tapped, and the Storyteller's
+  // count settles it. If the count never comes, the hand comes down again and
+  // says so, rather than lying on the screen.
+  const [wanted, setWanted] = useState<boolean | null>(null)
+  const [lost, setLost] = useState(false)
+  useEffect(() => {
+    if (wanted === null) return
+    if (wanted === counted) {
+      setWanted(null)
+      return
+    }
+    const t = window.setTimeout(() => {
+      setWanted(null)
+      setLost(true)
+    }, 4000)
+    return () => window.clearTimeout(t)
+  }, [wanted, counted])
+  useEffect(() => setLost(false), [vote.id])
+  const raised = wanted ?? counted
   // Alive, or dead with the one vote still in hand. A hand already up can
   // always come down, which is how a spent ghost vote is taken back.
   const may = Boolean(me && (me.alive || me.ghostVote || raised))
@@ -257,7 +276,11 @@ function Vote() {
         <div className="mt-3">
           {may ? (
             <button
-              onClick={() => hand(!raised)}
+              onClick={() => {
+                setLost(false)
+                setWanted(!raised)
+                hand(!raised)
+              }}
               disabled={status !== 'open'}
               aria-pressed={raised}
               className={`min-h-(--tap-min) w-full rounded-full border px-4 text-[16px] font-medium disabled:opacity-40 ${
@@ -270,6 +293,11 @@ function Vote() {
             </button>
           ) : (
             <p className="caps text-(--text-faint)">Your ghost vote is spent</p>
+          )}
+          {lost && (
+            <p className="mt-2 text-center text-[12px] text-(--color-red-2)">
+              The Storyteller did not get that. Try again.
+            </p>
           )}
           {!me.alive && may && !raised && (
             <p className="mt-2 text-center text-[12px] text-(--text-faint)">
