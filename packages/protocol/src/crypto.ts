@@ -44,3 +44,76 @@ export function generateRoomId(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(6))
   return Array.from(bytes, (b) => b.toString(36).padStart(2, '0')).join('').slice(0, 8)
 }
+
+/* -------------------------------------------------------------------------
+ * Per-player sealing.
+ *
+ * The room key from the QR protects everything from the relay, but every
+ * player holds that same key, and the relay broadcasts to the whole room. So a
+ * role encrypted with it alone would be readable by every other player at the
+ * table — which, in a game built entirely on hidden information, is not a
+ * privacy detail. It is the game.
+ *
+ * Each player therefore generates an ephemeral key pair on claiming a seat and
+ * publishes the public half. The Storyteller derives a separate key per player
+ * and seals that player's role with it. Nobody without the matching private
+ * key can open it, including everyone else in the room.
+ * ---------------------------------------------------------------------- */
+
+const CURVE = { name: 'ECDH', namedCurve: 'P-256' } as const
+
+export async function generateSealingPair(): Promise<CryptoKeyPair> {
+  return crypto.subtle.generateKey(CURVE, false, ['deriveKey'])
+}
+
+export async function exportPublicKey(pair: CryptoKeyPair): Promise<string> {
+  const raw = new Uint8Array(await crypto.subtle.exportKey('raw', pair.publicKey))
+  let binary = ''
+  for (const b of raw) binary += String.fromCharCode(b)
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+async function importPublicKey(text: string): Promise<CryptoKey> {
+  const padded = text.replace(/-/g, '+').replace(/_/g, '/')
+  const binary = atob(padded + '='.repeat((4 - (padded.length % 4)) % 4))
+  const raw = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) raw[i] = binary.charCodeAt(i)
+  return crypto.subtle.importKey('raw', raw, CURVE, false, [])
+}
+
+async function deriveWith(privateKey: CryptoKey, publicKey: CryptoKey): Promise<CryptoKey> {
+  return crypto.subtle.deriveKey(
+    { name: 'ECDH', public: publicKey },
+    privateKey,
+    { name: ALGORITHM, length: 128 },
+    false,
+    ['encrypt', 'decrypt'],
+  )
+}
+
+/** Storyteller side: seal a value so only the holder of `theirPublicKey` can read it. */
+export async function sealFor(
+  ourPair: CryptoKeyPair,
+  theirPublicKey: string,
+  value: unknown,
+): Promise<string> {
+  const key = await deriveWith(ourPair.privateKey, await importPublicKey(theirPublicKey))
+  const bytes = await encryptJson(key, value)
+  let binary = ''
+  for (const b of bytes) binary += String.fromCharCode(b)
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+/** Player side: open something sealed for us. Throws if it was not. */
+export async function openSealed<T>(
+  ourPair: CryptoKeyPair,
+  theirPublicKey: string,
+  sealed: string,
+): Promise<T> {
+  const key = await deriveWith(ourPair.privateKey, await importPublicKey(theirPublicKey))
+  const padded = sealed.replace(/-/g, '+').replace(/_/g, '/')
+  const binary = atob(padded + '='.repeat((4 - (padded.length % 4)) % 4))
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return decryptJson<T>(key, bytes)
+}

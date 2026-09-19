@@ -2,12 +2,19 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import QRCode from 'qrcode'
 import { getCharacter } from '@botc/rules'
 import {
+  Relay,
   characterIndex,
-  encodePayload,
+  exportPublicKey,
+  generateKeyMaterial,
+  generateRoomId,
+  generateSealingPair,
   indexesFor,
   payloadUrl,
   roomCode,
+  sealFor,
   type Payload,
+  type RelayMessage,
+  type RelayStatus,
 } from '@botc/protocol'
 import { Button, Label, Sheet } from '@botc/ui'
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react'
@@ -131,9 +138,78 @@ export function DistributeSheet({ open, onClose }: { open: boolean; onClose: () 
 function SharedCode({ open, onClose }: { open: boolean; onClose: () => void }) {
   const game = useStore((s) => s.game)
   const [room] = useState(() => ({
-    id: Math.random().toString(36).slice(2, 10),
-    key: crypto.getRandomValues(new Uint8Array(16)),
+    id: generateRoomId(),
+    key: generateKeyMaterial(),
   }))
+  const [claimed, setClaimed] = useState<string[]>([])
+  const [status, setStatus] = useState<RelayStatus>('offline')
+  const relay = useRef<Relay | null>(null)
+  const pair = useRef<CryptoKeyPair | null>(null)
+
+  const seats = game?.seats ?? []
+  const scriptName = game?.scriptName ?? ''
+  const scriptIds = game?.script.characterIds ?? []
+
+  useEffect(() => {
+    if (!open || !RELAY_URL) return
+    let cancelled = false
+
+    const run = async () => {
+      const ours = await generateSealingPair()
+      if (cancelled) return
+      pair.current = ours
+      const pub = await exportPublicKey(ours)
+
+      const client = new Relay({
+        url: RELAY_URL,
+        room: room.id,
+        key: room.key,
+        role: 'host',
+        onStatus: setStatus,
+        onMessage: (message: RelayMessage) => {
+          if (message.t !== 'claim') return
+          const seat = seats.find((s) => s.id === message.seatId)
+          if (!seat?.characterId || !pair.current) return
+          setClaimed((c) => (c.includes(seat.id) ? c : [...c, seat.id]))
+          // Sealed to this player's own key, so the broadcast is readable by
+          // exactly one device at the table.
+          void sealFor(pair.current, message.pub, {
+            character: characterIndex(seat.characterId),
+            script: indexesFor(scriptIds.filter((id) => getCharacter(id))),
+            scriptName,
+          }).then((sealed) => client.send({ t: 'role', seatId: seat.id, sealed }))
+        },
+      })
+
+      relay.current = client
+      await client.start()
+      // Publish who we are and who is at the table. Re-sent on every change so
+      // a late joiner does not have to wait for the next one.
+      client.send({ t: 'hello', pub })
+      client.send({
+        t: 'seats',
+        seats: seats.map((s) => ({ id: s.id, name: s.name, taken: false })),
+      })
+    }
+
+    void run()
+    return () => {
+      cancelled = true
+      relay.current?.close()
+      relay.current = null
+    }
+    // Seats are captured at the moment the sheet opens, which is when roles are
+    // handed out; re-running on every seat edit would churn the connection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, room.id])
+
+  useEffect(() => {
+    relay.current?.send({
+      t: 'seats',
+      seats: seats.map((s) => ({ id: s.id, name: s.name, taken: claimed.includes(s.id) })),
+    })
+  }, [claimed, seats])
+
   if (!game) return null
 
   const payload: Payload = { kind: 'room', room: room.id, key: room.key, scriptHash: 0 }
@@ -144,19 +220,42 @@ function SharedCode({ open, onClose }: { open: boolean; onClose: () => void }) {
       open={open}
       onOpenChange={(o) => !o && onClose()}
       title="Everyone scan this"
-      subtitle="Then tap your own name. You will only ever see your own character."
+      subtitle="Then they tap their own name. Each player only ever sees their own character."
     >
       <div className="flex flex-col items-center gap-5 pb-2">
         <QrImage value={payloadUrl(PLAYER_ORIGIN, payload)} />
+
         <div className="text-center">
           <Label>Or type this at {PLAYER_ORIGIN.replace(/^https?:\/\//, '')}</Label>
           <div className="display text-[26px] tracking-[0.3em] text-(--color-brass-300)">
             {code}
           </div>
         </div>
+
+        <div className="w-full">
+          <Label>
+            {claimed.length} of {seats.length} have theirs
+            {status !== 'open' && ' · not connected'}
+          </Label>
+          <div className="flex flex-wrap gap-1.5">
+            {seats.map((s) => (
+              <span
+                key={s.id}
+                className={`min-h-8 rounded-full border px-3 text-[12px] leading-8 ${
+                  claimed.includes(s.id)
+                    ? 'border-(--color-brass-400) text-(--color-brass-300)'
+                    : 'border-(--hairline) text-(--text-faint)'
+                }`}
+              >
+                {s.name}
+              </span>
+            ))}
+          </div>
+        </div>
+
         <p className="max-w-[32ch] text-center text-[13px] leading-snug text-(--text-faint)">
-          The code carries a key that never leaves this screen, so what passes between the
-          phones cannot be read by anything in between.
+          The key lives in this code and never reaches a server. Each character is sealed to
+          the phone that claimed it, so nobody else at the table can read it either.
         </p>
       </div>
     </Sheet>

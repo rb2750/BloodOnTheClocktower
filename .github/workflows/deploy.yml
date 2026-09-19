@@ -1,0 +1,69 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm art
+
+      # Both apps ship from one Pages site: the Storyteller at the root and the
+      # player companion under /player. The player's origin is baked in so the
+      # QR codes point at the right place.
+      - name: Build the Storyteller app
+        run: pnpm --filter @botc/storyteller build
+        env:
+          BOTC_BASE: /${{ github.event.repository.name }}/
+          VITE_PLAYER_ORIGIN: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/player
+          VITE_RELAY_URL: ${{ vars.RELAY_URL }}
+
+      - name: Build the player companion
+        run: pnpm --filter @botc/player build
+        env:
+          BOTC_PLAYER_BASE: /${{ github.event.repository.name }}/player/
+          VITE_RELAY_URL: ${{ vars.RELAY_URL }}
+
+      - name: Assemble the site
+        run: |
+          mkdir -p site
+          cp -r apps/storyteller/dist/* site/
+          mkdir -p site/player
+          cp -r apps/player/dist/* site/player/
+          # Pages otherwise runs the output through Jekyll, which drops files
+          # and directories beginning with an underscore.
+          touch site/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

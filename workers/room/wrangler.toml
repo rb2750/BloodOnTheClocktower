@@ -1,0 +1,17 @@
+name = "botc-room"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+
+# One Durable Object per game. WebSocket hibernation means an idle room is not
+# billed for duration, which suits Blood on the Clocktower exactly: hours of
+# talking punctuated by short bursts of state changes.
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "Room"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Room"]
+
+[observability]
+enabled = true

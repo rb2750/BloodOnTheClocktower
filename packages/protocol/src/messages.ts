@@ -1,12 +1,28 @@
 import { CHARACTERS } from '@botc/rules'
 
-/** Messages exchanged through the relay, all encrypted before they leave. */
+/**
+ * Messages exchanged through the relay. Every one is encrypted with the room
+ * key before it leaves, so the relay sees only bytes.
+ *
+ * The `role` message goes one step further. The relay broadcasts to the whole
+ * room and every player holds the room key, so a role protected by that alone
+ * would be readable by the other players. Its contents are therefore sealed a
+ * second time, to the claiming player's own ephemeral public key.
+ */
 export type RelayMessage =
+  | { t: 'hello'; pub: string }
   | { t: 'seats'; seats: { id: string; name: string; taken: boolean }[] }
-  | { t: 'claim'; seatId: string; deviceId: string }
-  | { t: 'role'; seatId: string; character: number; script: number[]; scriptName: string }
+  | { t: 'claim'; seatId: string; deviceId: string; pub: string }
+  | { t: 'role'; seatId: string; sealed: string }
   | { t: 'phase'; phase: string; day: number }
   | { t: 'death'; seatId: string; alive: boolean }
+
+/** What a sealed `role` message contains once opened. */
+export type SealedRole = {
+  character: number
+  script: number[]
+  scriptName: string
+}
 
 /**
  * Character ids are sent as indexes into the bundled roster rather than as
