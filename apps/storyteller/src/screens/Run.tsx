@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { getCharacter } from '@botc/rules'
 import { Grimoire } from '@botc/ui'
-import { Lock, LockOpen, History, Undo2 } from 'lucide-react'
+import { Lock, LockOpen, History, Undo2, UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useStore, phaseLabel } from '../state/store.js'
 import { Screen } from '../components/Screen.js'
@@ -21,6 +21,7 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
 
   const [openSeat, setOpenSeat] = useState<string | null>(null)
   const [logOpen, setLogOpen] = useState(false)
+  const addSeat = useStore((s) => s.addSeat)
 
   if (!game) return null
 
@@ -85,6 +86,22 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
                   Undo
                 </button>
               )}
+              {/* Travellers join mid-game, so a seat can be added at any point.
+                  Rare enough to live quietly in the middle of the ring. */}
+              <button
+                onClick={() => {
+                  const name = window.prompt('Who is joining?')?.trim()
+                  if (!name) return
+                  addSeat(name, true)
+                  toast(`${name} joined as a Traveller.`, {
+                    action: { label: 'Undo', onClick: () => undo() },
+                  })
+                }}
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-[12px] text-(--text-faint)"
+              >
+                <UserPlus size={13} />
+                Add
+              </button>
             </div>
           }
         >

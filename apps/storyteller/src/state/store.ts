@@ -5,6 +5,7 @@ import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval'
 import {
   buildNightOrder,
   editionScript,
+  getCharacter,
   majorityThreshold,
   resolveBlock,
   tallyVotes,
@@ -240,9 +241,10 @@ export const useStore = create<Store>()(
             const seat = draft.game?.seats.find((s) => s.id === seatId)
             if (!seat) return
             seat.characterId = characterId
-            pushLog(draft, 'change', `${seat.name} is now ${characterId ?? 'unassigned'}.`, [
-              seatId,
-            ])
+            // Log the character's proper name, not its id. The log is read by a
+            // person, often out loud during the post-game recap.
+            const name = characterId ? getCharacter(characterId)?.name : undefined
+            pushLog(draft, 'change', `${seat.name} is the ${name ?? 'nobody yet'}.`, [seatId])
           }),
 
         setSeatTrueCharacter: (seatId, characterId) =>
@@ -250,11 +252,12 @@ export const useStore = create<Store>()(
             const seat = draft.game?.seats.find((s) => s.id === seatId)
             if (!seat) return
             seat.trueCharacterId = characterId
+            const realName = characterId ? getCharacter(characterId)?.name : undefined
             pushLog(
               draft,
               'change',
-              characterId
-                ? `${seat.name} really is the ${characterId}, though they believe otherwise.`
+              realName
+                ? `${seat.name} really is the ${realName}, though they believe otherwise.`
                 : `${seat.name} is what they appear to be.`,
               [seatId],
             )

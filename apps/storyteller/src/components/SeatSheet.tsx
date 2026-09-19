@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { getCharacter, scriptCharacters, teamAlignment } from '@botc/rules'
 import { AbilityText, Button, Chip, Label, Sheet } from '@botc/ui'
-import { Skull, Heart, Vote, UserPen, Trash2 } from 'lucide-react'
+import { Skull, Heart, Vote, UserPen, Trash2, Plane } from 'lucide-react'
 import { toast } from 'sonner'
 import { useStore } from '../state/store.js'
 import { CharacterToken } from './CharacterToken.js'
+import { HoldToConfirm } from './HoldToConfirm.js'
 import type { EffectKind } from '../state/types.js'
 
 /** Effects a Storyteller reaches for constantly, each with the right expiry. */
@@ -25,6 +26,8 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
   const setSeatCharacter = useStore((s) => s.setSeatCharacter)
   const setSeatTrueCharacter = useStore((s) => s.setSeatTrueCharacter)
   const setSeatNotes = useStore((s) => s.setSeatNotes)
+  const setSeatTraveller = useStore((s) => s.setSeatTraveller)
+  const removeSeat = useStore((s) => s.removeSeat)
   const undo = useStore((s) => s.undo)
 
   const [picking, setPicking] = useState<'perceived' | 'true' | null>(null)
@@ -163,6 +166,36 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
           <Button className="flex-1" onClick={() => setPicking('true')}>
             {trueCharacter ? 'Change what they really are' : 'They are not what they think'}
           </Button>
+        </div>
+
+        <div className="mt-2 flex gap-2">
+          <Button
+            className="flex-1"
+            onClick={() => {
+              setSeatTraveller(seat.id, !seat.isTraveller)
+              toast(
+                seat.isTraveller
+                  ? `${seat.name} is a regular player again.`
+                  : `${seat.name} is a Traveller.`,
+              )
+            }}
+          >
+            <Plane size={17} />
+            {seat.isTraveller ? 'Not a Traveller' : 'Make a Traveller'}
+          </Button>
+          {/* Removing someone is rare and not undone by a tap, so it needs a
+              deliberate hold rather than a dialog that would be one more thing
+              to dismiss in the dark. */}
+          <HoldToConfirm
+            label="Hold to remove"
+            onConfirm={() => {
+              removeSeat(seat.id)
+              onClose()
+              toast(`${seat.name} left the game.`, {
+                action: { label: 'Undo', onClick: () => undo() },
+              })
+            }}
+          />
         </div>
 
         {timeline.length > 0 && (
