@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { getCharacter, teamAlignment, type Character } from '@botc/rules'
-import { Button, Chip, Label, Sheet, inputClass, Plus, Shroud, Trash, Close } from '@botc/ui'
+import { Button, Chip, Label, Sheet, Token, inputClass, Plus, Shroud, Trash, Close } from '@botc/ui'
 import { useStore } from '../state.js'
 import { CharacterToken } from '../components/CharacterToken.js'
 
@@ -58,7 +58,7 @@ export function NotesScreen() {
                     onClick={() => setOpen(name)}
                     className="flex min-h-(--tap-min) w-full items-center gap-3 border-b border-(--hairline) py-2 text-left active:bg-(--surface-raised)"
                   >
-                    <CharacterToken character={claimed} size="38px" muted />
+                    <Token name={name} size="38px" />
                     <span className="min-w-0 flex-1">
                       <span
                         className={`block text-[15px] ${
@@ -68,7 +68,7 @@ export function NotesScreen() {
                         {name}
                       </span>
                       <span className="block truncate text-[13px] text-(--text-faint)">
-                        {claimed ? `claims ${claimed.name}` : 'no claim yet'}
+                        {claimed ? `says ${claimed.name}` : 'has not said yet'}
                         {note.stamps.length > 0 && ` · ${note.stamps.join(', ')}`}
                       </span>
                     </span>
@@ -114,7 +114,7 @@ export function NotesScreen() {
   )
 }
 
-function NoteSheet({ name, onClose }: { name: string | null; onClose: () => void }) {
+export function NoteSheet({ name, onClose }: { name: string | null; onClose: () => void }) {
   const notes = useStore((s) => s.notes)
   const scriptIds = useStore((s) => s.scriptIds)
   const phase = useStore((s) => s.phase)
@@ -126,7 +126,6 @@ function NoteSheet({ name, onClose }: { name: string | null; onClose: () => void
   const setDied = useStore((s) => s.setDied)
 
   const [line, setLine] = useState('')
-  const [picking, setPicking] = useState(false)
 
   const note = name ? notes[name] : undefined
   if (!name || !note) return null
@@ -138,37 +137,56 @@ function NoteSheet({ name, onClose }: { name: string | null; onClose: () => void
   return (
     <>
       <Sheet
-        open={!picking}
+        open
         onOpenChange={(o) => !o && onClose()}
         title={note.name}
         subtitle={note.diedOnDay ? `Died on day ${note.diedOnDay}` : phase}
       >
         <div className="space-y-6 pb-2">
           <div>
-            <Label>Claims</Label>
-            <Button className="w-full" onClick={() => setPicking(true)}>
-              {note.claims.length === 0 ? 'Record a claim' : 'Record a different claim'}
-            </Button>
-            {note.claims.length > 0 && (
-              <ol className="mt-3 space-y-1">
-                {note.claims.map((c, i) => (
-                  <li
-                    key={`${c.characterId}-${i}`}
-                    className="flex items-center gap-2 text-[14px]"
+            <Label>Who do they say they are?</Label>
+            <div className="grid grid-cols-4 gap-x-2 gap-y-3 sm:grid-cols-5">
+              {characters.map((c) => {
+                const current = note.claims.at(-1)?.characterId === c.id
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => addClaim(note.name, c.id)}
+                    aria-pressed={current}
+                    className={`flex flex-col items-center gap-1 rounded-xl py-1.5 ${
+                      current ? 'bg-(--surface-raised)' : ''
+                    }`}
                   >
-                    <span className="text-(--text-faint)">{c.at}</span>
-                    <span className="text-(--text)">{getCharacter(c.characterId)?.name}</span>
-                    {i < note.claims.length - 1 && (
-                      <span className="caps text-(--text-faint)">then changed</span>
-                    )}
-                  </li>
-                ))}
-              </ol>
+                    <CharacterToken
+                      character={c}
+                      size="46px"
+                      alignment={teamAlignment(c.team) === 'evil' ? 'evil' : 'good'}
+                      muted={!current}
+                    />
+                    <span
+                      className={`text-center text-[10px] leading-tight ${
+                        current ? 'text-(--text)' : 'text-(--text-faint)'
+                      }`}
+                    >
+                      {c.name}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+            {note.claims.length > 1 && (
+              <p className="serif mt-3 text-[13px] leading-snug text-(--text-faint)">
+                Said before:{' '}
+                {note.claims
+                  .slice(0, -1)
+                  .map((c) => `${getCharacter(c.characterId)?.name} in ${c.at}`)
+                  .join(', ')}
+              </p>
             )}
           </div>
 
           <div>
-            <Label>Quick marks</Label>
+            <Label>What do you make of them?</Label>
             <div className="flex flex-wrap gap-2">
               {STAMPS.map((stamp) => (
                 <Chip
@@ -183,7 +201,7 @@ function NoteSheet({ name, onClose }: { name: string | null; onClose: () => void
           </div>
 
           <div>
-            <Label>Notes</Label>
+            <Label>Anything they said</Label>
             <form
               onSubmit={(e) => {
                 e.preventDefault()
@@ -245,34 +263,6 @@ function NoteSheet({ name, onClose }: { name: string | null; onClose: () => void
         </div>
       </Sheet>
 
-      <Sheet
-        open={picking}
-        onOpenChange={(o) => !o && setPicking(false)}
-        title={`What does ${note.name} claim?`}
-        subtitle="Only the characters on this script."
-      >
-        <div className="grid grid-cols-4 gap-3 pb-2 sm:grid-cols-5">
-          {characters.map((c) => (
-            <button
-              key={c.id}
-              className="flex flex-col items-center gap-1"
-              onClick={() => {
-                addClaim(note.name, c.id)
-                setPicking(false)
-              }}
-            >
-              <CharacterToken
-                character={c}
-                size="52px"
-                alignment={teamAlignment(c.team) === 'evil' ? 'evil' : 'good'}
-              />
-              <span className="caps text-center text-[9px] leading-tight text-(--text-faint)">
-                {c.name}
-              </span>
-            </button>
-          ))}
-        </div>
-      </Sheet>
     </>
   )
 }
