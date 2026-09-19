@@ -14,9 +14,21 @@ const CHECK_EVERY_MS = 15 * 60 * 1000
  * schedule rather than only at launch, since an installed app can stay open
  * for days.
  */
+/** A new build found this soon after a load is the refresh itself asking. */
+const REFRESH_WINDOW_MS = 8000
+
 export function setUpServiceWorker() {
+  const loadedAt = Date.now()
   const update = registerSW({
     onNeedRefresh() {
+      // A refresh must never land on a stale build. The browser checks the
+      // worker on every navigation, so a version found within moments of the
+      // load is taken at once, and the page comes back on it. Found later, mid
+      // game, it waits for the toast as before.
+      if (Date.now() - loadedAt < REFRESH_WINDOW_MS) {
+        void update(true)
+        return
+      }
       toast('A new version is ready.', {
         duration: Infinity,
         action: { label: 'Reload', onClick: () => void update(true) },
