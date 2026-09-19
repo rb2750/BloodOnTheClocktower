@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { getCharacter, scriptCharacters, teamAlignment } from '@botc/rules'
-import { AbilityText, Button, Chip, Label, Sheet, Shroud, Heart, Hand, Swap, Trash, Signpost } from '@botc/ui'
+import { AbilityText, Button, Label, Sheet, Shroud, Heart, Ghost, Swap, Mask, Signpost, inputClass } from '@botc/ui'
 import { toast } from 'sonner'
 import { useStore } from '../state/store.js'
 import { CharacterToken } from './CharacterToken.js'
 import { HoldToConfirm } from './HoldToConfirm.js'
+import { ReminderChip, ReminderOption } from './ReminderChip.js'
 import type { EffectKind } from '../state/types.js'
 
 /** Effects a Storyteller reaches for constantly, each with the right expiry. */
@@ -15,6 +16,16 @@ const QUICK_EFFECTS: { kind: EffectKind; label: string; expiry: 'dusk' | 'perman
   { kind: 'red-herring', label: 'Red herring', expiry: 'permanent' },
   { kind: 'mad', label: 'Mad', expiry: 'permanent' },
 ]
+
+const TEAM_LABEL: Record<string, string> = {
+  townsfolk: 'Townsfolk',
+  outsider: 'Outsider',
+  minion: 'Minion',
+  demon: 'Demon',
+  traveller: 'Traveller',
+  fabled: 'Fabled',
+  loric: 'Loric',
+}
 
 export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose: () => void }) {
   const game = useStore((s) => s.game)
@@ -36,68 +47,116 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
 
   const character = getCharacter(seat.characterId ?? '')
   const trueCharacter = getCharacter(seat.trueCharacterId ?? '')
+  const shown = trueCharacter ?? character
+  const alignment = seat.alignmentOverride ?? (shown ? teamAlignment(shown.team) : undefined)
   const timeline = game.log.filter((l) => l.seatIds.includes(seat.id))
+
+  const roleLine = shown
+    ? `${shown.name} · ${TEAM_LABEL[shown.team] ?? shown.team}${
+        trueCharacter ? ` · believes ${character?.name}` : ''
+      }`
+    : 'No character yet'
 
   return (
     <>
-      <Sheet
-        open={seatId !== null && picking === null}
-        onOpenChange={(o) => !o && onClose()}
-        title={seat.name}
-        subtitle={
-          trueCharacter
-            ? `Believes they are the ${character?.name}. Really the ${trueCharacter.name}.`
-            : (character?.name ?? 'No character yet')
-        }
-      >
-        <div className="flex items-start gap-4">
-          <button onClick={() => setPicking('perceived')} className="shrink-0">
+      <Sheet open={seatId !== null && picking === null} onOpenChange={(o) => !o && onClose()}>
+        <div className="flex items-center gap-4">
+          <button onClick={() => setPicking('perceived')} className="shrink-0" aria-label="Change character">
             <CharacterToken
-              character={trueCharacter ?? character}
-              size="72px"
+              character={shown}
+              size="60px"
               dead={!seat.alive}
               alignment={seat.alignmentOverride}
             />
           </button>
           <div className="min-w-0 flex-1">
-            {character ? (
-              <AbilityText>{(trueCharacter ?? character).ability}</AbilityText>
-            ) : (
-              <p className="text-[14px] text-(--text-faint)">Tap the token to assign one.</p>
-            )}
+            <h2 className="display text-[26px] leading-none">{seat.name}</h2>
+            <div
+              className={`caps mt-1.5 ${
+                alignment === 'evil'
+                  ? 'text-(--color-red-2)'
+                  : alignment === 'good'
+                    ? 'text-(--color-blue-2)'
+                    : 'text-(--text-faint)'
+              }`}
+            >
+              {roleLine}
+            </div>
           </div>
+        </div>
+
+        <div className="mt-4">
+          {shown ? (
+            <AbilityText>{shown.ability}</AbilityText>
+          ) : (
+            <p className="serif text-[15px] text-(--text-faint)">Tap the token to assign one.</p>
+          )}
         </div>
 
         {/* Frequent, reversible actions: instant, with an undo toast. No dialog
             every time, which in a dim room would be torture. */}
-        <div className="mt-5 flex gap-2">
-          <Button
-            className="flex-1"
+        <div className="mt-5 grid grid-cols-4 gap-1 border-y border-(--hairline) py-2">
+          <Action
+            icon={seat.alive ? <Shroud size={22} /> : <Heart size={22} />}
+            label={seat.alive ? 'Kill' : 'Revive'}
             onClick={() => {
               toggleAlive(seat.id)
               toast(seat.alive ? `${seat.name} died.` : `${seat.name} lives.`, {
                 action: { label: 'Undo', onClick: () => undo() },
               })
             }}
-          >
-            {seat.alive ? <Shroud size={18} /> : <Heart size={18} />}
-            {seat.alive ? 'Kill' : 'Revive'}
-          </Button>
-          {!seat.alive && (
-            <Button className="flex-1" onClick={() => toggleDeadVote(seat.id)}>
-              <Hand size={18} />
-              {seat.deadVoteAvailable ? 'Ghost vote unused' : 'Ghost vote spent'}
-            </Button>
+          />
+          {seat.alive ? (
+            <Action icon={<Swap size={22} />} label="Character" onClick={() => setPicking('perceived')} />
+          ) : (
+            <Action
+              icon={<Ghost size={22} />}
+              label={seat.deadVoteAvailable ? 'Ghost vote' : 'Vote spent'}
+              dim={!seat.deadVoteAvailable}
+              onClick={() => toggleDeadVote(seat.id)}
+            />
           )}
+          <Action
+            icon={<Mask size={22} />}
+            label={trueCharacter ? 'Disguised' : 'Disguise'}
+            active={Boolean(trueCharacter)}
+            onClick={() => setPicking('true')}
+          />
+          <Action
+            icon={<Signpost size={22} />}
+            label="Traveller"
+            active={seat.isTraveller}
+            onClick={() => {
+              setSeatTraveller(seat.id, !seat.isTraveller)
+              toast(
+                seat.isTraveller
+                  ? `${seat.name} is a regular player again.`
+                  : `${seat.name} is a Traveller.`,
+              )
+            }}
+          />
         </div>
 
-        <div className="mt-6">
+        <div className="mt-5">
           <Label>Reminders</Label>
           <div className="flex flex-wrap gap-2">
-            {QUICK_EFFECTS.map((e) => (
-              <Chip
+            {seat.effects.map((e) => (
+              <ReminderChip
+                key={e.id}
+                effect={e}
+                onRemove={() => {
+                  removeEffect(seat.id, e.id)
+                  toast('Reminder removed.', {
+                    action: { label: 'Undo', onClick: () => undo() },
+                  })
+                }}
+              />
+            ))}
+            {QUICK_EFFECTS.filter((q) => !seat.effects.some((e) => e.kind === q.kind)).map((e) => (
+              <ReminderOption
                 key={e.kind}
                 kind={e.kind}
+                label={e.label}
                 onClick={() =>
                   addEffect(seat.id, {
                     kind: e.kind,
@@ -105,45 +164,9 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
                     expiry: e.expiry === 'dusk' ? { kind: 'dusk' } : { kind: 'permanent' },
                   })
                 }
-              >
-                + {e.label}
-              </Chip>
+              />
             ))}
           </div>
-
-          {seat.effects.length > 0 && (
-            <ul className="mt-3 space-y-1">
-              {seat.effects.map((e) => (
-                <li
-                  key={e.id}
-                  className="flex items-center gap-2 rounded-(--radius-surface) border border-(--hairline) px-3 py-2"
-                >
-                  <span className="flex-1 text-[14px]">{e.label}</span>
-                  <span className="text-[11px] text-(--text-faint)">
-                    {e.expiry.kind === 'dusk'
-                      ? 'until dusk'
-                      : e.expiry.kind === 'permanent'
-                        ? 'lasting'
-                        : `until ${e.expiry.kind} ${'night' in e.expiry ? e.expiry.night : ''}`}
-                    {' · '}
-                    {e.createdOn}
-                  </span>
-                  <button
-                    onClick={() => {
-                      removeEffect(seat.id, e.id)
-                      toast('Reminder removed.', {
-                        action: { label: 'Undo', onClick: () => undo() },
-                      })
-                    }}
-                    aria-label={`Remove ${e.label}`}
-                    className="grid size-9 place-items-center text-(--text-faint)"
-                  >
-                    <Trash size={15} />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
 
         <div className="mt-6">
@@ -153,47 +176,7 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
             onChange={(e) => setSeatNotes(seat.id, e.target.value)}
             rows={2}
             placeholder="What you told them, what they claimed…"
-            className="w-full resize-none rounded-(--radius-surface) border border-(--hairline) bg-(--bg) p-3 text-[15px] outline-none placeholder:text-(--text-faint) focus:border-(--hairline-strong)"
-          />
-        </div>
-
-        <div className="mt-6 flex gap-2">
-          <Button className="flex-1" onClick={() => setPicking('perceived')}>
-            <Swap size={17} />
-            Change character
-          </Button>
-          <Button className="flex-1" onClick={() => setPicking('true')}>
-            {trueCharacter ? 'Change what they really are' : 'They are not what they think'}
-          </Button>
-        </div>
-
-        <div className="mt-2 flex gap-2">
-          <Button
-            className="flex-1"
-            onClick={() => {
-              setSeatTraveller(seat.id, !seat.isTraveller)
-              toast(
-                seat.isTraveller
-                  ? `${seat.name} is a regular player again.`
-                  : `${seat.name} is a Traveller.`,
-              )
-            }}
-          >
-            <Signpost size={17} />
-            {seat.isTraveller ? 'Not a Traveller' : 'Make a Traveller'}
-          </Button>
-          {/* Removing someone is rare and not undone by a tap, so it needs a
-              deliberate hold rather than a dialog that would be one more thing
-              to dismiss in the dark. */}
-          <HoldToConfirm
-            label="Hold to remove"
-            onConfirm={() => {
-              removeSeat(seat.id)
-              onClose()
-              toast(`${seat.name} left the game.`, {
-                action: { label: 'Undo', onClick: () => undo() },
-              })
-            }}
+            className={`${inputClass} serif resize-none p-3 text-[15px]`}
           />
         </div>
 
@@ -203,15 +186,29 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
             <ol className="space-y-2 border-l border-(--hairline) pl-4">
               {timeline.map((l) => (
                 <li key={l.id}>
-                  <div className="text-[11px] uppercase tracking-wider text-(--text-faint)">
-                    {l.phase}
-                  </div>
+                  <div className="caps text-[10px] text-(--text-faint)">{l.phase}</div>
                   <div className="text-[14px] text-(--text-dim)">{l.text}</div>
                 </li>
               ))}
             </ol>
           </div>
         )}
+
+        {/* Removing someone is rare and not undone by a tap, so it needs a
+            deliberate hold rather than a dialog that would be one more thing
+            to dismiss in the dark. */}
+        <div className="mt-6">
+          <HoldToConfirm
+            label="Hold to remove from the game"
+            onConfirm={() => {
+              removeSeat(seat.id)
+              onClose()
+              toast(`${seat.name} left the game.`, {
+                action: { label: 'Undo', onClick: () => undo() },
+              })
+            }}
+          />
+        </div>
       </Sheet>
 
       <Sheet
@@ -220,13 +217,13 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
         title={picking === 'true' ? 'What are they really?' : 'Which character?'}
         subtitle={
           picking === 'true'
-            ? 'Use this for the Drunk, the Marionette or the Lunatic. They keep waking in the slot of the character they believe they are.'
+            ? 'For the Drunk, the Marionette or the Lunatic. They keep waking in the slot of the character they believe they are.'
             : undefined
         }
       >
         {picking === 'true' && seat.trueCharacterId && (
           <Button
-            className="mb-3 w-full"
+            className="mb-4 w-full"
             onClick={() => {
               setSeatTrueCharacter(seat.id, undefined)
               setPicking(null)
@@ -239,7 +236,7 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
           {scriptCharacters(game.script).map((c) => (
             <button
               key={c.id}
-              className="flex flex-col items-center gap-1"
+              className="flex flex-col items-center gap-1.5"
               onClick={() => {
                 if (picking === 'true') setSeatTrueCharacter(seat.id, c.id)
                 else setSeatCharacter(seat.id, c.id)
@@ -251,7 +248,7 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
                 size="52px"
                 alignment={teamAlignment(c.team) === 'evil' ? 'evil' : 'good'}
               />
-              <span className="text-center text-[10px] leading-tight text-(--text-faint)">
+              <span className="caps text-center text-[9px] leading-tight text-(--text-faint)">
                 {c.name}
               </span>
             </button>
@@ -259,5 +256,33 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
         </div>
       </Sheet>
     </>
+  )
+}
+
+function Action({
+  icon,
+  label,
+  onClick,
+  active = false,
+  dim = false,
+}: {
+  icon: React.ReactNode
+  label: string
+  onClick: () => void
+  active?: boolean
+  dim?: boolean
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex min-h-(--tap-min) flex-col items-center justify-center gap-1.5 rounded-(--radius-surface) py-1 active:bg-(--surface-raised) ${
+        dim ? 'opacity-45' : ''
+      }`}
+    >
+      <span className={active ? 'text-(--now)' : 'text-(--text)'}>{icon}</span>
+      <span className={`caps text-[9.5px] ${active ? 'text-(--now)' : 'text-(--text-dim)'}`}>
+        {label}
+      </span>
+    </button>
   )
 }

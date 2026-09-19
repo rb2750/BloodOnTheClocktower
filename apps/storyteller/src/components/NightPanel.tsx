@@ -37,7 +37,7 @@ export function NightPanel() {
             {entry ? `Step ${entry.order} of ${order.length}` : 'Night complete'}
           </Label>
           {entry?.allDead && (
-            <span className="text-[11px] text-(--text-faint)">everyone here is dead</span>
+            <span className="caps text-(--text-faint)">everyone here is dead</span>
           )}
         </div>
 
@@ -45,9 +45,9 @@ export function NightPanel() {
           <div className="flex gap-3">
             {character && <CharacterToken character={character} size="52px" />}
             <div className="min-w-0 flex-1">
-              <div className="display text-[14px] text-(--text)">{entry.name}</div>
+              <div className="display text-[22px] leading-none text-(--text)">{entry.name}</div>
               {entry.seats.length > 0 && (
-                <div className="mb-1 text-[12px] text-(--text-faint)">
+                <div className="mb-1.5 mt-1 text-[13px] text-(--text-faint)">
                   {entry.seats
                     .map((s) => {
                       const seat = game.seats.find((x) => x.id === s.seatId)
@@ -62,7 +62,7 @@ export function NightPanel() {
             </div>
           </div>
         ) : (
-          <p className="serif text-[16px] text-(--text-dim)">
+          <p className="serif m-0 text-[16px] text-(--text-dim)">
             Everyone is asleep and every step is done. Wait about ten seconds before you call
             for eyes open, so the last wake cannot be timed.
           </p>
@@ -85,7 +85,7 @@ export function NightPanel() {
               <button
                 key={label}
                 onClick={() => setPlacing({ label, characterId: entry.id })}
-                className="min-h-9 rounded-full border border-(--hairline-strong) px-3 text-[12px] text-(--accent)"
+                className="min-h-9 rounded-full border border-(--hairline-strong) px-3 text-[13px] font-medium text-(--text)"
               >
                 place “{label}”
               </button>
@@ -154,10 +154,10 @@ export function NightPanel() {
                 })
                 setPlacing(null)
               }}
-              className="flex min-h-(--tap-min) flex-col items-center gap-1 rounded-(--radius-surface) border border-(--hairline) p-2"
+              className="flex min-h-(--tap-min) flex-col items-center gap-1 rounded-(--radius-surface) border border-(--hairline-strong) p-2"
             >
               <span className="truncate text-[13px]">{seat.name}</span>
-              <span className="text-[10px] text-(--text-faint)">
+              <span className="caps text-[9px] text-(--text-faint)">
                 {getCharacter(seat.characterId ?? '')?.name ?? '—'}
               </span>
             </button>

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Leave } from '@botc/ui'
 
 const HOLD_MS = 650
 
@@ -10,15 +9,10 @@ const HOLD_MS = 650
  * undo, and rare irreversible ones are confirmed. A hold is the right shape for
  * the second kind in a dim room, because it cannot be triggered by a stray tap
  * and it gives continuous feedback, where a dialog is just one more thing to
- * find and dismiss in the dark.
+ * find and dismiss in the dark. It is a line of red text, not a button: the
+ * loud option on a screen is never the destructive one.
  */
-export function HoldToConfirm({
-  label,
-  onConfirm,
-}: {
-  label: string
-  onConfirm: () => void
-}) {
+export function HoldToConfirm({ label, onConfirm }: { label: string; onConfirm: () => void }) {
   const [progress, setProgress] = useState(0)
   const frame = useRef<number | null>(null)
   const start = useRef(0)
@@ -53,14 +47,13 @@ export function HoldToConfirm({
       onPointerUp={stop}
       onPointerLeave={stop}
       onPointerCancel={stop}
-      className="relative flex min-h-(--tap-min) flex-1 items-center justify-center gap-2 overflow-hidden rounded-(--radius-surface) border border-(--hairline) px-4 text-[15px] text-(--color-red-2)"
+      className="caps relative flex min-h-(--tap-min) w-full items-center justify-center overflow-hidden text-(--color-red-2)"
     >
       <span
-        className="absolute inset-y-0 left-0 bg-[color-mix(in_oklab,var(--color-red)_26%,transparent)] transition-none"
+        className="absolute inset-x-0 bottom-0 h-px bg-(--color-red-2) transition-none"
         style={{ width: `${progress * 100}%` }}
         aria-hidden
       />
-      <Leave size={17} className="relative" />
       <span className="relative">{label}</span>
     </button>
   )

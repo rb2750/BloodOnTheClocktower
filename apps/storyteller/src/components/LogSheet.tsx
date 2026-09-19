@@ -4,7 +4,7 @@ import type { LogKind } from '../state/types.js'
 
 /** Colour by event type, so scanning back for "who died on night two" is fast. */
 const TONE: Record<LogKind, string> = {
-  phase: 'text-(--accent)',
+  phase: 'text-(--text)',
   deal: 'text-(--text-faint)',
   info: 'text-(--color-blue-2)',
   death: 'text-(--color-red-2)',
@@ -47,9 +47,7 @@ export function LogSheet({ open, onClose }: { open: boolean; onClose: () => void
               <li key={entry.id}>
                 {showPhase && (
                   <div className="mb-1 mt-4 flex items-center gap-2 first:mt-0">
-                    <span className="display text-[11px] text-(--text-faint)">
-                      {entry.phase}
-                    </span>
+                    <span className="caps text-(--text-faint)">{entry.phase}</span>
                     <span className="h-px flex-1 bg-(--hairline)" />
                   </div>
                 )}
@@ -60,7 +58,7 @@ export function LogSheet({ open, onClose }: { open: boolean; onClose: () => void
                       className={
                         entry.info.truthful
                           ? ' text-(--text-faint)'
-                          : ' text-(--accent)'
+                          : ' text-(--now)'
                       }
                     >
                       {' '}

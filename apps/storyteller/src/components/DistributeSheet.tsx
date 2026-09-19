@@ -115,12 +115,12 @@ export function DistributeSheet({ open, onClose }: { open: boolean; onClose: () 
                 <button
                   key={s.id}
                   onClick={() => setIndex(i)}
-                  className={`min-h-9 rounded-full border px-3 text-[12px] ${
+                  className={`min-h-9 rounded-full border px-3 text-[12px] font-medium ${
                     handed.includes(s.id)
-                      ? 'border-(--accent) text-(--accent)'
+                      ? 'border-(--accent) bg-(--accent) text-(--bg)'
                       : i === index
-                        ? 'border-(--hairline-strong) text-(--text)'
-                        : 'border-(--hairline) text-(--text-faint)'
+                        ? 'border-(--now) text-(--now)'
+                        : 'border-(--hairline-strong) text-(--text-faint)'
                   }`}
                 >
                   {s.name}

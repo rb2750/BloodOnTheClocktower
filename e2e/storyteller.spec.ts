@@ -2,8 +2,13 @@ import { expect, test, type Page } from '@playwright/test'
 
 const PLAYERS = ['Alice', 'Bran', 'Cora', 'Dev', 'Esme', 'Finn', 'Greta']
 
-async function dealGame(page: Page, count = PLAYERS.length) {
+async function openSetup(page: Page) {
   await page.goto('/')
+  await page.getByRole('button', { name: /^New game$/ }).click()
+}
+
+async function dealGame(page: Page, count = PLAYERS.length) {
+  await openSetup(page)
   for (const name of PLAYERS.slice(0, count)) {
     await page.getByPlaceholder('Add a name').fill(name)
     await page.getByPlaceholder('Add a name').press('Enter')
@@ -87,14 +92,14 @@ test('boots with no network at all', async ({ page, context }) => {
   await context.setOffline(true)
   await page.reload()
 
-  await expect(page.getByPlaceholder('Add a name')).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole('button', { name: /^New game$/ })).toBeVisible({ timeout: 15_000 })
   await context.setOffline(false)
 })
 
 test('never puts a player in a seat with no character', async ({ page }) => {
   // The composition table stops at fifteen, so a larger game has to fill the
   // extra seats with Travellers rather than leaving them blank.
-  await page.goto('/')
+  await openSetup(page)
   const many = [...PLAYERS, 'Hal', 'Isla', 'Jonah', 'Kit', 'Lena', 'Mo', 'Nadia', 'Otto', 'Priya']
   for (const name of many) {
     await page.getByPlaceholder('Add a name').fill(name)

@@ -1,5 +1,5 @@
 import { characterArt, getCharacter, teamAlignment } from '@botc/rules'
-import { AbilityText, Label, Token, Qr } from '@botc/ui'
+import { AbilityText, Label, Rows, Row, Token, Qr } from '@botc/ui'
 import { useStore } from '../state.js'
 import { HoldToReveal } from '../components/HoldToReveal.js'
 import { useRelay } from '../useRelay.js'
@@ -37,11 +37,12 @@ export function MeScreen() {
             size="min(38vw, 150px)"
           />
           <div>
-            <h1 className="display text-[20px] text-(--text)">{character.name}</h1>
+            <h1 className="display text-[30px] leading-none text-(--text)">{character.name}</h1>
             <p
-              className={`m-0 text-[12px] uppercase tracking-[0.16em] ${
+              className={`caps m-0 mt-2 ${
                 alignment === 'evil' ? 'text-(--color-red-2)' : 'text-(--color-blue-2)'
               }`}
+              style={{ letterSpacing: '0.22em' }}
             >
               {/* The word as well as the colour and the ring shape: three
                   redundant channels, so colour vision is never the only cue. */}
@@ -69,9 +70,9 @@ export function MeScreen() {
 function Empty() {
   return (
     <section className="flex min-h-full flex-col items-center justify-center gap-5 px-8 text-center">
-      <Qr size={40} className="text-(--hairline-strong)" strokeWidth={1.4} />
-      <h1 className="display text-[18px] text-(--text)">Scan the Storyteller&rsquo;s code</h1>
-      <p className="max-w-[28ch] text-[14px] leading-snug text-(--text-faint)">
+      <Qr size={44} className="text-(--text-dim)" strokeWidth={1.25} />
+      <h1 className="display text-[26px] leading-tight text-(--text)">Scan the Storyteller&rsquo;s code</h1>
+      <p className="serif max-w-[28ch] text-[15px] leading-snug text-(--text-faint)">
         Point your camera at the code they are holding. Your character, the script and your
         notes all live here afterwards, and it works with no signal.
       </p>
@@ -93,35 +94,33 @@ function Waiting() {
   if (!claimed && seats.length > 0) {
     return (
       <section className="px-5 py-8">
-        <h1 className="display mb-1 text-center text-[18px] text-(--text)">Who are you?</h1>
-        <p className="mx-auto mb-6 max-w-[30ch] text-center text-[13px] leading-snug text-(--text-faint)">
+        <h1 className="display mb-1 text-center text-[26px] text-(--text)">Who are you?</h1>
+        <p className="serif mx-auto mb-6 max-w-[30ch] text-center text-[14px] leading-snug text-(--text-faint)">
           Tap your own name. You will only ever be shown your own character.
         </p>
-        <ul className="space-y-1">
+        <Rows>
           {seats.map((seat) => (
-            <li key={seat.id}>
-              <button
-                disabled={seat.taken}
-                onClick={() => claim(seat)}
-                className="flex min-h-(--tap-min) w-full items-center justify-between rounded-(--radius-surface) border border-(--hairline) px-4 text-left disabled:opacity-30"
-              >
-                <span className="text-[15px]">{seat.name}</span>
-                {seat.taken && <span className="text-[12px] text-(--text-faint)">taken</span>}
-              </button>
-            </li>
+            <Row
+              key={seat.id}
+              disabled={seat.taken}
+              onClick={() => claim(seat)}
+              trailing={seat.taken ? 'taken' : undefined}
+            >
+              {seat.name}
+            </Row>
           ))}
-        </ul>
+        </Rows>
       </section>
     )
   }
 
   return (
     <section className="flex min-h-full flex-col items-center justify-center gap-5 px-8 text-center">
-      <span className="size-3 animate-pulse rounded-full bg-(--accent)" />
-      <h1 className="display text-[18px] text-(--text)">
+      <span className="size-3 animate-pulse rounded-full bg-(--now)" />
+      <h1 className="display text-[26px] leading-tight text-(--text)">
         {seatName ? `You are ${seatName}` : 'Waiting for the Storyteller'}
       </h1>
-      <p className="max-w-[28ch] text-[14px] leading-snug text-(--text-faint)">
+      <p className="serif max-w-[28ch] text-[15px] leading-snug text-(--text-faint)">
         {status === 'offline'
           ? 'Not connected. If they are handing out codes one at a time, scan the one meant for you.'
           : 'They will send your character over in a moment. Keep this open.'}

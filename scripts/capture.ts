@@ -149,7 +149,10 @@ async function player(browser: Browser) {
 /** Walk the app from cold to a live game, capturing along the way. */
 async function setUpGame(page: Page, playerCount: number, shoot?: (name: string) => Promise<void>) {
   await page.goto(URL)
-  await page.waitForSelector('text=New game')
+  await page.waitForSelector('text=Grimoire')
+  await shoot?.('00-home')
+  await page.getByRole('button', { name: /^New game$/ }).click()
+  await page.waitForSelector('text=Who is playing')
   await shoot?.('01-empty')
 
   for (const name of PLAYERS.slice(0, playerCount)) {
@@ -264,6 +267,7 @@ async function motion(browser: Browser) {
 
     if (phase === 'night') {
       await page.goto(URL)
+      await page.getByRole('button', { name: /^New game$/ }).click()
       for (const name of PLAYERS.slice(0, 8)) {
         await page.getByPlaceholder('Add a name').fill(name)
         await page.getByPlaceholder('Add a name').press('Enter')
@@ -311,6 +315,7 @@ async function motion(browser: Browser) {
 
     // Get to the moment *before* the transition, without letting it play.
     await page.goto(URL)
+    await page.getByRole('button', { name: /^New game$/ }).click()
     for (const name of PLAYERS.slice(0, 8)) {
       await page.getByPlaceholder('Add a name').fill(name)
       await page.getByPlaceholder('Add a name').press('Enter')

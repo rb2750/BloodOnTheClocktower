@@ -1,5 +1,5 @@
 import { PROVENANCE } from '@botc/rules'
-import { Label } from '@botc/ui'
+import { Label, Rows, Row, Switch } from '@botc/ui'
 import { useStore } from '../state/store.js'
 import { Screen } from '../components/Screen.js'
 import type { Screen as ScreenName } from '../App.js'
@@ -38,51 +38,32 @@ export function SettingsScreen({ go }: { go: (s: ScreenName) => void }) {
   const history = useStore((s) => s.history)
 
   return (
-    <Screen title="Settings" onBack={() => go('plan')}>
+    <Screen title="Settings" onBack={() => go('home')}>
       <section className="pb-8">
         <Label>Running a game</Label>
-        <ul className="space-y-2">
+        <ul className="m-0 list-none border-t border-(--hairline) p-0">
           {TOGGLES.map((t) => (
-            <li
-              key={t.key}
-              className="flex items-start gap-3 rounded-(--radius-surface) border border-(--hairline) p-4"
-            >
+            <li key={t.key} className="flex items-start gap-4 border-b border-(--hairline) py-3">
               <div className="min-w-0 flex-1">
                 <div className="text-[15px]">{t.label}</div>
-                <p className="mt-0.5 text-[13px] leading-snug text-(--text-faint)">{t.hint}</p>
+                <p className="serif mt-0.5 text-[14px] leading-snug text-(--text-faint)">{t.hint}</p>
               </div>
-              <button
-                role="switch"
-                aria-checked={settings[t.key]}
-                aria-label={t.label}
-                onClick={() => setSetting(t.key, !settings[t.key])}
-                className={`mt-0.5 h-7 w-12 shrink-0 rounded-full border transition-colors ${
-                  settings[t.key]
-                    ? 'border-(--accent) bg-[color-mix(in_oklab,var(--accent)_28%,transparent)]'
-                    : 'border-(--hairline)'
-                }`}
-              >
-                <span
-                  className={`block size-5 rounded-full transition-transform ${
-                    settings[t.key]
-                      ? 'translate-x-6 bg-(--accent)'
-                      : 'translate-x-1 bg-(--hairline-strong)'
-                  }`}
-                />
-              </button>
+              <Switch
+                checked={settings[t.key]}
+                onChange={(v) => setSetting(t.key, v)}
+                label={t.label}
+              />
             </li>
           ))}
         </ul>
 
         <div className="mt-6">
           <Label>Your games</Label>
-          <button
-            onClick={() => go('history')}
-            className="flex min-h-(--tap-min) w-full items-center justify-between rounded-(--radius-surface) border border-(--hairline) px-4"
-          >
-            <span className="text-[15px]">Past games</span>
-            <span className="tabular text-[13px] text-(--text-faint)">{history.length}</span>
-          </button>
+          <Rows>
+            <Row trailing={String(history.length)} onClick={() => go('history')}>
+              Past games
+            </Row>
+          </Rows>
         </div>
 
         <div className="mt-8 border-t border-(--hairline) pt-5">
@@ -92,7 +73,7 @@ export function SettingsScreen({ go }: { go: (s: ScreenName) => void }) {
             text and art are used non-commercially under their Community Created Content
             Policy.
           </p>
-          <p className="mt-2 text-[12px] text-(--text-faint)">
+          <p className="caps mt-3 text-(--text-faint)">
             Game data from {new Date(PROVENANCE.fetchedAt).toLocaleDateString()} ·{' '}
             {PROVENANCE.counts.characters} characters
           </p>

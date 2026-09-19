@@ -30,23 +30,18 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
   return (
     <>
       <Screen
-        title={
-          <button onClick={() => setLogOpen(true)} className="inline-flex items-center gap-1.5">
-            <span className="display text-[13px] text-(--text)">{phaseLabel(game.phase)}</span>
-            <span className="tabular text-[12px] text-(--text-faint)">
-              · {aliveCount} alive
-            </span>
-          </button>
-        }
-        onBack={() => go('plan')}
+        title={phaseLabel(game.phase)}
+        subtitle={`${aliveCount} alive`}
+        onTitle={() => setLogOpen(true)}
+        onBack={() => go('home')}
         fill
         trailing={
           <button
             onClick={() => setLocked(!locked)}
             aria-label={locked ? 'Unlock grimoire' : 'Lock grimoire'}
-            className={locked ? 'text-(--accent)' : 'text-(--text-faint)'}
+            className={locked ? 'text-(--now)' : 'text-(--text-faint)'}
           >
-            {locked ? <Lock size={18} /> : <Unlock size={18} />}
+            {locked ? <Lock size={20} /> : <Unlock size={20} />}
           </button>
         }
         // The phase panel is the one thing always within thumb reach, and it is
@@ -68,9 +63,9 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
             <div className="flex flex-col items-center gap-1">
               <button
                 onClick={() => setLogOpen(true)}
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-[12px] text-(--text-faint)"
+                className="caps inline-flex min-h-9 items-center gap-1.5 px-3 text-(--text-faint)"
               >
-                <Book size={13} />
+                <Book size={14} />
                 Log
               </button>
               {canUndo && (
@@ -79,9 +74,9 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
                     const label = undo()
                     if (label) toast(`Undid: ${label.toLowerCase()}`)
                   }}
-                  className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-[12px] text-(--text-faint)"
+                  className="caps inline-flex min-h-9 items-center gap-1.5 px-3 text-(--text-faint)"
                 >
-                  <Undo size={13} />
+                  <Undo size={14} />
                   Undo
                 </button>
               )}
@@ -96,9 +91,9 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
                     action: { label: 'Undo', onClick: () => undo() },
                   })
                 }}
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-[12px] text-(--text-faint)"
+                className="caps inline-flex min-h-9 items-center gap-1.5 px-3 text-(--text-faint)"
               >
-                <Ring size={13} />
+                <Ring size={14} />
                 Add
               </button>
             </div>

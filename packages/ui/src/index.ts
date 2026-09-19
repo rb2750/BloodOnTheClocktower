@@ -1,7 +1,7 @@
 export { Token, type TokenProps } from './Token.js'
 export { Sheet, type SheetProps } from './Sheet.js'
 export { Grimoire, type GrimoireProps } from './Grimoire.js'
-export { Button, Chip, Label, AbilityText } from './controls.js'
+export { Button, Chip, Label, AbilityText, Rows, Row, Switch, inputClass } from './controls.js'
 export { ReminderText } from './ReminderText.js'
 export { PALETTE, contrastRatio, relativeLuminance } from './palette.js'
 export * from './icons.js'

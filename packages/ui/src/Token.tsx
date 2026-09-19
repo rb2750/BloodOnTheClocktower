@@ -57,7 +57,7 @@ export function Token({
       )}
       {src ? (
         <img className="token-art" src={src} alt="" loading="lazy" decoding="async" />
-      ) : (
+      ) : children ? null : (
         <span className="token-initials">{initials(name)}</span>
       )}
       {children}

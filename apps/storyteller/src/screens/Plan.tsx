@@ -15,7 +15,7 @@ import {
   scriptCharacters,
   type Script,
 } from '@botc/rules'
-import { Button, Label, Plus, Close, Dice, Import, Ring, Scroll, Candle } from '@botc/ui'
+import { Button, Label, Rows, Row, inputClass, Plus, Close, Dice, Import } from '@botc/ui'
 import { useStore } from '../state/store.js'
 import { Screen } from '../components/Screen.js'
 import { CharacterToken } from '../components/CharacterToken.js'
@@ -150,24 +150,17 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
 
   return (
     <Screen
-      title={
-        game && game.phase.k !== 'setup' ? (
-          <button onClick={() => go('run')} className="text-(--accent)">
-            Return to the game in progress
-          </button>
-        ) : (
-          'New game'
-        )
+      title="New game"
+      subtitle={
+        step === 'players'
+          ? playerCount > 0
+            ? `${playerCount} at the table`
+            : undefined
+          : step === 'script'
+            ? `${playerCount} players`
+            : scriptName
       }
-      trailing={
-        <button
-          onClick={() => go('settings')}
-          aria-label="Settings"
-          className="text-(--text-faint)"
-        >
-          <Candle size={18} />
-        </button>
-      }
+      onBack={() => (game && game.phase.k !== 'setup' ? go('run') : go('home'))}
       bottom={
         step === 'players' ? (
           <Button
@@ -213,7 +206,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
               onChange={(e) => setDraft(e.target.value)}
               placeholder="Add a name"
               autoComplete="off"
-              className="min-h-(--tap-min) flex-1 rounded-(--radius-surface) border border-(--hairline) bg-(--surface) px-4 text-[16px] text-(--text) outline-none placeholder:text-(--text-faint) focus:border-(--hairline-strong)"
+              className={`${inputClass} flex-1`}
             />
             <Button type="submit" aria-label="Add player" disabled={!draft.trim()}>
               <Plus size={20} />
@@ -221,24 +214,27 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
           </form>
 
           {names.length > 0 && (
-            <ul className="mt-4 space-y-1">
+            <Rows className="mt-4">
               {names.map((name, i) => (
-                <li
+                <Row
                   key={name}
-                  className="flex items-center gap-3 rounded-(--radius-surface) border border-(--hairline) bg-(--surface) px-4 py-2"
+                  leading={
+                    <span className="tabular w-5 text-[13px] text-(--text-faint)">{i + 1}</span>
+                  }
+                  trailing={
+                    <button
+                      onClick={() => setNames((n) => n.filter((x) => x !== name))}
+                      aria-label={`Remove ${name}`}
+                      className="grid size-9 place-items-center text-(--text-faint)"
+                    >
+                      <Close size={16} />
+                    </button>
+                  }
                 >
-                  <span className="tabular w-6 text-[13px] text-(--text-faint)">{i + 1}</span>
-                  <span className="flex-1 text-[15px]">{name}</span>
-                  <button
-                    onClick={() => setNames((n) => n.filter((x) => x !== name))}
-                    aria-label={`Remove ${name}`}
-                    className="grid size-9 place-items-center text-(--text-faint)"
-                  >
-                    <Close size={16} />
-                  </button>
-                </li>
+                  {name}
+                </Row>
               ))}
-            </ul>
+            </Rows>
           )}
 
           {roster.length > 0 && (
@@ -251,7 +247,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
                     <button
                       key={r.id}
                       onClick={() => addName(r.name)}
-                      className="min-h-9 rounded-full border border-(--hairline) px-3 text-[13px] text-(--text-dim)"
+                      className="min-h-9 rounded-full border border-(--hairline-strong) px-3 text-[13px] text-(--text-dim)"
                     >
                       {r.name}
                     </button>
@@ -267,37 +263,39 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
       {step === 'script' && (
         <section className="pb-6">
           <Label>Official scripts</Label>
-          <div className="space-y-2">
+          <Rows>
             {BASE_SCRIPTS.map((e) => (
-              <ScriptRow
+              <Row
                 key={e.id}
-                name={e.name}
-                detail={e.level}
+                trailing={e.level}
                 onClick={() => chooseScript(editionScript(e.id, e.name), e.name)}
-              />
+              >
+                {e.name}
+              </Row>
             ))}
-          </div>
+          </Rows>
 
           {savedScripts.length > 0 && (
             <>
               <div className="mt-6" />
               <Label>Your scripts</Label>
-              <div className="space-y-2">
+              <Rows>
                 {savedScripts.map((s) => (
-                  <ScriptRow
+                  <Row
                     key={s.id}
-                    name={s.name}
-                    detail={`${s.script.characterIds.length} characters`}
+                    trailing={`${s.script.characterIds.length} characters`}
                     onClick={() => chooseScript(s.script, s.name)}
-                  />
+                  >
+                    {s.name}
+                  </Row>
                 ))}
-              </div>
+              </Rows>
             </>
           )}
 
           <div className="mt-6">
             <Label>Import</Label>
-            <label className="flex min-h-(--tap-min) cursor-pointer items-center justify-center gap-2 rounded-(--radius-surface) border border-dashed border-(--hairline) text-[14px] text-(--text-dim)">
+            <label className="flex min-h-(--tap-min) cursor-pointer items-center justify-center gap-2 rounded-(--radius-surface) border border-dashed border-(--hairline-strong) text-[14px] font-medium text-(--text-dim)">
               <Import size={16} />
               Script Tool or botcscripts JSON
               <input
@@ -351,7 +349,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
                       }}
                     >
                       <CharacterToken character={c} size="56px" />
-                      <span className="text-center text-[10px] leading-tight text-(--text-faint)">
+                      <span className="caps text-center text-[9px] leading-tight text-(--text-faint)">
                         {c?.name}
                       </span>
                     </button>
@@ -360,7 +358,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
               </div>
             </>
           ) : (
-            <p className="mt-6 text-center text-[14px] text-(--text-faint)">
+            <p className="serif mt-8 text-center text-[16px] text-(--text-faint)">
               {scriptName} is ready. Deal when you are.
             </p>
           )}
@@ -371,7 +369,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
               <Label>
                 Travellers — {travellerCount} of {playerCount} must be
               </Label>
-              <p className="mb-3 text-[13px] leading-snug text-(--text-faint)">
+              <p className="serif mb-3 text-[14px] leading-snug text-(--text-faint)">
                 The composition table stops at fifteen, so these seats sit outside it. You choose
                 each Traveller&rsquo;s alignment yourself once the game starts.
               </p>
@@ -395,7 +393,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
                       }}
                     >
                       <CharacterToken character={c} size="56px" />
-                      <span className="text-center text-[10px] leading-tight text-(--text-faint)">
+                      <span className="caps text-center text-[9px] leading-tight text-(--text-faint)">
                         {c?.name}
                       </span>
                     </button>
@@ -410,6 +408,8 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
   )
 }
 
+/** Setup is a sequence, so it is drawn as one: three labels on a rule, the
+ *  done ones lit. */
 function Stepper({
   step,
   onStep,
@@ -421,52 +421,38 @@ function Stepper({
   hasScript: boolean
   count: number
 }) {
-  const steps: { id: Step; label: string; icon: typeof Ring; enabled: boolean }[] = [
-    { id: 'players', label: 'Players', icon: Ring, enabled: true },
-    { id: 'script', label: 'Script', icon: Scroll, enabled: count >= 5 },
-    { id: 'deal', label: 'Deal', icon: Dice, enabled: hasScript },
+  const steps: { id: Step; label: string; enabled: boolean }[] = [
+    { id: 'players', label: 'Players', enabled: true },
+    { id: 'script', label: 'Script', enabled: count >= 5 },
+    { id: 'deal', label: 'Deal', enabled: hasScript },
   ]
+  const at = steps.findIndex((s) => s.id === step)
   return (
-    <nav className="mb-5 mt-1 flex gap-1">
-      {steps.map((s) => {
+    <nav className="mb-6 mt-2 flex items-center">
+      {steps.map((s, i) => {
         const active = s.id === step
+        const done = i < at
         return (
-          <button
-            key={s.id}
-            disabled={!s.enabled}
-            onClick={() => onStep(s.id)}
-            className={`flex min-h-10 flex-1 items-center justify-center gap-2 rounded-(--radius-surface) border text-[13px] transition-colors disabled:opacity-35 ${
-              active
-                ? 'border-(--hairline-strong) text-(--accent)'
-                : 'border-transparent text-(--text-faint)'
-            }`}
-          >
-            <s.icon size={15} />
-            {s.label}
-          </button>
+          <span key={s.id} className="contents">
+            {i > 0 && <span className="mx-3 h-px flex-1 bg-(--hairline)" aria-hidden />}
+            <button
+              disabled={!s.enabled}
+              onClick={() => onStep(s.id)}
+              aria-current={active ? 'step' : undefined}
+              className={`caps min-h-10 pb-0.5 transition-colors disabled:opacity-35 ${
+                active
+                  ? 'border-b border-(--accent) text-(--text)'
+                  : done
+                    ? 'text-(--text-dim)'
+                    : 'text-(--text-faint)'
+              }`}
+            >
+              {s.label}
+            </button>
+          </span>
         )
       })}
     </nav>
-  )
-}
-
-function ScriptRow({
-  name,
-  detail,
-  onClick,
-}: {
-  name: string
-  detail: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex min-h-(--tap-min) w-full items-center justify-between rounded-(--radius-surface) border border-(--hairline) bg-(--surface) px-4 text-left"
-    >
-      <span className="text-[15px]">{name}</span>
-      <span className="text-[12px] text-(--text-faint)">{detail}</span>
-    </button>
   )
 }
 
@@ -474,7 +460,7 @@ function CompositionPreview({ count }: { count: number }) {
   const c = baseComposition(count)
   const travellers = requiredTravellers(count)
   return (
-    <div className="mt-6 rounded-(--radius-surface) border border-(--hairline) p-4">
+    <div className="mt-8 border-t border-(--hairline) pt-4">
       <Label>A {count}-player game needs</Label>
       <dl className="grid grid-cols-4 gap-2 text-center">
         {(
@@ -486,13 +472,13 @@ function CompositionPreview({ count }: { count: number }) {
           ] as const
         ).map(([label, n]) => (
           <div key={label}>
-            <dd className="tabular display text-[22px] text-(--text)">{n}</dd>
-            <dt className="text-[10px] uppercase tracking-wider text-(--text-faint)">{label}</dt>
+            <dd className="tabular display text-[28px] text-(--text)">{n}</dd>
+            <dt className="caps mt-1 text-[9.5px] text-(--text-faint)">{label}</dt>
           </div>
         ))}
       </dl>
       {travellers > 0 && (
-        <p className="mt-3 text-[13px] text-(--accent)">
+        <p className="serif mt-3 text-[14px] leading-snug text-(--text-dim)">
           Above fifteen players the table does not grow, so {travellers} of them must be
           Travellers. The other {compositionTotal(c)} take the fifteen-player setup.
         </p>

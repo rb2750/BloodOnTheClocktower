@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { getCharacter, teamAlignment, type Character } from '@botc/rules'
-import { Button, Chip, Label, Sheet, Plus, Shroud, Trash, Close } from '@botc/ui'
+import { Button, Chip, Label, Sheet, inputClass, Plus, Shroud, Trash, Close } from '@botc/ui'
 import { useStore } from '../state.js'
 import { CharacterToken } from '../components/CharacterToken.js'
 
@@ -34,7 +34,7 @@ export function NotesScreen() {
       <section className="px-5 pb-8 pt-5">
         <div className="mb-4 flex items-baseline justify-between">
           <Label>Everyone at the table</Label>
-          <span className="text-[12px] text-(--text-faint)">{phase}</span>
+          <span className="caps text-(--text-faint)">{phase}</span>
         </div>
 
         <form
@@ -52,7 +52,7 @@ export function NotesScreen() {
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Add a name"
             autoComplete="off"
-            className="min-h-(--tap-min) flex-1 rounded-(--radius-surface) border border-(--hairline) bg-(--bg) px-4 text-[16px] text-(--text) outline-none placeholder:text-(--text-faint) focus:border-(--hairline-strong)"
+            className={`${inputClass} flex-1`}
           />
           <Button type="submit" aria-label="Add" disabled={!draft.trim()}>
             <Plus size={20} />
@@ -60,11 +60,11 @@ export function NotesScreen() {
         </form>
 
         {names.length === 0 ? (
-          <p className="px-4 py-10 text-center text-[14px] leading-snug text-(--text-faint)">
+          <p className="serif px-4 py-10 text-center text-[15px] leading-snug text-(--text-faint)">
             Add the people around you and you can record what they claim with a single tap.
           </p>
         ) : (
-          <ul className="space-y-1">
+          <ul className="m-0 list-none border-t border-(--hairline) p-0">
             {names.map((name) => {
               const note = notes[name]!
               const claim = note.claims.at(-1)
@@ -73,7 +73,7 @@ export function NotesScreen() {
                 <li key={name}>
                   <button
                     onClick={() => setOpen(name)}
-                    className="flex min-h-(--tap-min) w-full items-center gap-3 rounded-(--radius-surface) border border-(--hairline) px-3 py-2 text-left"
+                    className="flex min-h-(--tap-min) w-full items-center gap-3 border-b border-(--hairline) py-2 text-left active:bg-(--surface-raised)"
                   >
                     <CharacterToken character={claimed} size="38px" muted />
                     <span className="min-w-0 flex-1">
@@ -152,7 +152,7 @@ function NoteSheet({ name, onClose }: { name: string | null; onClose: () => void
                     <span className="text-(--text-faint)">{c.at}</span>
                     <span className="text-(--text)">{getCharacter(c.characterId)?.name}</span>
                     {i < note.claims.length - 1 && (
-                      <span className="text-[11px] text-(--accent)">then changed</span>
+                      <span className="caps text-(--text-faint)">then changed</span>
                     )}
                   </li>
                 ))}
@@ -189,7 +189,7 @@ function NoteSheet({ name, onClose }: { name: string | null; onClose: () => void
                 value={line}
                 onChange={(e) => setLine(e.target.value)}
                 placeholder={`What did ${note.name} say?`}
-                className="min-h-(--tap-min) flex-1 rounded-(--radius-surface) border border-(--hairline) bg-(--bg) px-4 text-[16px] text-(--text) outline-none placeholder:text-(--text-faint) focus:border-(--hairline-strong)"
+                className={`${inputClass} flex-1`}
               />
               <Button type="submit" aria-label="Save note" disabled={!line.trim()}>
                 <Plus size={20} />
@@ -200,10 +200,10 @@ function NoteSheet({ name, onClose }: { name: string | null; onClose: () => void
               <ul className="mt-3 space-y-1">
                 {note.lines.map((l) => (
                   <li key={l.id} className="flex items-start gap-2">
-                    <span className="mt-[3px] shrink-0 text-[11px] uppercase tracking-wider text-(--text-faint)">
+                    <span className="caps mt-[3px] shrink-0 text-[10px] text-(--text-faint)">
                       {l.at}
                     </span>
-                    <span className="flex-1 text-[14px] leading-snug text-(--text-dim)">
+                    <span className="serif flex-1 text-[15px] leading-snug text-(--text-dim)">
                       {l.text}
                     </span>
                     <button
@@ -259,7 +259,7 @@ function NoteSheet({ name, onClose }: { name: string | null; onClose: () => void
                 size="52px"
                 alignment={teamAlignment(c.team) === 'evil' ? 'evil' : 'good'}
               />
-              <span className="text-center text-[10px] leading-tight text-(--text-faint)">
+              <span className="caps text-center text-[9px] leading-tight text-(--text-faint)">
                 {c.name}
               </span>
             </button>

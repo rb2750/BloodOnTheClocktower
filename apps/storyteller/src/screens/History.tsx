@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { getCharacter } from '@botc/rules'
-import { Button, Label, Export } from '@botc/ui'
+import { Button, Label, Rows, Row, Export } from '@botc/ui'
 import { useStore } from '../state/store.js'
 import { Screen } from '../components/Screen.js'
 import type { Screen as ScreenName } from '../App.js'
@@ -28,7 +28,7 @@ export function HistoryScreen({ go }: { go: (s: ScreenName) => void }) {
   return (
     <Screen
       title="Past games"
-      onBack={() => go('settings')}
+      onBack={() => go('home')}
       bottom={
         history.length > 0 ? (
           <Button className="w-full" onClick={exportAll}>
@@ -43,36 +43,36 @@ export function HistoryScreen({ go }: { go: (s: ScreenName) => void }) {
           Finished games are kept here, with a walk through what happened.
         </p>
       ) : (
-        <ul className="space-y-2 pb-6">
+        <Rows className="pb-6">
           {history.map((g) => (
-            <li key={g.id}>
-              <button
-                onClick={() => setOpenId(g.id)}
-                className="w-full rounded-(--radius-surface) border border-(--hairline) p-4 text-left"
-              >
-                <div className="flex items-baseline justify-between">
-                  <span className="text-[15px]">{g.scriptName}</span>
-                  <span
-                    className={
-                      g.phase.k === 'ended' && g.phase.winner === 'good'
-                        ? 'text-[13px] text-(--color-blue-2)'
-                        : 'text-[13px] text-(--color-red-2)'
-                    }
-                  >
-                    {g.phase.k === 'ended'
-                      ? g.phase.winner === 'good'
-                        ? 'Good won'
-                        : 'Evil won'
-                      : 'Unfinished'}
-                  </span>
-                </div>
-                <div className="mt-1 text-[12px] text-(--text-faint)">
-                  {new Date(g.createdAt).toLocaleDateString()} · {g.seats.length} players
-                </div>
-              </button>
-            </li>
+            <Row
+              key={g.id}
+              onClick={() => setOpenId(g.id)}
+              trailing={
+                <span
+                  className={
+                    g.phase.k === 'ended' && g.phase.winner === 'good'
+                      ? 'text-(--color-blue-2)'
+                      : g.phase.k === 'ended'
+                        ? 'text-(--color-red-2)'
+                        : undefined
+                  }
+                >
+                  {g.phase.k === 'ended'
+                    ? g.phase.winner === 'good'
+                      ? 'Good won'
+                      : 'Evil won'
+                    : 'Unfinished'}
+                </span>
+              }
+            >
+              <span className="block">{g.scriptName}</span>
+              <span className="caps block text-(--text-faint)">
+                {new Date(g.createdAt).toLocaleDateString()} · {g.seats.length} players
+              </span>
+            </Row>
           ))}
-        </ul>
+        </Rows>
       )}
     </Screen>
   )
@@ -95,7 +95,7 @@ function Recap({ game, onBack }: { game: Game; onBack: () => void }) {
             return (
               <li
                 key={seat.id}
-                className="flex items-baseline justify-between rounded-(--radius-surface) border border-(--hairline) px-4 py-2"
+                className="flex items-baseline justify-between border-b border-(--hairline) py-2 first:border-t"
               >
                 <span className="text-[14px]">{seat.name}</span>
                 <span className="text-[13px] text-(--text-dim)">
@@ -118,9 +118,7 @@ function Recap({ game, onBack }: { game: Game; onBack: () => void }) {
               <li key={entry.id}>
                 {showPhase && (
                   <div className="mb-1 mt-4 flex items-center gap-2 first:mt-0">
-                    <span className="display text-[11px] text-(--text-faint)">
-                      {entry.phase}
-                    </span>
+                    <span className="caps text-(--text-faint)">{entry.phase}</span>
                     <span className="h-px flex-1 bg-(--hairline)" />
                   </div>
                 )}

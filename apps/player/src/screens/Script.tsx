@@ -34,7 +34,7 @@ export function ScriptScreen() {
 
   if (scriptIds.length === 0) {
     return (
-      <p className="px-8 py-16 text-center text-[14px] text-(--text-faint)">
+      <p className="serif px-8 py-16 text-center text-[15px] text-(--text-faint)">
         The script will appear here once you have scanned the Storyteller&rsquo;s code.
       </p>
     )
@@ -44,12 +44,12 @@ export function ScriptScreen() {
     <>
       <section className="px-5 pb-8 pt-5">
         {scriptName && (
-          <h1 className="display mb-5 text-center text-[16px] text-(--text)">{scriptName}</h1>
+          <h1 className="display mb-6 text-center text-[26px] text-(--text)">{scriptName}</h1>
         )}
         {grouped.map((group) => (
           <div key={group.team} className="mb-6">
             <Label>{HEADING[group.team] ?? group.team}</Label>
-            <ul className="space-y-1">
+            <ul className="m-0 list-none border-t border-(--hairline) p-0">
               {group.characters.map((c) => (
                 <li key={c.id}>
                   <CharacterRow character={c} onClick={() => setOpen(c)} />
@@ -70,7 +70,7 @@ export function ScriptScreen() {
           <div className="space-y-4 pb-2">
             <AbilityText>{open.ability}</AbilityText>
             {open.flavor && (
-              <p className="serif m-0 border-l border-(--hairline-strong) pl-3 text-[15px] italic leading-snug text-(--text-faint)">
+              <p className="serif m-0 border-l-2 border-(--hairline-strong) pl-3 text-[15px] italic leading-snug text-(--text-faint)">
                 {open.flavor}
               </p>
             )}
@@ -82,7 +82,7 @@ export function ScriptScreen() {
                     .filter((j) => useStore.getState().scriptIds.includes(j.with))
                     .map((j) => (
                       <li key={j.with}>
-                        <div className="text-[13px] text-(--accent)">
+                        <div className="text-[14px] font-medium text-(--text)">
                           {getCharacter(j.with)?.name}
                         </div>
                         <p className="serif m-0 text-[15px] leading-snug text-(--text-dim)">

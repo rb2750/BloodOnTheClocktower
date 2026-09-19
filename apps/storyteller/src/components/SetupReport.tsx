@@ -31,7 +31,7 @@ export function SetupReport({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-(--radius-surface) border border-(--hairline) p-4">
+      <div className="border-b border-(--hairline) pb-4">
         <Label>{changed ? 'Adjusted for the characters in play' : 'Composition'}</Label>
         <dl className="grid grid-cols-4 gap-2 text-center">
           {(
@@ -44,15 +44,13 @@ export function SetupReport({
           ).map(([label, n, was]) => (
             <div key={label}>
               <dd
-                className={`tabular display text-[22px] ${
-                  n !== was ? 'text-(--accent)' : 'text-(--text)'
+                className={`tabular display text-[28px] ${
+                  n !== was ? 'text-(--now)' : 'text-(--text)'
                 }`}
               >
                 {n}
               </dd>
-              <dt className="text-[10px] uppercase tracking-wider text-(--text-faint)">
-                {label}
-              </dt>
+              <dt className="caps mt-1 text-[9.5px] text-(--text-faint)">{label}</dt>
               {n !== was && (
                 <dd className="tabular text-[10px] text-(--text-faint)">was {was}</dd>
               )}
@@ -61,7 +59,7 @@ export function SetupReport({
         </dl>
 
         {bagDiffers && (
-          <p className="mt-3 border-t border-(--hairline) pt-3 text-[13px] text-(--text-dim)">
+          <p className="serif mt-3 border-t border-(--hairline) pt-3 text-[15px] leading-snug text-(--text-dim)">
             The bag is not the same as the composition here. Deal{' '}
             <strong className="text-(--text)">{bag.townsfolk} Townsfolk</strong> and{' '}
             <strong className="text-(--text)">{bag.outsider} Outsider</strong> tokens, because
@@ -77,11 +75,8 @@ export function SetupReport({
       ))}
 
       {resolution.pendingChoices.map((choice) => (
-        <div
-          key={choice.characterId}
-          className="rounded-(--radius-surface) border border-(--hairline-strong) p-4"
-        >
-          <div className="mb-3 flex items-center gap-2 text-[14px] text-(--accent)">
+        <div key={choice.characterId} className="border-b border-(--hairline) pb-4">
+          <div className="mb-3 flex items-center gap-2 text-[15px] text-(--text)">
             <Question size={16} />
             {choice.prompt}
           </div>
@@ -90,10 +85,10 @@ export function SetupReport({
               <button
                 key={option.label}
                 onClick={() => onChoose(choice.characterId, i)}
-                className={`min-h-10 rounded-full border px-4 text-[13px] ${
+                className={`min-h-10 rounded-full border px-4 text-[13px] font-medium ${
                   choices[choice.characterId] === i
-                    ? 'border-(--accent) text-(--accent)'
-                    : 'border-(--hairline) text-(--text-dim)'
+                    ? 'border-(--accent) bg-(--accent) text-(--bg)'
+                    : 'border-(--hairline-strong) text-(--text-dim)'
                 }`}
               >
                 {option.label}
@@ -138,12 +133,12 @@ export function SetupReport({
       )}
 
       {jinxes.length > 0 && (
-        <div className="rounded-(--radius-surface) border border-(--hairline-strong) p-4">
+        <div className="border-b border-(--hairline) pb-4">
           <Label>Jinxes in play</Label>
           <ul className="space-y-2">
             {jinxes.map((j) => (
               <li key={`${j.a}-${j.b}`}>
-                <div className="text-[13px] text-(--accent)">
+                <div className="text-[14px] font-medium text-(--text)">
                   {getCharacter(j.a)?.name} &amp; {getCharacter(j.b)?.name}
                 </div>
                 <p className="serif m-0 text-[15px] leading-snug text-(--text-dim)">{j.reason}</p>
@@ -168,20 +163,12 @@ function Callout({
   children: React.ReactNode
 }) {
   const border =
-    tone === 'bad'
-      ? 'border-(--color-red)'
-      : tone === 'open'
-        ? 'border-(--hairline-strong)'
-        : 'border-(--hairline)'
+    tone === 'bad' ? 'border-(--color-red)' : tone === 'open' ? 'border-(--now)' : 'border-(--hairline-strong)'
   const colour =
-    tone === 'bad'
-      ? 'text-(--color-red-2)'
-      : tone === 'open'
-        ? 'text-(--accent)'
-        : 'text-(--text-dim)'
+    tone === 'bad' ? 'text-(--color-red-2)' : tone === 'open' ? 'text-(--now)' : 'text-(--text-dim)'
   return (
-    <div className={`rounded-(--radius-surface) border ${border} p-4`}>
-      <div className={`mb-1 flex items-center gap-2 text-[13px] ${colour}`}>
+    <div className={`border-l-2 ${border} pl-3`}>
+      <div className={`mb-1 flex items-center gap-2 text-[14px] font-medium ${colour}`}>
         <Icon size={15} />
         {title}
       </div>

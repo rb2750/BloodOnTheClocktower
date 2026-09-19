@@ -11,6 +11,8 @@ import { ChevronLeft } from '@botc/ui'
  */
 export function Screen({
   title,
+  subtitle,
+  onTitle,
   onBack,
   trailing,
   children,
@@ -18,6 +20,10 @@ export function Screen({
   fill = false,
 }: {
   title: ReactNode
+  /** A small caps line under the title: the count, the step. */
+  subtitle?: ReactNode
+  /** Makes the title a button, for the log. */
+  onTitle?: () => void
   onBack?: () => void
   trailing?: ReactNode
   children: ReactNode
@@ -26,6 +32,12 @@ export function Screen({
    *  the live grimoire, which should never leave a dead gap above the controls. */
   fill?: boolean
 }) {
+  const heading = (
+    <>
+      <h1 className="display text-[22px] leading-none text-(--text)">{title}</h1>
+      {subtitle && <div className="caps mt-1 text-(--text-faint)">{subtitle}</div>}
+    </>
+  )
   return (
     <div className="flex h-full flex-col bg-(--bg)">
       <header
@@ -36,14 +48,20 @@ export function Screen({
           <button
             onClick={onBack}
             aria-label="Back"
-            className="grid size-11 place-items-center rounded-full text-(--text-dim)"
+            className="grid size-11 place-items-center text-(--text-dim)"
           >
-            <ChevronLeft size={22} strokeWidth={2.25} />
+            <ChevronLeft size={22} strokeWidth={1.75} />
           </button>
         ) : (
           <span className="size-11" />
         )}
-        <h1 className="flex-1 text-center text-[13px] text-(--text-dim)">{title}</h1>
+        {onTitle ? (
+          <button onClick={onTitle} className="flex-1 text-center">
+            {heading}
+          </button>
+        ) : (
+          <div className="flex-1 text-center">{heading}</div>
+        )}
         <span className="flex size-11 items-center justify-center">{trailing}</span>
       </header>
 
@@ -59,7 +77,7 @@ export function Screen({
 
       {bottom && (
         <div
-          className="shrink-0 border-t border-(--hairline) bg-(--surface) px-5 pt-4"
+          className="shrink-0 border-t border-(--hairline) bg-(--surface) px-5 pt-3"
           style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 14px)' }}
         >
           {bottom}

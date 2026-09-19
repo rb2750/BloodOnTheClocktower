@@ -54,7 +54,7 @@ export function DayPanel({ onOpenSeat }: { onOpenSeat: (id: string) => void }) {
           <>
             <div className="mb-2 flex items-baseline justify-between">
               <Label>Day {day}</Label>
-              <span className="text-[12px] text-(--text-faint)">
+              <span className="caps text-(--text-faint)">
                 {today.length} nomination{today.length === 1 ? '' : 's'}
               </span>
             </div>
@@ -150,10 +150,10 @@ export function DayPanel({ onOpenSeat }: { onOpenSeat: (id: string) => void }) {
                     toast(`${seatName(nominating!.nominatorId!)} nominates ${seat.name}.`)
                   }
                 }}
-                className="flex min-h-(--tap-min) flex-col items-start justify-center rounded-(--radius-surface) border border-(--hairline) px-4 py-2 text-left disabled:opacity-30"
+                className="flex min-h-(--tap-min) flex-col items-start justify-center rounded-(--radius-surface) border border-(--hairline-strong) px-4 py-2 text-left disabled:opacity-30"
               >
                 <span className="text-[14px]">{seat.name}</span>
-                <span className="text-[11px] text-(--text-faint)">
+                <span className="caps text-[9.5px] text-(--text-faint)">
                   {check.allowed
                     ? (getCharacter(seat.characterId ?? '')?.name ?? '—')
                     : check.reason}
@@ -194,7 +194,7 @@ function VoteInProgress({
         <Label>
           {nominator} nominated {nominee}
         </Label>
-        <span className="tabular display text-[20px] text-(--accent)">{tally}</span>
+        <span className="tabular display text-[28px] leading-none text-(--now)">{tally}</span>
       </div>
 
       <SayThis>{votesNeededPhrase(nominee, aliveCount, blockVotes)}</SayThis>
@@ -208,10 +208,10 @@ function VoteInProgress({
               key={seat.id}
               disabled={!canVote && !voting}
               onClick={() => onToggle(seat.id)}
-              className={`min-h-9 rounded-full border px-3 text-[12px] transition-colors disabled:opacity-25 ${
+              className={`min-h-9 rounded-full border px-3 text-[12px] font-medium transition-colors disabled:opacity-25 ${
                 voting
-                  ? 'border-(--accent) bg-[color-mix(in_oklab,var(--accent)_16%,transparent)] text-(--accent)'
-                  : 'border-(--hairline) text-(--text-dim)'
+                  ? 'border-(--now) bg-(--now) text-(--bg)'
+                  : 'border-(--hairline-strong) text-(--text-dim)'
               }`}
             >
               {seat.name}
@@ -232,8 +232,8 @@ function VoteInProgress({
  *  silent, gestural instructions the night panel gives. */
 function SayThis({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-2 rounded-(--radius-surface) border border-(--hairline) bg-(--bg) px-3 py-2">
-      <Quote size={13} className="mt-1 shrink-0 text-(--hairline-strong)" />
+    <div className="flex items-start gap-2 border-l-2 border-(--text) py-0.5 pl-3">
+      <Quote size={14} className="mt-[3px] shrink-0 text-(--text-faint)" />
       <p className="serif m-0 text-[17px] leading-snug text-(--text)">{children}</p>
     </div>
   )

@@ -12,17 +12,17 @@ import { parseReminderMarkup } from '@botc/rules'
 export function ReminderText({ source }: { source: string }) {
   const nodes = parseReminderMarkup(source)
   return (
-    <span className="serif text-[17px] leading-snug text-(--text)">
+    <span className="serif text-[16px] leading-snug text-(--text)">
       {nodes.map((node, i) => {
         if (node.kind === 'text') return <span key={i}>{node.value}</span>
         if (node.kind === 'reminder') {
           return (
             <span
               key={i}
-              className="mx-1 inline-flex translate-y-[2px] items-center gap-1 rounded-full border border-(--hairline-strong) px-2 py-[1px] align-middle text-[11px] uppercase tracking-wider text-(--accent)"
+              className="caps mx-1 inline-flex translate-y-[-1px] items-center gap-1 align-middle text-[10px] text-(--text-dim)"
             >
               <span
-                className="inline-block size-2 rounded-full border border-(--accent)"
+                className="inline-block size-2 rounded-full border border-(--text-dim)"
                 aria-hidden
               />
               reminder
@@ -32,7 +32,7 @@ export function ReminderText({ source }: { source: string }) {
         return (
           <strong
             key={i}
-            className="mx-[2px] rounded bg-(--surface-raised) px-[5px] py-[1px] font-sans text-[13px] font-medium uppercase tracking-wide text-(--text)"
+            className="caps mx-[2px] rounded-[3px] bg-(--text) px-[5px] py-[1px] text-[11px] text-(--bg)"
           >
             {node.value}
           </strong>
