@@ -1,0 +1,17 @@
+{
+  "fetchedAt": "2026-09-19T01:52:30.324Z",
+  "source": "https://raw.githubusercontent.com/ThePandemoniumInstitute/botc-release/main",
+  "notice": "Blood on the Clocktower is a trademark of Steven Medway and The Pandemonium Institute. Character text and art are used non-commercially under the Community Created Content Policy. This project is not affiliated with The Pandemonium Institute.",
+  "sha256": {
+    "roles": "6c659354dee75cf3afdeaf6cbc750b274a87d1099cc5f68651a2114881eb85ca",
+    "jinxes": "5d3d8d0ac194fb1ea44af79b74f9e4bdc09712aef2123c3a3ef2b6c43efa7df7",
+    "nightsheet": "99a2815bb31bcec3e107bf7f1c2fb305e301d317981d855704d3d954ec4c3f75",
+    "schema": "fe5592e0e3ae8f082419c7d64056fc68a8791487f7585ebbf9fe23699df4da74"
+  },
+  "counts": {
+    "characters": 181,
+    "jinxPairs": 131,
+    "firstNightSteps": 80,
+    "otherNightSteps": 99
+  }
+}

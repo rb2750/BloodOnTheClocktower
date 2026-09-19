@@ -1,0 +1,34 @@
+[
+  {
+    "id": "dusk",
+    "name": "Dusk",
+    "firstNight": 1,
+    "firstNightReminder": "Check that every eye is closed before you begin. Some Travellers act now.",
+    "otherNight": 1,
+    "otherNightReminder": "Check that every eye is closed before you begin. Some Travellers act now."
+  },
+  {
+    "id": "minioninfo",
+    "name": "Minion Info",
+    "firstNight": 20,
+    "firstNightReminder": "Seven or more players: wake all Minions together and let them see each other. Show the *THIS IS THE DEMON* token and point to the Demon.",
+    "otherNight": 0,
+    "otherNightReminder": ""
+  },
+  {
+    "id": "demoninfo",
+    "name": "Demon Info & Bluffs",
+    "firstNight": 24,
+    "firstNightReminder": "Seven or more players: wake the Demon. Show *THESE ARE YOUR MINIONS* and point to each Minion. Show *THESE CHARACTERS ARE NOT IN PLAY* and show three good characters that are not in play.",
+    "otherNight": 0,
+    "otherNightReminder": ""
+  },
+  {
+    "id": "dawn",
+    "name": "Dawn",
+    "firstNight": 78,
+    "firstNightReminder": "Wait about ten seconds, so the last wake cannot be timed by anyone listening. Call for eyes open, then immediately announce who died.",
+    "otherNight": 98,
+    "otherNightReminder": "Wait about ten seconds, so the last wake cannot be timed by anyone listening. Call for eyes open, then immediately announce who died."
+  }
+]

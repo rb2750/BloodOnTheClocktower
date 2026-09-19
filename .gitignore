@@ -1,0 +1,24 @@
+node_modules/
+dist/
+dist-ssr/
+.vite/
+coverage/
+*.local
+.DS_Store
+.wrangler/
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Design captures are build output, not source. Individual frames are large and
+# churn constantly; they are shared with the user directly rather than committed.
+design/
+!design/.gitkeep
+
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
