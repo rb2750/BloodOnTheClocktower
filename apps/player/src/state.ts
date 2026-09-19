@@ -121,10 +121,15 @@ export const useStore = create<PlayerState & PlayerActions>()(
       deviceId: newId(),
       hasRevealed: false,
 
+      // Notes are about the people in *this* game. A new room, or a per-player
+      // code for a different script, is a new game, and what you thought of
+      // Cara last week must not follow her to the next table.
       applyPayload: (payload) =>
         set((s) => {
           if (payload.kind === 'seat') {
             const ids = idsFor(payload.script)
+            const sameGame =
+              s.payload?.kind === 'seat' && s.scriptIds.join() === ids.join()
             return {
               payload,
               scriptIds: ids,
@@ -132,11 +137,13 @@ export const useStore = create<PlayerState & PlayerActions>()(
               // A per-player code carries the role outright, so there is
               // nothing to claim and nothing to wait for.
               seatId: s.seatId,
+              notes: sameGame ? s.notes : {},
+              messages: sameGame ? s.messages : [],
             }
           }
           // A code for the room we already sat down in keeps our seat; a code
-          // for another game clears it, along with the character that came
-          // with it.
+          // for another game clears it, along with everything that belonged
+          // to the old one.
           if (s.roomId === payload.room) return { payload }
           return {
             payload,
@@ -146,18 +153,16 @@ export const useStore = create<PlayerState & PlayerActions>()(
             characterId: null,
             hasRevealed: false,
             messages: [],
+            notes: {},
             table: [],
+            vote: null,
             cinematicPlayed: null,
             phaseKnown: false,
-            vote: null,
             storytellerKey: null,
             roleChanged: false,
           }
         }),
 
-      // A different character arriving over one we already hold is the
-      // Storyteller changing it mid-game, which deserves a buzz and a banner
-      // until the card has been held again.
       setRole: (characterId, scriptIds, scriptName) =>
         set((s) => {
           const changed = Boolean(s.characterId && s.characterId !== characterId)
