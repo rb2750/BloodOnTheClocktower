@@ -9,6 +9,7 @@
   },
   "scripts": {
     "data": "tsx scripts/fetch-data.ts",
+    "art": "tsx scripts/fetch-art.ts",
     "dev": "pnpm --filter @botc/storyteller dev",
     "dev:player": "pnpm --filter @botc/player dev",
     "build": "pnpm -r --filter './apps/*' build",

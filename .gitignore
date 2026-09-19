@@ -22,3 +22,6 @@ design/
 .env
 .env.*
 !.env.example
+
+# Character art is fetched at build time, never committed. See NOTICE.md.
+apps/*/public/art/

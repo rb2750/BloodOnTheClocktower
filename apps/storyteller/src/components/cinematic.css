@@ -1,0 +1,240 @@
+/*
+ * The phase cinematic.
+ *
+ * Authored as a fixed overlay driven by CSS keyframes rather than inside a view
+ * transition. A view transition is a one-shot morph of a snapshot: it pauses
+ * rendering to take that snapshot and blocks interaction while it runs, which
+ * fights tap-to-skip and would stutter on a fifteen-token grimoire.
+ *
+ * Everything here animates `transform`, `opacity` or `clip-path`, which stay on
+ * the compositor. Nothing animates a blur radius or a gradient geometry, and
+ * nothing runs after the cinematic ends: the app holds a screen wake lock for
+ * ninety minutes, so ambient animation would be a genuine battery cost.
+ */
+
+.cinematic {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  /* The veil is opaque by the time the title lands, so the swap underneath is
+     never seen. */
+  background: var(--bg);
+  animation: veil-in 260ms var(--ease-veil) both;
+}
+
+.cinematic[data-leaving='true'] {
+  animation: veil-out 420ms var(--ease-exit) both;
+}
+
+@keyframes veil-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes veil-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Beat 2: a circular wipe from the centre. Both keyframes use the same shape
+   function with the same argument count, which is what keeps `clip-path` on
+   the compositor rather than forcing a repaint each frame. */
+.cinematic-wash {
+  position: absolute;
+  inset: 0;
+  clip-path: circle(0% at 50% 45%);
+  animation: wash 1100ms var(--ease-cinematic) 120ms both;
+}
+
+.cinematic[data-phase='night'] .cinematic-wash {
+  background:
+    radial-gradient(
+      ellipse 120% 80% at 50% 40%,
+      color-mix(in oklab, #1d2740 70%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(180deg, #0a0d16, var(--color-ink-900));
+}
+
+.cinematic[data-phase='day'] .cinematic-wash {
+  background:
+    radial-gradient(
+      ellipse 110% 70% at 50% 62%,
+      color-mix(in oklab, var(--color-brass-600) 34%, transparent),
+      transparent 68%
+    ),
+    linear-gradient(180deg, var(--color-ink-900), #171310);
+}
+
+@keyframes wash {
+  from {
+    clip-path: circle(0% at 50% 45%);
+  }
+  to {
+    clip-path: circle(150% at 50% 45%);
+  }
+}
+
+/* Beat 1: letterbox. The cheapest premium signal there is — two bars and a
+   transform, nothing else. */
+.cinematic-bar {
+  position: absolute;
+  inset-inline: 0;
+  height: 14vh;
+  background: #05070b;
+  animation: bar-in 760ms var(--ease-cinematic) both;
+}
+
+.cinematic-bar[data-edge='top'] {
+  top: 0;
+  transform-origin: top;
+}
+
+.cinematic-bar[data-edge='bottom'] {
+  bottom: 0;
+  transform-origin: bottom;
+}
+
+@keyframes bar-in {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* A vignette whose opacity animates. The gradient itself is painted once and
+   never re-laid-out. */
+.cinematic-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 45%, transparent 38%, rgb(0 0 0 / 0.72) 100%);
+  animation: fade-in 1200ms var(--ease-cinematic) 300ms both;
+}
+
+/* Beat 3: the title, opening its letter-spacing as it arrives. */
+.cinematic-title {
+  position: relative;
+  text-align: center;
+  padding-inline: 2rem;
+  animation: title-in 1400ms var(--ease-cinematic) 380ms both;
+}
+
+.cinematic-title .line {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-size: clamp(26px, 8.5vw, 44px);
+  font-weight: 600;
+  color: var(--color-parch-100);
+}
+
+.cinematic-title .sub {
+  margin-top: 0.75rem;
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: clamp(15px, 4vw, 18px);
+  color: var(--color-parch-500);
+  animation: fade-in 900ms var(--ease-cinematic) 820ms both;
+}
+
+@keyframes title-in {
+  from {
+    opacity: 0;
+    letter-spacing: 0.02em;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0.16em;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Two candle flames, out of phase on prime-ish durations so they never
+   re-sync. Capped at two, and they stop with the cinematic. */
+.cinematic-flame {
+  position: absolute;
+  width: 46vw;
+  height: 46vw;
+  border-radius: 50%;
+  filter: blur(28px);
+  opacity: 0;
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--color-brass-400) 46%, transparent),
+    transparent 62%
+  );
+  animation:
+    fade-in 900ms var(--ease-cinematic) 500ms both,
+    flicker var(--flicker, 3.1s) ease-in-out 1.2s infinite alternate;
+}
+
+@keyframes flicker {
+  from {
+    opacity: 0.32;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0.5;
+    transform: scale(1.06);
+  }
+}
+
+.cinematic-skip {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 18vh;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-parch-500);
+  animation: fade-in 600ms linear 700ms both;
+}
+
+/*
+ * Reduced motion: the phase change is a functional signal, not decoration, so
+ * it is replaced with a crossfade and a held title rather than removed.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .cinematic {
+    animation: veil-in 200ms linear both;
+  }
+  .cinematic-wash {
+    clip-path: circle(150% at 50% 45%);
+    animation: fade-in 200ms linear both;
+  }
+  .cinematic-bar,
+  .cinematic-flame {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .cinematic-flame {
+    opacity: 0.36;
+  }
+  .cinematic-title {
+    animation: fade-in 200ms linear both;
+    letter-spacing: 0.16em;
+  }
+}

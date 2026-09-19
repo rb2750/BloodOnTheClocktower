@@ -1,0 +1,12 @@
+@import 'tailwindcss';
+
+/* Self-hosted so the app works with no network. Cinzel carries only the few
+   display moments; Inter does all UI; Garamond carries ability text. */
+@import '@fontsource/cinzel/600.css';
+@import '@fontsource-variable/inter/index.css';
+@import '@fontsource-variable/eb-garamond/index.css';
+
+@import '@botc/ui/theme.css';
+@import '@botc/ui/grimoire.css';
+
+@source "../../../packages/ui/src";
