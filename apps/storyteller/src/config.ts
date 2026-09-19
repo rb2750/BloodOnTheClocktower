@@ -11,3 +11,6 @@ export const RELAY_URL: string = import.meta.env.VITE_RELAY_URL ?? ''
 /** Where the player companion is served from. */
 export const PLAYER_ORIGIN: string =
   import.meta.env.VITE_PLAYER_ORIGIN ?? `${window.location.origin}/player`
+
+/** Which build this is, for the foot of the home screen. */
+export const BUILD: string = __BUILD__

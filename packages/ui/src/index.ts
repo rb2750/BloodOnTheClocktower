@@ -5,6 +5,7 @@ export { Button, Chip, Label, AbilityText, Rows, Row, Switch, inputClass } from 
 export { ReminderText } from './ReminderText.js'
 export { Recovery } from './Recovery.js'
 export { Cinematic } from './Cinematic.js'
+export { BuildStamp } from './BuildStamp.js'
 export { PALETTE, contrastRatio, relativeLuminance } from './palette.js'
 export * from './icons.js'
 export type { IconProps } from './icons.js'

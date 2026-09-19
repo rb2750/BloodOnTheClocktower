@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { characterArt, getCharacter } from '@botc/rules'
-import { ChevronRight, Plus, Token, Button, inputClass } from '@botc/ui'
+import { ChevronRight, Plus, Token, Button, BuildStamp, inputClass } from '@botc/ui'
 import { useStore } from '../state.js'
 import { useRelay } from '../room.js'
+import { BUILD } from '../config.js'
 import { MeScreen } from './Me.js'
 import { HoldToReveal } from '../components/HoldToReveal.js'
 import { NoteSheet } from './Notes.js'
@@ -115,6 +116,8 @@ export function HomeScreen({ openRoles }: { openRoles: () => void }) {
           </button>
         </div>
       )}
+
+      <BuildStamp build={BUILD} />
 
       <Note name={open} onClose={() => setOpen(null)} />
     </>

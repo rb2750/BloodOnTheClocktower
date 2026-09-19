@@ -1,4 +1,5 @@
-import { Book, Candle, Hourglass, Ring, Rows, Row, Button, Scroll } from '@botc/ui'
+import { Book, Candle, Hourglass, Ring, Rows, Row, Button, Scroll, BuildStamp } from '@botc/ui'
+import { BUILD } from '../config.js'
 import { useStore, phaseLabel } from '../state/store.js'
 import type { Screen as ScreenName } from '../App.js'
 
@@ -80,6 +81,7 @@ export function HomeScreen({ go }: { go: (s: ScreenName) => void }) {
         <Button variant="primary" live className="w-full" onClick={() => go('plan')}>
           {live ? 'Start another game' : 'New game'}
         </Button>
+        <BuildStamp build={BUILD} />
       </div>
     </div>
   )

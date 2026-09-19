@@ -2,11 +2,24 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwind from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'node:child_process'
+
+// Stamped at build time, shown at the foot of the home screen, so two phones
+// can compare numbers across a table and a stale build has nowhere to hide.
+const git = (args: string) => {
+  try {
+    return execSync(`git ${args}`, { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+  } catch {
+    return ''
+  }
+}
+const BUILD = `${git('rev-list --count HEAD') || '0'} · ${git('rev-parse --short HEAD') || 'dev'}`
 
 const base = process.env.BOTC_PLAYER_BASE ?? '/'
 
 export default defineConfig({
   base,
+  define: { __BUILD__: JSON.stringify(BUILD) },
   plugins: [
     react(),
     tailwind(),
