@@ -138,7 +138,9 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
               if (seat.trueCharacterId === 'drunk') setSeatTrueCharacter(seat.id, undefined)
               else {
                 setSeatTrueCharacter(seat.id, 'drunk')
-                if (!seat.characterId || seat.characterId === 'drunk') setPicking('believed')
+                // The Drunk believes a Townsfolk. Anything else, or nothing,
+                // means the choice is still owed.
+                if (getCharacter(seat.characterId ?? '')?.team !== 'townsfolk') setPicking('believed')
               }
             }}
           />
