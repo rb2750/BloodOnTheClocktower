@@ -79,7 +79,8 @@ export function WhisperSheet({
     const line = templated ? sentence : text.trim()
     if (!line) return
     setSending(true)
-    const sent = await whisper(seat.id, line)
+    const id = Math.random().toString(36).slice(2, 10)
+    const sent = await whisper(seat.id, line, id)
     setSending(false)
     if (!sent) {
       toast.error(`${seat.name}'s phone is not connected.`)
@@ -89,6 +90,7 @@ export function WhisperSheet({
       toSeatId: seat.id,
       given: line,
       truthful: honest,
+      id,
     })
     setText('')
     setParts({})

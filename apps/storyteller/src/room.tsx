@@ -5,13 +5,14 @@ import {
   exportPublicKey,
   generateKeyMaterial,
   generateRoomId,
-  generateSealingPair,
+  keptSealingPair,
   indexesFor,
   sealFor,
   type RelayMessage,
   type RelayStatus,
 } from '@botc/protocol'
 import { getCharacter } from '@botc/rules'
+import { get as idbGet, set as idbSet } from 'idb-keyval'
 import { phaseLabel, useStore } from './state/store.js'
 import { RELAY_URL } from './config.js'
 
@@ -28,7 +29,7 @@ type Room = {
   status: RelayStatus
   /** Seats whose phone is connected and can be sent a private word. */
   reachable: string[]
-  whisper: (seatId: string, text: string) => Promise<boolean>
+  whisper: (seatId: string, text: string, id: string) => Promise<boolean>
 }
 
 const RoomContext = createContext<Room>({
@@ -83,9 +84,13 @@ export function RoomProvider({ children }: { children: ReactNode }) {
 
   const relay = useRef<Relay | null>(null)
   const pair = useRef<CryptoKeyPair | null>(null)
-  // Each player's own public key, learned when they claim their seat and
-  // refreshed every time they come back, since a reload makes a new one.
+  const resend = useRef<(seatId: string) => void>(() => {})
+  // Each player's own public key, learned when they claim their seat. Kept on
+  // disk per room, so a Storyteller whose app restarted mid-game can still
+  // reach every phone that has ever sat down.
   const keys = useRef<Map<string, string>>(new Map())
+  // What each seat was last told it is, so a changed character is sent again.
+  const told = useRef<Map<string, string>>(new Map())
 
   const roomId = game?.room?.id
   const hasGame = Boolean(game)
@@ -95,18 +100,77 @@ export function RoomProvider({ children }: { children: ReactNode }) {
     let cancelled = false
     const room = ensureRoom(() => ({ id: generateRoomId(), key: generateKeyMaterial() }))
 
+    const keysStore = `botc-keys-${room.id}`
+
+    // Everything a phone needs to catch up: who we are, who is here, what time
+    // it is, and how the vote stands. Sent on every connect, not just the
+    // first, so a Storyteller's phone coming back from a locked screen makes
+    // every player re-introduce itself and nothing stays stale.
+    const introduce = (client: Relay, pub: string) => {
+      const now = useStore.getState().game
+      client.send({ t: 'hello', pub })
+      client.send({ t: 'seats', seats: tableOf(now) })
+      const opening = phaseMessage(now)
+      if (opening) client.send(opening)
+      client.send(voteMessage(now))
+    }
+
+    const sendRole = (client: Relay, seatId: string) => {
+      const ours = pair.current
+      const theirs = keys.current.get(seatId)
+      const state = useStore.getState()
+      const seat = state.game?.seats.find((s) => s.id === seatId)
+      if (!ours || !theirs || !seat?.characterId) return
+      told.current.set(seat.id, seat.characterId)
+      // Sealed to this player's own key, so the broadcast is readable by
+      // exactly one device at the table.
+      void sealFor(ours, theirs, {
+        character: characterIndex(seat.characterId),
+        script: indexesFor((state.game?.script.characterIds ?? []).filter((id) => getCharacter(id))),
+        scriptName: state.game?.scriptName ?? '',
+      }).then((sealed) => client.send({ t: 'role', seatId: seat.id, sealed }))
+    }
+
+    // Everything this seat was ever told, sent again under the same ids. A
+    // phone that missed a word while asleep, or could not open it before its
+    // key was known, gets it the moment it sits back down.
+    const resendWhispers = (client: Relay, seatId: string) => {
+      const ours = pair.current
+      const theirs = keys.current.get(seatId)
+      const game = useStore.getState().game
+      if (!ours || !theirs || !game) return
+      for (const entry of game.log) {
+        if (entry.kind !== 'info' || entry.info?.toSeatId !== seatId || !entry.info.id) continue
+        const { id, given } = entry.info
+        void sealFor(ours, theirs, { text: given, at: entry.phase }).then((sealed) =>
+          client.send({ t: 'whisper', seatId, id, sealed }),
+        )
+      }
+    }
+
     const run = async () => {
-      const ours = await generateSealingPair()
+      const ours = await keptSealingPair(
+        () => idbGet('botc-storyteller-pair'),
+        (p) => idbSet('botc-storyteller-pair', p),
+      )
       if (cancelled) return
       pair.current = ours
       const pub = await exportPublicKey(ours)
+      const remembered = (await idbGet(keysStore).catch(() => undefined)) as
+        | Record<string, string>
+        | undefined
+      if (remembered) keys.current = new Map(Object.entries(remembered))
+      setReachable([...keys.current.keys()])
 
       const client = new Relay({
         url: RELAY_URL,
         room: room.id,
         key: room.key,
         role: 'host',
-        onStatus: setStatus,
+        onStatus: (status) => {
+          setStatus(status)
+          if (status === 'open') introduce(client, pub)
+        },
         onMessage: (message: RelayMessage) => {
           if (message.t !== 'claim') return
           const state = useStore.getState()
@@ -114,34 +178,17 @@ export function RoomProvider({ children }: { children: ReactNode }) {
           if (!seat || !pair.current) return
 
           keys.current.set(seat.id, message.pub)
+          void idbSet(keysStore, Object.fromEntries(keys.current))
           setReachable([...keys.current.keys()])
           recordClaim(seat.id, message.deviceId)
-          if (!seat.characterId) return
-
-          // Sealed to this player's own key, so the broadcast is readable by
-          // exactly one device at the table.
-          void sealFor(pair.current, message.pub, {
-            character: characterIndex(seat.characterId),
-            script: indexesFor(
-              (state.game?.script.characterIds ?? []).filter((id) => getCharacter(id)),
-            ),
-            scriptName: state.game?.scriptName ?? '',
-          }).then((sealed) => client.send({ t: 'role', seatId: seat.id, sealed }))
+          sendRole(client, seat.id)
+          resendWhispers(client, seat.id)
         },
       })
 
       relay.current = client
+      resend.current = (seatId) => sendRole(client, seatId)
       await client.start()
-      // Saying hello again is what makes a reconnect self-healing: every phone
-      // in the room answers with a claim, and each answer carries a fresh key.
-      client.send({ t: 'hello', pub })
-      // And the table as it stands, because the effect below only fires on a
-      // change, and by then a phone waiting to sit down has nothing to tap.
-      const now = useStore.getState().game
-      client.send({ t: 'seats', seats: tableOf(now) })
-      const opening = phaseMessage(now)
-      if (opening) client.send(opening)
-      client.send(voteMessage(now))
     }
 
     void run()
@@ -150,14 +197,26 @@ export function RoomProvider({ children }: { children: ReactNode }) {
       relay.current?.close()
       relay.current = null
       keys.current.clear()
+      told.current.clear()
       setReachable([])
     }
   }, [hasGame, roomId, ensureRoom, recordClaim])
+
 
   // The seat list is re-sent whenever it changes, so a phone that joins late,
   // or comes back, is never looking at a stale table.
   const seats = game?.seats
   const claims = game?.claims
+  // A character changed mid-game goes out to that phone as soon as it changes.
+  // Before this, a role was only ever sent in answer to a claim, and a player
+  // whose character was swapped kept the old one until they scanned again.
+  useEffect(() => {
+    for (const seat of seats ?? []) {
+      if (!seat.characterId || !keys.current.has(seat.id)) continue
+      if (told.current.get(seat.id) !== seat.characterId) resend.current(seat.id)
+    }
+  }, [seats])
+
   useEffect(() => {
     if (!relay.current || !seats) return
     relay.current.send({ t: 'seats', seats: tableOf(useStore.getState().game) })
@@ -177,7 +236,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
     if (relay.current) relay.current.send(voteMessage(useStore.getState().game))
   }, [nominations, phase])
 
-  const whisper = async (seatId: string, text: string) => {
+  const whisper = async (seatId: string, text: string, id: string) => {
     const client = relay.current
     const ours = pair.current
     const theirs = keys.current.get(seatId)
@@ -185,7 +244,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
     const phase = useStore.getState().game?.phase
     const at = phase ? phaseLabel(phase) : ''
     const sealed = await sealFor(ours, theirs, { text, at })
-    client.send({ t: 'whisper', seatId, id: Math.random().toString(36).slice(2, 10), sealed })
+    client.send({ t: 'whisper', seatId, id, sealed })
     return true
   }
 

@@ -53,6 +53,7 @@ export function HomeScreen({ openRoles }: { openRoles: () => void }) {
       <Clock />
       <Seat name={seatName} />
       <Vote />
+      <Changed />
       <MeScreen />
       <Whispers />
 
@@ -196,6 +197,20 @@ function AddSomeone({ empty }: { empty: boolean }) {
         <Plus size={20} />
       </Button>
     </form>
+  )
+}
+
+/** The Storyteller changed your character. Says so until you have looked. */
+function Changed() {
+  const changed = useStore((s) => s.roleChanged)
+  if (!changed) return null
+  return (
+    <section className="mx-5 mt-4 rounded-2xl border border-(--accent) px-4 py-3">
+      <p className="caps text-(--accent)">Your character has changed</p>
+      <p className="serif mt-1 text-[15px] leading-snug text-(--text-dim)">
+        The Storyteller has given you a different one. Hold your card to see it.
+      </p>
+    </section>
   )
 }
 

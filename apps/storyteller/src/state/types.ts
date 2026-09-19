@@ -76,7 +76,7 @@ export type LogEntry = {
   text: string
   seatIds: string[]
   /** Information handed to a player, and whether it was the truth. */
-  info?: { toSeatId: string; given: string; truthful: boolean }
+  info?: { toSeatId: string; given: string; truthful: boolean; id?: string }
 }
 
 export type Nomination = {

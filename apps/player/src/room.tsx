@@ -7,10 +7,11 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { get as idbGet, set as idbSet } from 'idb-keyval'
 import {
   Relay,
   exportPublicKey,
-  generateSealingPair,
+  keptSealingPair,
   idsFor,
   openSealed,
   type RelayMessage,
@@ -43,6 +44,7 @@ function useRelayConnection() {
   const rememberTable = useStore((s) => s.rememberTable)
   const setTable = useStore((s) => s.setTable)
   const setVote = useStore((s) => s.setVote)
+  const setStorytellerKey = useStore((s) => s.setStorytellerKey)
   const addMessage = useStore((s) => s.addMessage)
 
   const [seats, setSeats] = useState<Seat[]>([])
@@ -51,7 +53,9 @@ function useRelayConnection() {
   // Ours is ephemeral and lives only for this session: the Storyteller seals
   // our role to it, so nobody else in the room can open it.
   const pair = useRef<CryptoKeyPair | null>(null)
-  const storytellerKey = useRef<string | null>(null)
+  // Seeded from the last game, so a restart can open a word that arrives
+  // before the Storyteller has said hello again.
+  const storytellerKey = useRef<string | null>(useStore.getState().storytellerKey)
   const pendingClaim = useRef<Seat | null>(null)
 
   const announceClaim = useCallback(
@@ -72,19 +76,36 @@ function useRelayConnection() {
     let cancelled = false
 
     const run = async () => {
-      const ours = await generateSealingPair()
+      const ours = await keptSealingPair(
+        () => idbGet('botc-player-pair'),
+        (p) => idbSet('botc-player-pair', p),
+      )
       if (cancelled) return
       pair.current = ours
+
+      // Say who we are every time the line comes back, not only when asked.
+      // The Storyteller may have restarted, and may have missed our last
+      // answer while its own phone was asleep.
+      const sitDown = () => {
+        const s = useStore.getState()
+        if (s.roomId === payload.room && s.seatId && s.seatName) {
+          void announceClaim({ id: s.seatId, name: s.seatName, taken: false })
+        }
+      }
 
       const client = new Relay({
         url: RELAY_URL,
         room: payload.room,
         key: payload.key,
         role: 'player',
-        onStatus: setStatus,
+        onStatus: (status) => {
+          setStatus(status)
+          if (status === 'open') sitDown()
+        },
         onMessage: (message: RelayMessage) => {
           if (message.t === 'hello') {
             storytellerKey.current = message.pub
+            setStorytellerKey(message.pub)
             // A claim made before we knew their key is re-sent now.
             const waiting = pendingClaim.current
             if (waiting) {
@@ -108,7 +129,11 @@ function useRelayConnection() {
             void openSealed<SealedWhisper>(pair.current, theirs, message.sealed)
               .then((word) => addMessage(message.id, word.text, word.at))
               .catch(() => {
-                /* Sealed for somebody else. Nothing to do and nothing to say. */
+                // Addressed to us and we cannot open it: the Storyteller holds a
+                // key we no longer have. Sitting down again gives them the right
+                // one, and they send everything we were ever told.
+                console.warn('A word from the Storyteller could not be opened. Asking again.')
+                sitDown()
               })
             return
           }
@@ -159,7 +184,7 @@ function useRelayConnection() {
       relay.current?.close()
       relay.current = null
     }
-  }, [payload, setRole, setPhase, rememberTable, setTable, setVote, addMessage, announceClaim])
+  }, [payload, setRole, setPhase, rememberTable, setTable, setVote, setStorytellerKey, addMessage, announceClaim])
 
   const claim = (seat: Seat) => {
     if (!payload || payload.kind !== 'room') return

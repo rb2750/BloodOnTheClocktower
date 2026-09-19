@@ -66,6 +66,25 @@ export async function generateSealingPair(): Promise<CryptoKeyPair> {
   return crypto.subtle.generateKey(CURVE, false, ['deriveKey'])
 }
 
+/**
+ * One key for the whole game, not one per app start.
+ *
+ * The other side learns this key exactly once, when it is announced. A key
+ * that changed on every reload left the Storyteller sealing to a key the
+ * player no longer held, and the failure to open it looked like silence. A
+ * non-extractable CryptoKeyPair survives in IndexedDB, so it is kept there.
+ */
+export async function keptSealingPair(
+  load: () => Promise<unknown>,
+  save: (pair: CryptoKeyPair) => Promise<void>,
+): Promise<CryptoKeyPair> {
+  const kept = (await load().catch(() => undefined)) as CryptoKeyPair | undefined
+  if (kept?.privateKey && kept.publicKey) return kept
+  const fresh = await generateSealingPair()
+  await save(fresh).catch(() => undefined)
+  return fresh
+}
+
 export async function exportPublicKey(pair: CryptoKeyPair): Promise<string> {
   const raw = new Uint8Array(await crypto.subtle.exportKey('raw', pair.publicKey))
   let binary = ''

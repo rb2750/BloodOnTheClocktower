@@ -63,6 +63,10 @@ export type PlayerState = {
   cinematicPlayed: string | null
   /** Today's nomination as the Storyteller is counting it. */
   vote: VoteSnapshot | null
+  /** The Storyteller's public key, kept so a restart can open what arrives. */
+  storytellerKey: string | null
+  /** The Storyteller changed our character and we have not looked yet. */
+  roleChanged: boolean
   /** Stable id for this device, so a claimed seat survives a reload. */
   deviceId: string
   hasRevealed: boolean
@@ -77,6 +81,7 @@ export type PlayerActions = {
   addMessage: (id: string, text: string, at: string) => void
   setTable: (table: { name: string; alive: boolean }[]) => void
   setVote: (vote: VoteSnapshot | null) => void
+  setStorytellerKey: (key: string) => void
   setCinematicPlayed: (key: string) => void
 
   ensureNote: (name: string) => void
@@ -110,6 +115,8 @@ export const useStore = create<PlayerState & PlayerActions>()(
       table: [],
       cinematicPlayed: null,
       vote: null,
+      storytellerKey: null,
+      roleChanged: false,
       deviceId: newId(),
       hasRevealed: false,
 
@@ -142,11 +149,28 @@ export const useStore = create<PlayerState & PlayerActions>()(
             cinematicPlayed: null,
             phaseKnown: false,
             vote: null,
+            storytellerKey: null,
+            roleChanged: false,
           }
         }),
 
+      // A different character arriving over one we already hold is the
+      // Storyteller changing it mid-game, which deserves a buzz and a banner
+      // until the card has been held again.
       setRole: (characterId, scriptIds, scriptName) =>
-        set({ characterId, scriptIds, scriptName }),
+        set((s) => {
+          const changed = Boolean(s.characterId && s.characterId !== characterId)
+          if (changed) navigator.vibrate?.([80, 60, 80])
+          return {
+            characterId,
+            scriptIds,
+            scriptName,
+            roleChanged: s.roleChanged || changed,
+            hasRevealed: changed ? false : s.hasRevealed,
+          }
+        }),
+
+      setStorytellerKey: (storytellerKey) => set({ storytellerKey }),
 
       setSeat: (seatId, seatName, roomId) =>
         set((s) => {
@@ -168,7 +192,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
 
       setCinematicPlayed: (key) => set({ cinematicPlayed: key }),
 
-      markRevealed: () => set({ hasRevealed: true }),
+      markRevealed: () => set({ hasRevealed: true, roleChanged: false }),
 
       // The relay replays what it holds when a phone comes back, so the same
       // word can arrive twice; it is kept once, under the id it was sent with.
@@ -276,6 +300,8 @@ export const useStore = create<PlayerState & PlayerActions>()(
           cinematicPlayed: null,
           phaseKnown: false,
           vote: null,
+          storytellerKey: null,
+          roleChanged: false,
           hasRevealed: false,
           deviceId: get().deviceId,
         }),
