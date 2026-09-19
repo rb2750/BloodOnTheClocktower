@@ -34,6 +34,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
   const game = useStore((s) => s.game)
   const newGame = useStore((s) => s.newGame)
   const setSeatCharacter = useStore((s) => s.setSeatCharacter)
+  const setSeatTrueCharacter = useStore((s) => s.setSeatTrueCharacter)
   const setSeatTraveller = useStore((s) => s.setSeatTraveller)
   const setBluffs = useStore((s) => s.setBluffs)
   const startFirstNight = useStore((s) => s.startFirstNight)
@@ -45,6 +46,10 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
   const [script, setScript] = useState<Script | null>(null)
   const [scriptName, setScriptName] = useState('')
   const [dealt, setDealt] = useState<string[] | null>(null)
+  // The Drunk is never told they are the Drunk. They are handed a Townsfolk
+  // the Storyteller picks, and nothing starts until that pick is made.
+  const [drunkAs, setDrunkAs] = useState<string | null>(null)
+  const [choosingDrunk, setChoosingDrunk] = useState(false)
   const [travellers, setTravellers] = useState<string[]>([])
   const [choices, setChoices] = useState<Record<string, number>>({})
   const [swapping, setSwapping] = useState<{ list: 'dealt' | 'travellers'; index: number } | null>(null)
@@ -92,6 +97,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
       toast.error(`This script is short of ${missing} for ${tableSize} players.`)
     }
     setDealt(result.characterIds)
+    setDrunkAs(null)
 
     if (travellerCount > 0) {
       const pool = scriptCharacters(script).filter((c) => c.team === 'traveller')
@@ -114,14 +120,25 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
     }
   }
 
+  const drunkDealt = Boolean(dealt?.includes('drunk'))
+
   const begin = () => {
     if (!script || !dealt) return
+    if (drunkDealt && !drunkAs) {
+      setChoosingDrunk(true)
+      return
+    }
     newGame({ script, scriptName, names })
     const seats = useStore.getState().game?.seats ?? []
     const shuffled = [...dealt].sort(() => Math.random() - 0.5)
 
     seats.forEach((seat, i) => {
       const characterId = shuffled[i]
+      if (characterId === 'drunk' && drunkAs) {
+        setSeatCharacter(seat.id, drunkAs)
+        setSeatTrueCharacter(seat.id, 'drunk')
+        return
+      }
       if (characterId) {
         setSeatCharacter(seat.id, characterId)
         return
@@ -178,13 +195,28 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
               : `Choose a script for ${playerCount}`}
           </Button>
         ) : step === 'deal' && dealt ? (
-          <div className="flex gap-2">
-            <Button onClick={deal} aria-label="Deal again">
-              <Dice size={18} />
-            </Button>
-            <Button variant="primary" className="flex-1" onClick={begin}>
-              Begin the first night
-            </Button>
+          <div>
+            {drunkDealt && (
+              <button
+                onClick={() => setChoosingDrunk(true)}
+                className="mb-2 flex min-h-(--tap-min) w-full items-center justify-between rounded-(--radius-surface) border border-(--accent) px-4 text-left"
+              >
+                <span className="text-[14px] text-(--text)">
+                  {drunkAs
+                    ? `The Drunk believes they are the ${getCharacter(drunkAs)?.name}`
+                    : 'The Drunk needs a role to believe'}
+                </span>
+                <span className="caps text-(--text-faint)">{drunkAs ? 'change' : 'choose'}</span>
+              </button>
+            )}
+            <div className="flex gap-2">
+              <Button onClick={deal} aria-label="Deal again">
+                <Dice size={18} />
+              </Button>
+              <Button variant="primary" className="flex-1" onClick={begin}>
+                {drunkDealt && !drunkAs ? 'Choose the Drunk\u2019s role' : 'Begin the first night'}
+              </Button>
+            </div>
           </div>
         ) : step === 'deal' ? (
           <Button variant="primary" className="w-full" onClick={deal}>
@@ -401,8 +433,26 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
         </section>
       )}
 
-      {script && (
+      {script && dealt && (
         <CharacterPicker
+          open={choosingDrunk}
+          onClose={() => setChoosingDrunk(false)}
+          script={script}
+          title="The Drunk believes they are the…"
+          subtitle="A Townsfolk not in play. They wake in its slot, get its information, and never learn the difference."
+          current={drunkAs ?? undefined}
+          teams={['townsfolk']}
+          taken={dealt.filter((id) => id !== 'drunk')}
+          onPick={(c) => {
+            setDrunkAs(c.id)
+            setChoosingDrunk(false)
+          }}
+        />
+      )}
+
+      {script && (
+
+      <CharacterPicker
           open={swapping !== null}
           onClose={() => setSwapping(null)}
           script={script}
@@ -421,6 +471,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
             if (!swapping) return
             if (swapping.list === 'dealt') {
               setDealt((d) => d!.map((x, j) => (j === swapping.index ? c.id : x)))
+              setDrunkAs(null)
             } else {
               setTravellers((t) => t.map((x, j) => (j === swapping.index ? c.id : x)))
             }

@@ -43,7 +43,7 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
   const removeSeat = useStore((s) => s.removeSeat)
   const undo = useStore((s) => s.undo)
 
-  const [picking, setPicking] = useState<'perceived' | 'true' | null>(null)
+  const [picking, setPicking] = useState<'perceived' | 'true' | 'believed' | null>(null)
   const [telling, setTelling] = useState(false)
   const { reachable } = useRoom()
 
@@ -232,7 +232,14 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
         open={picking !== null}
         onClose={() => setPicking(null)}
         script={game.script}
-        title={picking === 'true' ? 'What are they really?' : `${seat.name} is the…`}
+        title={
+          picking === 'true'
+            ? 'What are they really?'
+            : picking === 'believed'
+              ? 'The Drunk believes they are the…'
+              : `${seat.name} is the…`
+        }
+        teams={picking === 'believed' ? ['townsfolk'] : undefined}
         subtitle={
           picking === 'true'
             ? 'For the Drunk, the Marionette or the Lunatic. They keep waking in the slot of the character they believe they are.'
@@ -245,7 +252,13 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
           .filter((id): id is string => Boolean(id))}
         onPick={(c) => {
           if (picking === 'true') setSeatTrueCharacter(seat.id, c.id)
-          else setSeatCharacter(seat.id, c.id)
+          else if (picking === 'perceived' && c.id === 'drunk') {
+            // Making someone the Drunk is two choices, and the second is not
+            // optional: what they believe they are.
+            setSeatTrueCharacter(seat.id, 'drunk')
+            setPicking('believed')
+            return
+          } else setSeatCharacter(seat.id, c.id)
           setPicking(null)
         }}
       >
