@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
+import { Scroll, Quill, Mask } from '@botc/ui'
 import { Toaster, toast } from 'sonner'
 import { PayloadError, payloadFromHash } from '@botc/protocol'
-import { ScrollText, StickyNote, User } from 'lucide-react'
 import { useStore } from './state.js'
 import { MeScreen } from './screens/Me.js'
 import { ScriptScreen } from './screens/Script.js'
@@ -9,10 +9,10 @@ import { NotesScreen } from './screens/Notes.js'
 
 type Tab = 'me' | 'script' | 'notes'
 
-const TABS: { id: Tab; label: string; icon: typeof User }[] = [
-  { id: 'me', label: 'Me', icon: User },
-  { id: 'script', label: 'Script', icon: ScrollText },
-  { id: 'notes', label: 'Notes', icon: StickyNote },
+const TABS: { id: Tab; label: string; icon: typeof Mask }[] = [
+  { id: 'me', label: 'Me', icon: Mask },
+  { id: 'script', label: 'Script', icon: Scroll },
+  { id: 'notes', label: 'Notes', icon: Quill },
 ]
 
 export function App() {

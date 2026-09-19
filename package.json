@@ -18,10 +18,15 @@
     "typecheck": "tsc --build --force",
     "shots": "tsx scripts/capture.ts",
     "e2e": "playwright test",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "icons": "tsx scripts/make-icons.ts"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "@tailwindcss/oxide", "workerd"]
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "@tailwindcss/oxide",
+      "workerd"
+    ]
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft } from '@botc/ui'
 
 /**
  * The standard frame: a plain title bar carrying no controls, a scrolling body,

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { getCharacter, scriptCharacters, teamAlignment } from '@botc/rules'
-import { AbilityText, Button, Chip, Label, Sheet } from '@botc/ui'
-import { Skull, Heart, Vote, UserPen, Trash2, Plane } from 'lucide-react'
+import { AbilityText, Button, Chip, Label, Sheet, Shroud, Heart, Hand, Swap, Trash, Signpost } from '@botc/ui'
 import { toast } from 'sonner'
 import { useStore } from '../state/store.js'
 import { CharacterToken } from './CharacterToken.js'
@@ -81,12 +80,12 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
               })
             }}
           >
-            {seat.alive ? <Skull size={18} /> : <Heart size={18} />}
+            {seat.alive ? <Shroud size={18} /> : <Heart size={18} />}
             {seat.alive ? 'Kill' : 'Revive'}
           </Button>
           {!seat.alive && (
             <Button className="flex-1" onClick={() => toggleDeadVote(seat.id)}>
-              <Vote size={18} />
+              <Hand size={18} />
               {seat.deadVoteAvailable ? 'Ghost vote unused' : 'Ghost vote spent'}
             </Button>
           )}
@@ -139,7 +138,7 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
                     aria-label={`Remove ${e.label}`}
                     className="grid size-9 place-items-center text-(--text-faint)"
                   >
-                    <Trash2 size={15} />
+                    <Trash size={15} />
                   </button>
                 </li>
               ))}
@@ -160,7 +159,7 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
 
         <div className="mt-6 flex gap-2">
           <Button className="flex-1" onClick={() => setPicking('perceived')}>
-            <UserPen size={17} />
+            <Swap size={17} />
             Change character
           </Button>
           <Button className="flex-1" onClick={() => setPicking('true')}>
@@ -180,7 +179,7 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
               )
             }}
           >
-            <Plane size={17} />
+            <Signpost size={17} />
             {seat.isTraveller ? 'Not a Traveller' : 'Make a Traveller'}
           </Button>
           {/* Removing someone is rare and not undone by a tap, so it needs a

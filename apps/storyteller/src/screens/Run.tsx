@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { getCharacter } from '@botc/rules'
-import { Grimoire } from '@botc/ui'
-import { Lock, LockOpen, History, Undo2, UserPlus } from 'lucide-react'
+import { Grimoire, Lock, Unlock, Book, Undo, Ring } from '@botc/ui'
 import { toast } from 'sonner'
 import { useStore, phaseLabel } from '../state/store.js'
 import { Screen } from '../components/Screen.js'
@@ -47,7 +46,7 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
             aria-label={locked ? 'Unlock grimoire' : 'Lock grimoire'}
             className={locked ? 'text-(--accent)' : 'text-(--text-faint)'}
           >
-            {locked ? <Lock size={18} /> : <LockOpen size={18} />}
+            {locked ? <Lock size={18} /> : <Unlock size={18} />}
           </button>
         }
         // The phase panel is the one thing always within thumb reach, and it is
@@ -71,7 +70,7 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
                 onClick={() => setLogOpen(true)}
                 className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-[12px] text-(--text-faint)"
               >
-                <History size={13} />
+                <Book size={13} />
                 Log
               </button>
               {canUndo && (
@@ -82,7 +81,7 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
                   }}
                   className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-[12px] text-(--text-faint)"
                 >
-                  <Undo2 size={13} />
+                  <Undo size={13} />
                   Undo
                 </button>
               )}
@@ -99,7 +98,7 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
                 }}
                 className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 text-[12px] text-(--text-faint)"
               >
-                <UserPlus size={13} />
+                <Ring size={13} />
                 Add
               </button>
             </div>

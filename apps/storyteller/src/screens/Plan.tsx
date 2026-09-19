@@ -15,8 +15,7 @@ import {
   scriptCharacters,
   type Script,
 } from '@botc/rules'
-import { Button, Label } from '@botc/ui'
-import { Plus, X, Shuffle, Upload, Users, ScrollText, Sparkles } from 'lucide-react'
+import { Button, Label, Plus, Close, Dice, Import, Ring, Scroll, Candle } from '@botc/ui'
 import { useStore } from '../state/store.js'
 import { Screen } from '../components/Screen.js'
 import { CharacterToken } from '../components/CharacterToken.js'
@@ -166,7 +165,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
           aria-label="Settings"
           className="text-(--text-faint)"
         >
-          <Sparkles size={18} />
+          <Candle size={18} />
         </button>
       }
       bottom={
@@ -184,7 +183,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
         ) : step === 'deal' && dealt ? (
           <div className="flex gap-2">
             <Button onClick={deal} aria-label="Deal again">
-              <Shuffle size={18} />
+              <Dice size={18} />
             </Button>
             <Button variant="primary" className="flex-1" onClick={begin}>
               Begin the first night
@@ -235,7 +234,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
                     aria-label={`Remove ${name}`}
                     className="grid size-9 place-items-center text-(--text-faint)"
                   >
-                    <X size={16} />
+                    <Close size={16} />
                   </button>
                 </li>
               ))}
@@ -299,7 +298,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
           <div className="mt-6">
             <Label>Import</Label>
             <label className="flex min-h-(--tap-min) cursor-pointer items-center justify-center gap-2 rounded-(--radius-surface) border border-dashed border-(--hairline) text-[14px] text-(--text-dim)">
-              <Upload size={16} />
+              <Import size={16} />
               Script Tool or botcscripts JSON
               <input
                 type="file"
@@ -422,10 +421,10 @@ function Stepper({
   hasScript: boolean
   count: number
 }) {
-  const steps: { id: Step; label: string; icon: typeof Users; enabled: boolean }[] = [
-    { id: 'players', label: 'Players', icon: Users, enabled: true },
-    { id: 'script', label: 'Script', icon: ScrollText, enabled: count >= 5 },
-    { id: 'deal', label: 'Deal', icon: Shuffle, enabled: hasScript },
+  const steps: { id: Step; label: string; icon: typeof Ring; enabled: boolean }[] = [
+    { id: 'players', label: 'Players', icon: Ring, enabled: true },
+    { id: 'script', label: 'Script', icon: Scroll, enabled: count >= 5 },
+    { id: 'deal', label: 'Deal', icon: Dice, enabled: hasScript },
   ]
   return (
     <nav className="mb-5 mt-1 flex gap-1">

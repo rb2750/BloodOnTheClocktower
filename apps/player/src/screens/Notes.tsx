@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { getCharacter, teamAlignment, type Character } from '@botc/rules'
-import { Button, Chip, Label, Sheet } from '@botc/ui'
-import { Plus, Skull, Trash2, X } from 'lucide-react'
+import { Button, Chip, Label, Sheet, Plus, Shroud, Trash, Close } from '@botc/ui'
 import { useStore } from '../state.js'
 import { CharacterToken } from '../components/CharacterToken.js'
 
@@ -212,7 +211,7 @@ function NoteSheet({ name, onClose }: { name: string | null; onClose: () => void
                       aria-label="Delete note"
                       className="grid size-8 shrink-0 place-items-center text-(--text-faint)"
                     >
-                      <Trash2 size={14} />
+                      <Trash size={14} />
                     </button>
                   </li>
                 ))}
@@ -226,12 +225,12 @@ function NoteSheet({ name, onClose }: { name: string | null; onClose: () => void
             <Label>Alive?</Label>
             {note.diedOnDay ? (
               <Button className="w-full" onClick={() => setDied(note.name, undefined)}>
-                <X size={17} />
+                <Close size={17} />
                 They are alive after all
               </Button>
             ) : (
               <Button variant="danger" className="w-full" onClick={() => setDied(note.name, day)}>
-                <Skull size={17} />
+                <Shroud size={17} />
                 Died on day {day}
               </Button>
             )}

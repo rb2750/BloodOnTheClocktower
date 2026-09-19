@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { getCharacter } from '@botc/rules'
-import { Button, Label } from '@botc/ui'
-import { Download } from 'lucide-react'
+import { Button, Label, Export } from '@botc/ui'
 import { useStore } from '../state/store.js'
 import { Screen } from '../components/Screen.js'
 import type { Screen as ScreenName } from '../App.js'
@@ -33,7 +32,7 @@ export function HistoryScreen({ go }: { go: (s: ScreenName) => void }) {
       bottom={
         history.length > 0 ? (
           <Button className="w-full" onClick={exportAll}>
-            <Download size={17} />
+            <Export size={17} />
             Export everything as JSON
           </Button>
         ) : undefined

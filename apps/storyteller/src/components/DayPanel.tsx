@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { canNominate, getCharacter, votesNeededPhrase } from '@botc/rules'
-import { Button, Sheet, Label } from '@botc/ui'
-import { Gavel, Moon, Quote } from 'lucide-react'
+import { Button, Sheet, Label, Point, Moon, Quote } from '@botc/ui'
 import { toast } from 'sonner'
 import { useStore, currentBlock } from '../state/store.js'
 import type { Seat } from '../state/types.js'
@@ -72,7 +71,7 @@ export function DayPanel({ onOpenSeat }: { onOpenSeat: (id: string) => void }) {
 
             <div className="mt-4 flex gap-2">
               <Button live className="flex-1" onClick={() => setNominating({})}>
-                <Gavel size={18} />
+                <Point size={18} />
                 Nominate
               </Button>
               <Button

@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { getCharacter, placesReminder } from '@botc/rules'
-import { Button, ReminderText, Sheet, Label } from '@botc/ui'
-import { ChevronLeft, ChevronRight, Eye, QrCode, Sunrise } from 'lucide-react'
+import { Button, ReminderText, Sheet, Label, ChevronLeft, ChevronRight, Qr, Dawn } from '@botc/ui'
 import { useStore } from '../state/store.js'
 import { CharacterToken } from './CharacterToken.js'
 import { DistributeSheet } from './DistributeSheet.js'
@@ -74,7 +73,7 @@ export function NightPanel() {
             in a menu, and only when it is the thing you are about to do. */}
         {game.phase.n === 1 && step === 0 && (
           <Button className="mt-3 w-full" onClick={() => setDistributing(true)}>
-            <QrCode size={17} />
+            <Qr size={17} />
             Hand out characters
           </Button>
         )}
@@ -106,7 +105,7 @@ export function NightPanel() {
           </Button>
           {isLast ? (
             <Button live variant="primary" className="flex-1" onClick={toDay}>
-              <Sunrise size={20} />
+              <Dawn size={20} />
               Call for eyes open
             </Button>
           ) : (
@@ -169,4 +168,3 @@ export function NightPanel() {
   )
 }
 
-export { Eye }

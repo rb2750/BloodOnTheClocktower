@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { UserMinus } from 'lucide-react'
+import { Leave } from '@botc/ui'
 
 const HOLD_MS = 650
 
@@ -60,7 +60,7 @@ export function HoldToConfirm({
         style={{ width: `${progress * 100}%` }}
         aria-hidden
       />
-      <UserMinus size={17} className="relative" />
+      <Leave size={17} className="relative" />
       <span className="relative">{label}</span>
     </button>
   )

@@ -1,6 +1,5 @@
 import { getCharacter, type SetupResolution } from '@botc/rules'
-import { Label } from '@botc/ui'
-import { AlertTriangle, Link2, HelpCircle } from 'lucide-react'
+import { Label, Warning, Link, Question } from '@botc/ui'
 
 /**
  * What the setup solver worked out, and — just as important — what it refused
@@ -72,7 +71,7 @@ export function SetupReport({
       </div>
 
       {resolution.problems.map((p) => (
-        <Callout key={p} tone="bad" icon={AlertTriangle} title="This does not add up">
+        <Callout key={p} tone="bad" icon={Warning} title="This does not add up">
           {p}
         </Callout>
       ))}
@@ -83,7 +82,7 @@ export function SetupReport({
           className="rounded-(--radius-surface) border border-(--hairline-strong) p-4"
         >
           <div className="mb-3 flex items-center gap-2 text-[14px] text-(--accent)">
-            <HelpCircle size={16} />
+            <Question size={16} />
             {choice.prompt}
           </div>
           <div className="flex flex-wrap gap-2">
@@ -108,7 +107,7 @@ export function SetupReport({
         <Callout
           key={u.characterId}
           tone="open"
-          icon={HelpCircle}
+          icon={Question}
           title={`${u.characterName} — you decide`}
         >
           {u.note}
@@ -116,7 +115,7 @@ export function SetupReport({
       ))}
 
       {resolution.seating.map((s) => (
-        <Callout key={s.characterId} tone="note" icon={Link2} title={`${s.characterName} seating`}>
+        <Callout key={s.characterId} tone="note" icon={Link} title={`${s.characterName} seating`}>
           {s.constraint === 'neighbours-demon'
             ? 'They must sit next to the Demon.'
             : 'The evil players must sit in one unbroken line, with the Demon in the middle.'}
@@ -124,13 +123,13 @@ export function SetupReport({
       ))}
 
       {resolution.disguised.map((d) => (
-        <Callout key={d.characterId} tone="note" icon={AlertTriangle} title={d.characterName}>
+        <Callout key={d.characterId} tone="note" icon={Warning} title={d.characterName}>
           {d.note}
         </Callout>
       ))}
 
       {resolution.forced.length > 0 && (
-        <Callout tone="note" icon={Link2} title="Pulled into play">
+        <Callout tone="note" icon={Link} title="Pulled into play">
           {resolution.forced
             .map((f) => `${getCharacter(f.by)?.name ?? f.by} brings the ${f.characterName}`)
             .join('. ')}
@@ -164,7 +163,7 @@ function Callout({
   children,
 }: {
   tone: 'bad' | 'open' | 'note'
-  icon: typeof AlertTriangle
+  icon: typeof Warning
   title: string
   children: React.ReactNode
 }) {

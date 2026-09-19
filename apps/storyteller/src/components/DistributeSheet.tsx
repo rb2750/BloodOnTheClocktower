@@ -16,8 +16,7 @@ import {
   type RelayMessage,
   type RelayStatus,
 } from '@botc/protocol'
-import { Button, Label, Sheet } from '@botc/ui'
-import { ChevronLeft, ChevronRight, Check } from 'lucide-react'
+import { Button, Label, Sheet, ChevronLeft, ChevronRight, Check } from '@botc/ui'
 import { useStore } from '../state/store.js'
 import { PLAYER_ORIGIN, RELAY_URL } from '../config.js'
 

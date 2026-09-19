@@ -1,6 +1,5 @@
 import { characterArt, getCharacter, teamAlignment } from '@botc/rules'
-import { AbilityText, Label, Token } from '@botc/ui'
-import { QrCode } from 'lucide-react'
+import { AbilityText, Label, Token, Qr } from '@botc/ui'
 import { useStore } from '../state.js'
 import { HoldToReveal } from '../components/HoldToReveal.js'
 import { useRelay } from '../useRelay.js'
@@ -70,7 +69,7 @@ export function MeScreen() {
 function Empty() {
   return (
     <section className="flex min-h-full flex-col items-center justify-center gap-5 px-8 text-center">
-      <QrCode size={40} className="text-(--hairline-strong)" strokeWidth={1.4} />
+      <Qr size={40} className="text-(--hairline-strong)" strokeWidth={1.4} />
       <h1 className="display text-[18px] text-(--text)">Scan the Storyteller&rsquo;s code</h1>
       <p className="max-w-[28ch] text-[14px] leading-snug text-(--text-faint)">
         Point your camera at the code they are holding. Your character, the script and your
