@@ -20,7 +20,7 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
   const toDay = useStore((s) => s.toDay)
   const addEffect = useStore((s) => s.addEffect)
   const [placing, setPlacing] = useState<{ label: string; characterId: string } | null>(null)
-  const [telling, setTelling] = useState<string | null>(null)
+  const [telling, setTelling] = useState<{ seatId: string; characterId: string } | null>(null)
   const { reachable } = useRoom()
   const concealed = useStore((s) => s.concealed)
 
@@ -92,7 +92,7 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
                 return (
                   <button
                     key={s.seatId}
-                    onClick={() => setTelling(s.seatId)}
+                    onClick={() => setTelling({ seatId: s.seatId, characterId: entry.id })}
                     className="flex min-h-9 items-center gap-1.5 rounded-full border border-(--hairline-strong) px-3 text-[13px] font-medium text-(--text)"
                   >
                     <Signpost size={14} />
@@ -203,7 +203,11 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
           ))}
         </div>
       </Sheet>
-      <WhisperSheet seatId={telling} onClose={() => setTelling(null)} />
+      <WhisperSheet
+        seatId={telling?.seatId ?? null}
+        characterId={telling?.characterId}
+        onClose={() => setTelling(null)}
+      />
     </>
   )
 }
