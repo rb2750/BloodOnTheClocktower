@@ -4,6 +4,12 @@ export type GrimoireProps = {
   count: number
   /** Rendered once per seat, in seating order starting at the top. */
   children: (index: number) => ReactNode
+  /** A stable key per seat, so moving a player animates rather than swaps. */
+  keys?: readonly string[]
+  /** Set on the seat being dragged. */
+  dragging?: string | null
+  /** Pointer handlers for the seats, for dragging. */
+  onSeatPointerDown?: (index: number, e: React.PointerEvent<HTMLLIElement>) => void
   /** Drawn in the middle of the ring: the phase, the primary action, the tally. */
   centre?: ReactNode
   /** Nomination arrows and other curves, drawn beneath the seats. */
@@ -24,6 +30,9 @@ const TICKS = Array.from({ length: 12 }, (_, i) => i)
 export function Grimoire({
   count,
   children,
+  keys,
+  dragging = null,
+  onSeatPointerDown,
   centre,
   overlay,
   showClock = true,
@@ -55,7 +64,13 @@ export function Grimoire({
         )}
 
         {Array.from({ length: count }, (_, i) => (
-          <li key={i} style={{ ['--i' as string]: i } as CSSProperties}>
+          <li
+            key={keys?.[i] ?? i}
+            data-seat-index={i}
+            data-dragging={dragging !== null && keys?.[i] === dragging ? 'true' : undefined}
+            onPointerDown={onSeatPointerDown ? (e) => onSeatPointerDown(i, e) : undefined}
+            style={{ ['--i' as string]: i } as CSSProperties}
+          >
             {children(i)}
           </li>
         ))}

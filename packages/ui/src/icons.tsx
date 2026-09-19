@@ -233,6 +233,28 @@ export const Eye = make(
   </>,
 )
 
+export const EyeOff = make(
+  'EyeOff',
+  <>
+    <path d="M4 4l16 16" />
+    <path d="M10.6 6.3A10 10 0 0 1 12 6c4 0 7.2 2 9.5 6-.8 1.4-1.7 2.5-2.7 3.4M6.6 8.1C5 9.1 3.6 10.4 2.5 12c2.3 4 5.5 6 9.5 6 1.3 0 2.6-.2 3.7-.7" />
+    <path d="M9.9 9.9a2.8 2.8 0 0 0 4 4" />
+  </>,
+)
+
+/** Two columns of dots: drag me. */
+export const Grip = make(
+  'Grip',
+  <>
+    <circle {...F} cx="9" cy="6" r="1.3" />
+    <circle {...F} cx="15" cy="6" r="1.3" />
+    <circle {...F} cx="9" cy="12" r="1.3" />
+    <circle {...F} cx="15" cy="12" r="1.3" />
+    <circle {...F} cx="9" cy="18" r="1.3" />
+    <circle {...F} cx="15" cy="18" r="1.3" />
+  </>,
+)
+
 export const Qr = make(
   'Qr',
   <>

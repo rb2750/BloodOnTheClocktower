@@ -80,9 +80,14 @@ export function DistributeSheet({ open, onClose }: { open: boolean; onClose: () 
         <div className="flex flex-col items-center gap-5 pb-2">
           <QrImage value={payloadUrl(PLAYER_ORIGIN, payload)} />
 
-          <p className="max-w-[30ch] text-center text-[13px] leading-snug text-(--text-faint)">
+          <p className="serif max-w-[32ch] text-center text-[14px] leading-snug text-(--text-faint)">
             Only {seat.name} should scan this. It carries their character and nothing else, and
             it never touches a server.
+          </p>
+          <p className="serif max-w-[34ch] border-t border-(--hairline) pt-3 text-center text-[13px] leading-snug text-(--text-faint)">
+            One code for the whole table, where each player picks their own name, needs the
+            relay. Deploy the worker in the repository and set <code>RELAY_URL</code>; this app
+            switches over on its own.
           </p>
 
           <div className="flex w-full gap-2">

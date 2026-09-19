@@ -12,7 +12,7 @@ import { CharacterToken } from './CharacterToken.js'
  * the most valuable space on screen, so it carries the one thing the
  * Storyteller needs right now and nothing else.
  */
-export function Dial() {
+export function Dial({ concealed = false }: { concealed?: boolean }) {
   const game = useStore((s) => s.game)
   const nightOrder = useStore((s) => s.nightOrder)
   const order = useMemo(
@@ -30,7 +30,7 @@ export function Dial() {
     return (
       <DialFrame fraction={fraction} caption={entry ? `${step + 1} of ${order.length}` : 'dawn'}>
         {character ? (
-          <CharacterToken character={character} size="44px" />
+          <CharacterToken character={character} size="44px" back={concealed} />
         ) : (
           <Token name="" size="44px">
             <span className="text-(--color-ink-2)">
@@ -56,7 +56,7 @@ export function Dial() {
       const c = getCharacter(blockSeat.characterId ?? '')
       return (
         <DialFrame fraction={0} caption={`${blockSeat.name} · ${block.votes}`}>
-          <CharacterToken character={c} size="44px" />
+          <CharacterToken character={c} size="44px" back={concealed} />
         </DialFrame>
       )
     }

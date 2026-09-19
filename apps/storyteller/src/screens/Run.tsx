@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getCharacter } from '@botc/rules'
-import { Grimoire, Lock, Unlock } from '@botc/ui'
+import { checkSeating, getCharacter } from '@botc/rules'
+import { Grimoire, Lock, Unlock, Eye, EyeOff } from '@botc/ui'
 import { toast } from 'sonner'
 import { useStore, phaseLabel } from '../state/store.js'
 import { Screen } from '../components/Screen.js'
@@ -11,6 +11,7 @@ import { DayPanel } from '../components/DayPanel.js'
 import { PhaseCinematic } from '../components/PhaseCinematic.js'
 import { LogSheet } from '../components/LogSheet.js'
 import { Dial } from '../components/Dial.js'
+import { useRingDrag } from '../hooks/useRingDrag.js'
 import type { Screen as ScreenName } from '../App.js'
 
 export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
@@ -21,6 +22,9 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
 
   const toggleVote = useStore((s) => s.toggleVote)
   const nightOrder = useStore((s) => s.nightOrder)
+  const moveSeat = useStore((s) => s.moveSeat)
+  const concealed = useStore((s) => s.concealed)
+  const setConcealed = useStore((s) => s.setConcealed)
 
   const [openSeat, setOpenSeat] = useState<string | null>(null)
   const [logOpen, setLogOpen] = useState(false)
@@ -38,6 +42,31 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
     return new Set(entry?.seats.map((s) => s.seatId) ?? [])
   }, [game, nightOrder])
 
+  // Seating rules that the current arrangement breaks: the Marionette away
+  // from the Demon, the evil line broken. Checked live, so a drag that fixes
+  // or breaks one is answered at once.
+  const seatingWarnings = useMemo(() => (game ? checkSeating(game.seats) : []), [game])
+
+  const ring = useRingDrag({
+    order: game?.seats.map((s) => s.id) ?? [],
+    disabled: !game || game.locked,
+    onMove: (seatId, toIndex) => {
+      moveSeat(seatId, toIndex)
+      const seat = game?.seats.find((s) => s.id === seatId)
+      const after = checkSeating(
+        (() => {
+          const next = [...(game?.seats ?? [])]
+          const from = next.findIndex((s) => s.id === seatId)
+          const [moved] = next.splice(from, 1)
+          if (moved) next.splice(toIndex, 0, moved)
+          return next
+        })(),
+      )
+      if (after.length > 0) toast.warning(after[0]!.message)
+      else toast(`${seat?.name ?? 'Player'} moved.`, { action: { label: 'Undo', onClick: () => undo() } })
+    },
+  })
+
   if (!game) return null
 
   const locked = game.locked
@@ -54,11 +83,15 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
       <Screen
         title={phaseLabel(game.phase)}
         subtitle={
-          openNomination
-            ? 'tap a seat to raise a hand'
-            : game.phase.k === 'night'
-              ? `${aliveCount} alive · hold to undo`
-              : `${aliveCount} alive`
+          seatingWarnings.length > 0 ? (
+            <span className="text-(--color-red-2)">{seatingWarnings[0]!.message}</span>
+          ) : openNomination ? (
+            'tap a seat to raise a hand'
+          ) : game.phase.k === 'night' ? (
+            `${aliveCount} alive · hold to undo`
+          ) : (
+            `${aliveCount} alive`
+          )
         }
         onTitle={() => setLogOpen(true)}
         onTitleHold={() => {
@@ -69,13 +102,24 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
         onBack={() => go('home')}
         fill
         trailing={
-          <button
-            onClick={() => setLocked(!locked)}
-            aria-label={locked ? 'Unlock grimoire' : 'Lock grimoire'}
-            className={locked ? 'text-(--now)' : 'text-(--text-faint)'}
-          >
-            {locked ? <Lock size={20} /> : <Unlock size={20} />}
-          </button>
+          <span className="flex items-center">
+            {/* Hide every role at a tap, for when someone can see the phone. */}
+            <button
+              onClick={() => setConcealed(!concealed)}
+              aria-label={concealed ? 'Show roles' : 'Hide roles'}
+              aria-pressed={concealed}
+              className={`grid size-11 place-items-center ${concealed ? 'text-(--now)' : 'text-(--text-faint)'}`}
+            >
+              {concealed ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+            <button
+              onClick={() => setLocked(!locked)}
+              aria-label={locked ? 'Unlock grimoire' : 'Lock grimoire'}
+              className={`grid size-11 place-items-center ${locked ? 'text-(--now)' : 'text-(--text-faint)'}`}
+            >
+              {locked ? <Lock size={20} /> : <Unlock size={20} />}
+            </button>
+          </span>
         }
         // The phase panel is the one thing always within thumb reach, and it is
         // part of the layout rather than floating over it, so the circle can
@@ -90,20 +134,26 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
       >
         <Grimoire
           count={game.seats.length}
-          centre={<Dial />}
+          keys={ring.order}
+          dragging={ring.dragging}
+          onSeatPointerDown={ring.onPointerDown}
+          centre={<Dial concealed={concealed} />}
           overlay={
             arcFrom >= 0 && arcTo >= 0 ? <NominationArc from={arcFrom} to={arcTo} /> : undefined
           }
         >
           {(i) => {
-            const seat = game.seats[i]
+            const seat = game.seats.find((s) => s.id === ring.order[i])
             if (!seat) return null
             return (
               <SeatView
                 seat={seat}
                 disabled={locked}
+                concealed={concealed}
                 now={awake.has(seat.id) || (openNomination?.voterIds.includes(seat.id) ?? false)}
                 onOpen={() => {
+                  // A drag that just ended is not a tap.
+                  if (ring.consumeDrag()) return
                   // During a vote the ring is the ballot: tapping a seat raises
                   // or lowers that hand. The sheet waits until hands are down.
                   if (openNomination) {

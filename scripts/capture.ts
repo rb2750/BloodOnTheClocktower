@@ -200,6 +200,12 @@ async function screens(browser: Browser) {
     }
     await shoot('06-night-step')
 
+    // Roles hidden, for when someone can see the phone.
+    await page.getByRole('button', { name: 'Hide roles' }).click()
+    await page.waitForTimeout(300)
+    await shoot('06b-concealed')
+    await page.getByRole('button', { name: 'Show roles' }).click()
+
     // A seat sheet.
     await page.locator('.circle > li button').first().click()
     await page.waitForTimeout(450)

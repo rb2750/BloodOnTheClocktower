@@ -96,6 +96,9 @@ export type StoreActions = {
 
   setBluffs: (ids: string[]) => void
   setLocked: (locked: boolean) => void
+  /** Roles hidden on screen, for when someone can see the phone. Not persisted. */
+  concealed: boolean
+  setConcealed: (concealed: boolean) => void
 
   startFirstNight: () => void
   toNight: () => void
@@ -383,6 +386,9 @@ export const useStore = create<Store>()(
           commit('Set demon bluffs', (draft) => {
             if (draft.game) draft.game.bluffs = ids
           }),
+
+        concealed: false,
+        setConcealed: (concealed) => set({ concealed }),
 
         setLocked: (locked) =>
           commit(locked ? 'Lock grimoire' : 'Unlock grimoire', (draft) => {

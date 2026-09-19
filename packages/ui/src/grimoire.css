@@ -343,3 +343,51 @@
     fill: var(--now);
   }
 }
+
+@layer components {
+  /* The back of a token: the seal, twelve ticks in a ring. Shown when roles
+     are concealed, so a glance at the phone gives nothing away. */
+  .token[data-back='true'] {
+    background: var(--surface-raised);
+    filter: none;
+    opacity: 1;
+  }
+
+  .token-seal {
+    position: absolute;
+    inset: 12%;
+    border-radius: 50%;
+    border: 1px solid var(--hairline-strong);
+  }
+
+  .token-seal::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: repeating-conic-gradient(var(--text-faint) 0deg 2deg, transparent 2deg 30deg);
+    -webkit-mask: radial-gradient(circle, transparent 66%, #000 67%, #000 88%, transparent 89%);
+    mask: radial-gradient(circle, transparent 66%, #000 67%, #000 88%, transparent 89%);
+  }
+
+  .token-seal::after {
+    content: '';
+    position: absolute;
+    inset: 36%;
+    border-radius: 50%;
+    border: 1px solid var(--hairline-strong);
+  }
+
+  /* A seat being dragged to a new chair: lifted above the rest and following
+     the finger, with no transition so it does not lag behind. */
+  .circle > li[data-dragging='true'] {
+    transition: none;
+    z-index: 50;
+  }
+
+  .circle > li[data-dragging='true'] .token {
+    scale: 1.12;
+    outline: 2px solid var(--now);
+    outline-offset: 4px;
+  }
+}

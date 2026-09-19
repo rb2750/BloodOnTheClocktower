@@ -15,7 +15,9 @@ import {
   scriptCharacters,
   type Script,
 } from '@botc/rules'
-import { Button, Label, Rows, Row, inputClass, Plus, Close, Dice, Import } from '@botc/ui'
+import { Button, Label, Rows, Row, inputClass, Plus, Close, Dice, Import, Grip } from '@botc/ui'
+import { CharacterPicker } from '../components/CharacterPicker.js'
+import { useListDrag } from '../hooks/useListDrag.js'
 import { useStore } from '../state/store.js'
 import { Screen } from '../components/Screen.js'
 import { CharacterToken } from '../components/CharacterToken.js'
@@ -45,6 +47,8 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
   const [dealt, setDealt] = useState<string[] | null>(null)
   const [travellers, setTravellers] = useState<string[]>([])
   const [choices, setChoices] = useState<Record<string, number>>({})
+  const [swapping, setSwapping] = useState<{ list: 'dealt' | 'travellers'; index: number } | null>(null)
+  const listDrag = useListDrag(names, setNames)
 
   const playerCount = names.length
   const resolution = useMemo(
@@ -214,12 +218,25 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
           </form>
 
           {names.length > 0 && (
-            <Rows className="mt-4">
+            <>
+            <p className="serif mt-4 text-[14px] text-(--text-faint)">
+              This is the seating order. Drag a name to move it.
+            </p>
+            <Rows className="mt-2" {...listDrag.listProps}>
               {names.map((name, i) => (
                 <Row
                   key={name}
+                  className={listDrag.dragging === name ? 'bg-(--surface-raised)' : ''}
                   leading={
-                    <span className="tabular w-5 text-[13px] text-(--text-faint)">{i + 1}</span>
+                    <span
+                      className="flex items-center gap-1 text-(--text-faint)"
+                      style={{ touchAction: 'none' }}
+                      onPointerDown={(e) => listDrag.start(name, e)}
+                      aria-label={`Drag ${name}`}
+                    >
+                      <Grip size={18} />
+                      <span className="tabular w-5 text-[13px]">{i + 1}</span>
+                    </span>
                   }
                   trailing={
                     <button
@@ -235,6 +252,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
                 </Row>
               ))}
             </Rows>
+            </>
           )}
 
           {roster.length > 0 && (
@@ -326,7 +344,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
           {dealt ? (
             <>
               <div className="mt-5" />
-              <Label>In play — tap to swap</Label>
+              <Label>In play — tap one to change it</Label>
               <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
                 {dealt.map((cid, i) => {
                   const c = getCharacter(cid)
@@ -334,19 +352,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
                     <button
                       key={`${cid}-${i}`}
                       className="flex flex-col items-center gap-1"
-                      onClick={() => {
-                        // Swapping a single character is a Plan-mode nicety;
-                        // in Run mode the seat sheet does it properly.
-                        const pool = scriptCharacters(script).filter(
-                          (x) => x.team === c?.team && !dealt.includes(x.id),
-                        )
-                        const next = pool[Math.floor(Math.random() * pool.length)]
-                        if (!next) {
-                          toast.error(`No other ${c?.team} left on this script.`)
-                          return
-                        }
-                        setDealt((d) => d!.map((x, j) => (j === i ? next.id : x)))
-                      }}
+                      onClick={() => setSwapping({ list: 'dealt', index: i })}
                     >
                       <CharacterToken character={c} size="56px" />
                       <span className="caps text-center text-[9px] leading-tight text-(--text-faint)">
@@ -380,17 +386,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
                     <button
                       key={`${cid}-${i}`}
                       className="flex flex-col items-center gap-1"
-                      onClick={() => {
-                        const pool = scriptCharacters(script).filter(
-                          (x) => x.team === 'traveller' && !travellers.includes(x.id),
-                        )
-                        const next = pool[Math.floor(Math.random() * pool.length)]
-                        if (!next) {
-                          toast.error('No other Travellers left on this script.')
-                          return
-                        }
-                        setTravellers((t) => t.map((x, j) => (j === i ? next.id : x)))
-                      }}
+                      onClick={() => setSwapping({ list: 'travellers', index: i })}
                     >
                       <CharacterToken character={c} size="56px" />
                       <span className="caps text-center text-[9px] leading-tight text-(--text-faint)">
@@ -403,6 +399,34 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
             </>
           )}
         </section>
+      )}
+
+      {script && (
+        <CharacterPicker
+          open={swapping !== null}
+          onClose={() => setSwapping(null)}
+          script={script}
+          title="Swap for…"
+          subtitle="Grouped by team. Changing team changes the composition, and the report above will say so."
+          current={
+            swapping
+              ? swapping.list === 'dealt'
+                ? dealt?.[swapping.index]
+                : travellers[swapping.index]
+              : undefined
+          }
+          teams={swapping?.list === 'travellers' ? ['traveller'] : undefined}
+          taken={[...(dealt ?? []), ...travellers]}
+          onPick={(c) => {
+            if (!swapping) return
+            if (swapping.list === 'dealt') {
+              setDealt((d) => d!.map((x, j) => (j === swapping.index ? c.id : x)))
+            } else {
+              setTravellers((t) => t.map((x, j) => (j === swapping.index ? c.id : x)))
+            }
+            setSwapping(null)
+          }}
+        />
       )}
     </Screen>
   )

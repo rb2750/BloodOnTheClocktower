@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { getCharacter, scriptCharacters, teamAlignment } from '@botc/rules'
+import { getCharacter, teamAlignment } from '@botc/rules'
 import { AbilityText, Button, Label, Sheet, Shroud, Heart, Ghost, Swap, Mask, Signpost, inputClass } from '@botc/ui'
 import { toast } from 'sonner'
 import { useStore } from '../state/store.js'
 import { CharacterToken } from './CharacterToken.js'
 import { HoldToConfirm } from './HoldToConfirm.js'
 import { ReminderChip, ReminderOption } from './ReminderChip.js'
+import { CharacterPicker } from './CharacterPicker.js'
 import type { EffectKind } from '../state/types.js'
 
 /** Effects a Storyteller reaches for constantly, each with the right expiry. */
@@ -211,15 +212,26 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
         </div>
       </Sheet>
 
-      <Sheet
+      <CharacterPicker
         open={picking !== null}
-        onOpenChange={(o) => !o && setPicking(null)}
-        title={picking === 'true' ? 'What are they really?' : 'Which character?'}
+        onClose={() => setPicking(null)}
+        script={game.script}
+        title={picking === 'true' ? 'What are they really?' : `${seat.name} is the…`}
         subtitle={
           picking === 'true'
             ? 'For the Drunk, the Marionette or the Lunatic. They keep waking in the slot of the character they believe they are.'
             : undefined
         }
+        current={picking === 'true' ? seat.trueCharacterId : seat.characterId}
+        taken={game.seats
+          .filter((s) => s.id !== seat.id)
+          .flatMap((s) => [s.characterId, s.trueCharacterId])
+          .filter((id): id is string => Boolean(id))}
+        onPick={(c) => {
+          if (picking === 'true') setSeatTrueCharacter(seat.id, c.id)
+          else setSeatCharacter(seat.id, c.id)
+          setPicking(null)
+        }}
       >
         {picking === 'true' && seat.trueCharacterId && (
           <Button
@@ -232,29 +244,7 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
             They really are the {character?.name}
           </Button>
         )}
-        <div className="grid grid-cols-4 gap-3 pb-2 sm:grid-cols-5">
-          {scriptCharacters(game.script).map((c) => (
-            <button
-              key={c.id}
-              className="flex flex-col items-center gap-1.5"
-              onClick={() => {
-                if (picking === 'true') setSeatTrueCharacter(seat.id, c.id)
-                else setSeatCharacter(seat.id, c.id)
-                setPicking(null)
-              }}
-            >
-              <CharacterToken
-                character={c}
-                size="52px"
-                alignment={teamAlignment(c.team) === 'evil' ? 'evil' : 'good'}
-              />
-              <span className="caps text-center text-[9px] leading-tight text-(--text-faint)">
-                {c.name}
-              </span>
-            </button>
-          ))}
-        </div>
-      </Sheet>
+      </CharacterPicker>
     </>
   )
 }

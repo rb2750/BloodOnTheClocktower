@@ -19,6 +19,7 @@ export function NightPanel() {
   const addEffect = useStore((s) => s.addEffect)
   const [placing, setPlacing] = useState<{ label: string; characterId: string } | null>(null)
   const [distributing, setDistributing] = useState(false)
+  const concealed = useStore((s) => s.concealed)
 
   const order = useMemo(() => nightOrder(), [nightOrder, game])
   if (!game || game.phase.k !== 'night') return null
@@ -43,7 +44,7 @@ export function NightPanel() {
           <div className="flex gap-3">
             <div className="min-w-0 flex-1">
               <div className="display text-[22px] leading-none text-(--text)">{entry.name}</div>
-              {entry.seats.length > 0 && (
+              {entry.seats.length > 0 && !concealed && (
                 <div className="mb-1.5 mt-1 text-[13px] text-(--text-faint)">
                   {entry.seats
                     .map((s) => {

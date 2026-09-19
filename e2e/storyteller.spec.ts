@@ -100,6 +100,33 @@ test('takes a vote by tapping seats on the ring', async ({ page }) => {
   await expect(page.locator('.token[data-now="true"]')).toHaveCount(0)
 })
 
+test('moves a player to another chair by dragging their token', async ({ page }) => {
+  await dealGame(page)
+  await startNight(page)
+  await expect(page.locator('.cinematic')).toHaveCount(0)
+
+  const seats = page.locator('.circle > li')
+  const from = (await seats.nth(0).boundingBox())!
+  const to = (await seats.nth(2).boundingBox())!
+  await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2)
+  await page.mouse.down()
+  // Hold still until the seat lifts, then carry it round the ring.
+  await expect(page.locator('.circle > li[data-dragging]')).toHaveCount(1)
+  for (let i = 1; i <= 8; i++) {
+    await page.mouse.move(
+      from.x + from.width / 2 + ((to.x - from.x) * i) / 8,
+      from.y + from.height / 2 + ((to.y - from.y) * i) / 8,
+    )
+  }
+  await page.mouse.up()
+
+  await expect(page.locator('.circle > li[data-dragging]')).toHaveCount(0)
+  const names = await page.locator('.seat-name').allTextContents()
+  expect(names.map((n) => n.toLowerCase())).toEqual(['bran', 'cora', 'alice', 'dev', 'esme', 'finn', 'greta'])
+  // The drag did not open the seat sheet.
+  await expect(page.getByRole('button', { name: /^Kill$/ })).toBeHidden()
+})
+
 test('keeps the game across a reload', async ({ page }) => {
   await dealGame(page)
   await startNight(page)

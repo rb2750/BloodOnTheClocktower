@@ -12,12 +12,15 @@ export function SeatView({
   seat,
   disabled,
   now = false,
+  concealed = false,
   onOpen,
 }: {
   seat: Seat
   disabled?: boolean
   /** Awake at night, or a hand raised in a vote. */
   now?: boolean
+  /** Roles hidden: the token shows its back and reminders are not drawn. */
+  concealed?: boolean
   onOpen: () => void
 }) {
   const character = getCharacter(seat.characterId ?? '')
@@ -38,19 +41,21 @@ export function SeatView({
       onClick={onOpen}
       aria-disabled={disabled}
       className="relative flex flex-col items-center"
-      aria-label={`${seat.name}, ${character?.name ?? 'no character'}${seat.alive ? '' : ', dead'}`}
+      aria-label={`${seat.name}${concealed ? '' : `, ${character?.name ?? 'no character'}`}${seat.alive ? '' : ', dead'}`}
+      style={{ touchAction: 'none' }}
     >
       <CharacterToken
         character={character}
         dead={!seat.alive}
         voteSpent={!seat.alive && !seat.deadVoteAvailable}
         alignment={alignment}
-        now={now}
+        now={now && !concealed}
+        back={concealed}
       />
 
       {/* A player who is not what their token says carries a quiet mark, so the
           Storyteller is reminded every time they look at the grimoire. */}
-      {trueCharacter && (
+      {trueCharacter && !concealed && (
         <span
           className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full border border-(--hairline-strong) bg-(--bg) text-(--text)"
           title={`Really the ${trueCharacter.name}`}
@@ -61,7 +66,7 @@ export function SeatView({
 
       <span className="seat-name">{seat.name}</span>
 
-      {seat.effects.length > 0 && (
+      {seat.effects.length > 0 && !concealed && (
         <span className="chips">
           {visible.map((e) => (
             <span key={e.id} title={e.label}>

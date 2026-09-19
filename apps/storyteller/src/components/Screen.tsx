@@ -94,7 +94,7 @@ export function Screen({
         ) : (
           <div className="flex-1 text-center">{heading}</div>
         )}
-        <span className="flex size-11 items-center justify-center">{trailing}</span>
+        <span className="flex min-w-11 items-center justify-end">{trailing}</span>
       </header>
 
       <main

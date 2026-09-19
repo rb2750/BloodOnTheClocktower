@@ -11,6 +11,8 @@ export type TokenProps = {
   voteSpent?: boolean
   /** Acting right now: awake at night, or a hand raised in a vote. */
   now?: boolean
+  /** Face down: the seal on the back, no art, no alignment. */
+  back?: boolean
   size?: string
   className?: string
   style?: CSSProperties
@@ -35,6 +37,7 @@ export function Token({
   dead = false,
   voteSpent = false,
   now = false,
+  back = false,
   size,
   className = '',
   style,
@@ -43,9 +46,10 @@ export function Token({
   return (
     <div
       className={`token ${className}`}
-      data-align={alignment === 'unknown' ? undefined : alignment}
+      data-align={back || alignment === 'unknown' ? undefined : alignment}
       data-dead={dead || undefined}
       data-now={now || undefined}
+      data-back={back || undefined}
       style={size ? ({ ...style, ['--size' as string]: size } as CSSProperties) : style}
     >
       {dead && (
@@ -55,7 +59,9 @@ export function Token({
           aria-hidden
         />
       )}
-      {src ? (
+      {back ? (
+        <span className="token-seal" aria-hidden />
+      ) : src ? (
         <img className="token-art" src={src} alt="" loading="lazy" decoding="async" />
       ) : children ? null : (
         <span className="token-initials">{initials(name)}</span>
