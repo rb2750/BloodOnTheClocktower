@@ -9,12 +9,18 @@
     border: 1px solid var(--hairline-strong);
     isolation: isolate;
     cursor: pointer;
-    /* Stops the browser scrolling under the finger, and stops iOS offering to
-       copy or share the character name from a long press. */
-    touch-action: none;
+    /* The page still scrolls with a finger on the card; only the horizontal
+       axis is claimed, which is what stops a swipe turning into a drag. iOS is
+       also stopped from offering to copy or share the name on a long press. */
+    touch-action: pan-y;
     user-select: none;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
+  }
+
+  .reveal * {
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   /* Grows from the centre so the alignment ring is the last thing to appear.

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type React from 'react'
 import type { ReactNode } from 'react'
 import './reveal.css'
 
@@ -20,8 +21,13 @@ import './reveal.css'
  *    where the system screenshots the page for the app switcher.
  *  - The reveal grows from the centre as a circular mask, so the alignment ring
  *    is the last thing to appear rather than flashing across the whole card.
+ *  - A finger that travels is scrolling the page, not asking for the secret, so
+ *    the card lets the page move under it and shows nothing.
  */
 const AUTO_COVER_MS = 6000
+/** Long enough to tell a hold from the start of a flick, short enough to feel instant. */
+const HOLD_MS = 130
+const SCROLL_SLOP = 8
 
 export function HoldToReveal({
   children,
@@ -36,13 +42,18 @@ export function HoldToReveal({
 }) {
   const [revealed, setRevealed] = useState(false)
   const timer = useRef<number | null>(null)
+  const holding = useRef<number | null>(null)
+  const from = useRef<{ x: number; y: number } | null>(null)
   const seen = useRef(false)
 
   const cover = useCallback(() => {
     setRevealed(false)
-    if (timer.current !== null) {
-      window.clearTimeout(timer.current)
-      timer.current = null
+    from.current = null
+    for (const ref of [timer, holding]) {
+      if (ref.current !== null) {
+        window.clearTimeout(ref.current)
+        ref.current = null
+      }
     }
   }, [])
 
@@ -69,15 +80,37 @@ export function HoldToReveal({
     }
   }, [cover])
 
+  // The card is most of the screen, so a finger landing on it is as likely to
+  // be the start of a scroll as a hold. A touch waits to see which it is and
+  // gives up the moment the finger travels; a mouse has no such ambiguity.
+  const press = (e: React.PointerEvent) => {
+    if (e.pointerType === 'mouse') return reveal()
+    from.current = { x: e.clientX, y: e.clientY }
+    holding.current = window.setTimeout(reveal, HOLD_MS)
+  }
+
+  const moved = (e: React.PointerEvent) => {
+    const start = from.current
+    if (!start || revealed) return
+    if (Math.abs(e.clientY - start.y) > SCROLL_SLOP || Math.abs(e.clientX - start.x) > SCROLL_SLOP) {
+      cover()
+    }
+  }
+
   return (
     <div
       className="reveal"
       data-revealed={revealed || undefined}
-      onPointerDown={reveal}
+      onPointerDown={press}
+      onPointerMove={moved}
       onPointerUp={cover}
       onPointerCancel={cover}
       onPointerLeave={cover}
       onContextMenu={(e) => e.preventDefault()}
+      // Android starts a selection from a long press even where selection is
+      // off, and the handles land over the card.
+      onSelectStart={(e) => e.preventDefault()}
+      onDragStart={(e) => e.preventDefault()}
       role="button"
       tabIndex={0}
       aria-label={revealed ? 'Your character is showing' : label}
