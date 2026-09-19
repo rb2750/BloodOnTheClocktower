@@ -32,6 +32,9 @@ while standing up.
 
 Both apps install to the home screen and work with no network.
 
+The reasoning behind all of this — the research, the decisions, and the things
+that changed during the build — is in [docs/DESIGN.md](./docs/DESIGN.md).
+
 ## Running it
 
 ```bash
