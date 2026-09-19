@@ -39,13 +39,16 @@
       min(calc(267cqw / (var(--n) + 6.2)), calc(210cqh / (var(--n) + 6.2))),
       92px
     );
-    /* Room for the token, plus a horizontal allowance for the name label that
-       sits outside it. The allowance scales with the token, so it shrinks as
-       seats are added: at twenty players the labels are small and the ring
-       needs every pixel of width it can get to keep tokens from touching. */
-    --pad: calc(var(--size) * 0.8);
-    --rx: calc(50cqw - var(--pad) - var(--size) * 0.5);
-    --ry: min(calc(50cqh - var(--pad)), calc(var(--rx) * 1.45));
+    /* How far a seat reaches past the ring: half a token, plus the name label
+       that sits outside it. Everything scales with the token, so one number
+       covers five players and twenty.
+
+       The tall cap on the vertical radius matters more than it looks. A phone
+       is far taller than it is wide, and letting the ring stretch into that
+       space is what buys the spacing between seats at high player counts. */
+    --pad: calc(var(--size) * 1.05);
+    --rx: calc(50cqw - var(--pad));
+    --ry: min(calc(50cqh - var(--pad)), calc(var(--rx) * 1.6));
   }
 
   .circle > li {
