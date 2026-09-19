@@ -54,6 +54,12 @@ jobs:
           # and directories beginning with an underscore.
           touch site/.nojekyll
 
+      # Creates the Pages site on first run, so nothing needs clicking in the
+      # repository settings; later runs are a no-op.
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
       - uses: actions/upload-pages-artifact@v4
         with:
           path: site
