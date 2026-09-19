@@ -21,6 +21,7 @@ import {
 } from '@botc/protocol'
 import { RELAY_URL } from './config.js'
 import { useStore } from './state.js'
+import { alert } from './alert.js'
 
 export type Seat = { id: string; name: string; taken: boolean }
 
@@ -127,7 +128,11 @@ function useRelayConnection() {
             const theirs = storytellerKey.current
             if (message.seatId !== mine || !theirs || !pair.current) return
             void openSealed<SealedWhisper>(pair.current, theirs, message.sealed)
-              .then((word) => addMessage(message.id, word.text, word.at))
+              .then((word) => {
+                const fresh = !useStore.getState().messages.some((m) => m.id === message.id)
+                addMessage(message.id, word.text, word.at)
+                if (fresh) alert('word')
+              })
               .catch(() => {
                 // Addressed to us and we cannot open it: the Storyteller holds a
                 // key we no longer have. Sitting down again gives them the right
@@ -149,15 +154,21 @@ function useRelayConnection() {
             )
             return setSeats(message.seats)
           }
-          if (message.t === 'phase') return setPhase(message.phase, message.day)
+          if (message.t === 'phase') {
+            const was = useStore.getState()
+            if (was.phaseKnown && was.phase !== message.phase) {
+              alert(/^night/i.test(message.phase) ? 'night' : 'day')
+            }
+            return setPhase(message.phase, message.day)
+          }
           if (message.t === 'vote') {
             // A short buzz when a vote opens, a longer one when it closes, so a
             // phone face down on the table still says "look up". Nothing for a
             // raised hand: that would buzz the room every few seconds.
             const before = useStore.getState().vote
             const next = message.nomination
-            if (next && next.id !== before?.id) navigator.vibrate?.([40, 50, 40])
-            else if (next && next.settled && before && !before.settled) navigator.vibrate?.(120)
+            if (next && next.id !== before?.id) alert('vote')
+            else if (next && next.settled && before && !before.settled) alert('closed')
             return setVote(next)
           }
           if (message.t === 'role') {

@@ -62,11 +62,9 @@ export class Relay {
   private reconnectNow() {
     if (this.closed) return
     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
-    if (this.socket?.readyState === WebSocket.OPEN) {
-      // Might be half dead after a sleep: ask, and let the pong decide.
-      this.ping()
-      return
-    }
+    // A socket that lived through a sleep is not to be trusted, and asking
+    // it costs seconds. A fresh one costs a tenth of that, and the other side
+    // re-sends everything on sitting down.
     if (this.timer) {
       clearTimeout(this.timer)
       this.timer = null

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval'
 import { idsFor, type Payload, type VoteSnapshot } from '@botc/protocol'
+import { alert } from './alert.js'
 
 const idbStorage: StateStorage = {
   getItem: async (name) => (await idbGet(name)) ?? null,
@@ -166,7 +167,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
       setRole: (characterId, scriptIds, scriptName) =>
         set((s) => {
           const changed = Boolean(s.characterId && s.characterId !== characterId)
-          if (changed) navigator.vibrate?.([80, 60, 80])
+          if (changed) alert('role')
           return {
             characterId,
             scriptIds,
