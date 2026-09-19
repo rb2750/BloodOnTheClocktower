@@ -205,6 +205,20 @@ export const useStore = create<PlayerState & PlayerActions>()(
       name: 'botc-player',
       version: 1,
       storage: createJSONStorage(() => idbStorage),
+      // A Uint8Array does not survive JSON, so the room key comes back as an
+      // object keyed by byte index and the relay can never be rejoined.
+      merge: (persisted, current) => {
+        const state = { ...current, ...(persisted as Partial<PlayerState>) } as PlayerState &
+          PlayerActions
+        const payload = state.payload
+        if (payload?.kind === 'room' && !(payload.key instanceof Uint8Array)) {
+          state.payload = {
+            ...payload,
+            key: Uint8Array.from(Object.values(payload.key as unknown as Record<string, number>)),
+          }
+        }
+        return state
+      },
     },
   ),
 )

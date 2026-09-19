@@ -107,7 +107,7 @@ export type Game = {
   locked: boolean
   /** The shared room, once a code has been shown. Kept for the whole game so
    *  the same code works at any point and a re-scan finds the same room. */
-  room?: { id: string; key: string }
+  room?: { id: string; key: Uint8Array }
   /** Which device claimed each seat, so nobody can take a seat that is spoken
    *  for and the same phone is recognised on a later scan. */
   claims?: Record<string, string>
