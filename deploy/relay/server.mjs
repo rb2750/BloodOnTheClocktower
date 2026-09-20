@@ -51,7 +51,7 @@ const rooms = new Map()
 function room(id) {
   let found = rooms.get(id)
   if (!found) {
-    found = { hosts: new Set(), players: new Set(), backlog: [], bytes: 0, subs: new Map() }
+    found = { hosts: new Set(), players: new Set(), backlog: [], bytes: 0, subs: new Map(), claims: new Map() }
     rooms.set(id, found)
   }
   found.touched = Date.now()
@@ -113,6 +113,9 @@ http.on('upgrade', (request, socket, head) => {
     // A player joining after the Storyteller has published wants the room as it
     // stands, rather than waiting for the next change.
     if (role === 'player') for (const body of here.backlog) ws.send(body)
+    // A Storyteller whose screen was off when someone sat down still owes them
+    // a role, so the latest claim for every seat is handed to a joining host.
+    if (role === 'host') for (const body of here.claims.values()) ws.send(body)
 
     ws.on('pong', () => {
       ws.alive = true
@@ -172,6 +175,12 @@ http.on('upgrade', (request, socket, head) => {
       // the rest hold ciphertext they cannot open.
       here.backlog.push(body)
       here.bytes += body.length
+      if (role === 'player') {
+        try {
+          const parsed = JSON.parse(body)
+          if (parsed.t === 'claim' && parsed.seatId) here.claims.set(parsed.seatId, body)
+        } catch {}
+      }
       while (here.backlog.length > MAX_BACKLOG || here.bytes > MAX_BACKLOG_BYTES) {
         here.bytes -= here.backlog.shift().length
       }
