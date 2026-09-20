@@ -1,5 +1,8 @@
 import { Book, Candle, Hourglass, Ring, Rows, Row, Button, Scroll, BuildStamp } from '@botc/ui'
 import { BUILD } from '../config.js'
+import { useState } from 'react'
+import { useRoom } from '../room.js'
+import { enablePush, pushState, type PushState } from '../push.js'
 import { useStore, phaseLabel } from '../state/store.js'
 import type { Screen as ScreenName } from '../App.js'
 
@@ -81,6 +84,7 @@ export function HomeScreen({ go }: { go: (s: ScreenName) => void }) {
         <Button variant="primary" live className="w-full" onClick={() => go('plan')}>
           {live ? 'Start another game' : 'New game'}
         </Button>
+        <Alerts />
         <BuildStamp build={BUILD} />
       </div>
     </div>
@@ -124,5 +128,39 @@ function ClockFace() {
       />
       <circle cx="80" cy="80" r="3" fill="currentColor" />
     </svg>
+  )
+}
+
+
+/** The Storyteller's own buzz: a hand, a seat, two players talking. */
+function Alerts() {
+  const { subscribe } = useRoom()
+  const [state, setState] = useState<PushState>(() => pushState())
+  const [busy, setBusy] = useState(false)
+  if (state === 'unsupported' || state === 'on') return null
+  const turnOn = async () => {
+    setBusy(true)
+    try {
+      const sub = await enablePush()
+      if (sub) subscribe(sub)
+    } finally {
+      setBusy(false)
+      setState(pushState())
+    }
+  }
+  return (
+    <div className="mt-4 rounded-2xl border border-(--hairline-strong) px-4 py-3">
+      {state === 'install-first' ? (
+        <p className="serif text-[14px] leading-snug text-(--text-dim)">
+          To get a buzz on this phone: Share, Add to Home Screen, open it from there, then turn alerts on here.
+        </p>
+      ) : state === 'denied' ? (
+        <p className="serif text-[14px] leading-snug text-(--text-dim)">Alerts are blocked for this app in Settings.</p>
+      ) : (
+        <Button className="w-full" disabled={busy} onClick={() => void turnOn()}>
+          {busy ? 'Turning on…' : 'Turn on alerts on this phone'}
+        </Button>
+      )}
+    </div>
   )
 }

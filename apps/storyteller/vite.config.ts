@@ -30,6 +30,7 @@ export default defineConfig({
       // it raises a toast and lets the Storyteller choose the moment.
       injectRegister: null,
       workbox: {
+        importScripts: ['push.js'],
         // The player companion is a separate app inside this one's scope, so
         // the navigation fallback must not answer for it. Without this, a phone
         // that has opened the Storyteller once is served the Storyteller again

@@ -13,6 +13,7 @@ import {
 } from '@botc/protocol'
 import { getCharacter } from '@botc/rules'
 import { alert } from '@botc/ui'
+import { currentPush } from './push.js'
 import { get as idbGet, set as idbSet } from 'idb-keyval'
 import { phaseLabel, useStore } from './state/store.js'
 import { RELAY_URL } from './config.js'
@@ -33,6 +34,8 @@ type Room = {
   /** Seats whose phone is connected and can be sent a private word. */
   reachable: string[]
   whisper: (seatId: string, text: string, id: string) => Promise<boolean>
+  /** Send the relay this phone's own notification subscription. */
+  subscribe: (sub: string) => void
 }
 
 const RoomContext = createContext<Room>({
@@ -119,6 +122,11 @@ export function RoomProvider({ children }: { children: ReactNode }) {
     const introduce = (client: Relay, pub: string) => {
       const now = useStore.getState().game
       client.send({ t: 'hello', pub })
+      // The Storyteller's own phone gets its notifications the same way a
+      // player's does, under the name "host".
+      void currentPush().then((sub) => {
+        if (sub) client.sendRaw(`sub:host:${sub}`)
+      })
       client.send({ t: 'seats', seats: tableOf(now, keys.current) })
       const opening = phaseMessage(now)
       if (opening) client.send(opening)
@@ -200,6 +208,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
             if (up !== message.up) {
               useStore.getState().toggleVote(open.id, message.seatId)
               alert('hand')
+              client.sendRaw('push:host:hand')
             }
             return
           }
@@ -207,6 +216,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
             // Cannot be read here, and is not. The phone it is for gets its
             // notification, and the grimoire notes that two people are talking.
             client.sendRaw(`push:${message.to}:chat`)
+            client.sendRaw('push:host:chat')
             const [a, b] = [message.from, message.to].sort()
             setTalking((t) => [...t.filter((x) => !(x.a === a && x.b === b)), { a: a!, b: b!, at: Date.now() }].slice(-12))
             return
@@ -216,7 +226,10 @@ export function RoomProvider({ children }: { children: ReactNode }) {
           const seat = state.game?.seats.find((s) => s.id === message.seatId)
           if (!seat || !pair.current) return
 
-          if (!keys.current.has(seat.id)) alert('seat')
+          if (!keys.current.has(seat.id)) {
+            alert('seat')
+            client.sendRaw('push:host:seat')
+          }
           keys.current.set(seat.id, message.pub)
           // The table goes out again so everyone has this phone's key.
           client.send({ t: 'seats', seats: tableOf(state.game, keys.current) })
@@ -291,6 +304,10 @@ export function RoomProvider({ children }: { children: ReactNode }) {
     lastVote.current = now ? { id: now.id, settled: now.settled } : null
   }, [nominations, phase])
 
+  const subscribe = (sub: string) => {
+    relay.current?.sendRaw(`sub:host:${sub}`)
+  }
+
   const whisper = async (seatId: string, text: string, id: string) => {
     const client = relay.current
     const ours = pair.current
@@ -305,7 +322,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <RoomContext.Provider value={{ status, reachable, talking, whisper }}>
+    <RoomContext.Provider value={{ status, reachable, talking, whisper, subscribe }}>
       {children}
     </RoomContext.Provider>
   )
