@@ -233,8 +233,11 @@ export const useStore = create<Store>()(
               }
             }
             pushLog(draft, 'phase', `New game on ${scriptName} with ${names.length} players.`)
-            draft.cinematicPlayed = null
-          }),
+          })
+          // A new game has nothing behind it, so its first night is a change
+          // and the cinematic plays.
+          set({ cinematicPlayed: null })
+        },
 
         abandonGame: () =>
           commit('Abandon game', (draft) => {
