@@ -7,6 +7,7 @@ import { ScriptScreen } from './screens/Script.js'
 import { HomeScreen } from './screens/Home.js'
 import { PlayerCinematic } from './components/PlayerCinematic.js'
 import { ThreadScreen } from './screens/Thread.js'
+import { GrimoireScreen } from './screens/GrimoireScreen.js'
 
 type View = 'home' | 'script'
 
@@ -71,12 +72,20 @@ export function App() {
   }
 
   const [thread, setThread] = useState<string | null>(null)
+  const [grimoire, setGrimoire] = useState(false)
   const openThread = (seatId: string) => {
     history.pushState({ view: 'thread' }, '')
     setThread(seatId)
   }
+  const openGrimoire = () => {
+    history.pushState({ view: 'grimoire' }, '')
+    setGrimoire(true)
+  }
   useEffect(() => {
-    const onPop = () => setThread(null)
+    const onPop = () => {
+      setThread(null)
+      setGrimoire(false)
+    }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
   }, [])
@@ -97,6 +106,8 @@ export function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [thread])
 
+  if (grimoire) return <GrimoireScreen onBack={() => history.back()} />
+
   if (thread)
     return (
       <>
@@ -110,7 +121,7 @@ export function App() {
       {view !== 'home' && <BackBar onBack={() => history.back()} />}
 
       <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        {view === 'home' && <HomeScreen openRoles={() => open('script')} openThread={openThread} />}
+        {view === 'home' && <HomeScreen openRoles={() => open('script')} openThread={openThread} openGrimoire={openGrimoire} />}
         {view === 'script' && <ScriptScreen />}
       </main>
 

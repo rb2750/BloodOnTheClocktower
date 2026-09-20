@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { baseComposition, characterArt, getCharacter, teamAlignment } from '@botc/rules'
-import { idsFor, type SealedGrimoire } from '@botc/protocol'
-import { ChevronRight, Plus, Token, Button, BuildStamp, Grimoire, haptic, inputClass } from '@botc/ui'
+import { baseComposition, characterArt, getCharacter } from '@botc/rules'
+import { ChevronRight, Plus, Token, Button, BuildStamp, haptic, inputClass } from '@botc/ui'
 import { useStore } from '../state.js'
 import { useRelay } from '../room.js'
 import { BUILD } from '../config.js'
@@ -43,7 +42,15 @@ function claimOf(name: string, notes: ReturnType<typeof useStore.getState>['note
 }
 
 /** The table as it actually sits: a ring, in seat order, like the grimoire. */
-export function HomeScreen({ openRoles, openThread }: { openRoles: () => void; openThread: (seatId: string) => void }) {
+export function HomeScreen({
+  openRoles,
+  openThread,
+  openGrimoire,
+}: {
+  openRoles: () => void
+  openThread: (seatId: string) => void
+  openGrimoire: () => void
+}) {
   const payload = useStore((s) => s.payload)
   const characterId = useStore((s) => s.characterId)
   const seatName = useStore((s) => s.seatName)
@@ -65,7 +72,7 @@ export function HomeScreen({ openRoles, openThread }: { openRoles: () => void; o
       <Alerts />
       <MeScreen />
       <Whispers />
-      <TheGrimoire />
+      <TheGrimoire open={openGrimoire} />
 
       {payload && (characterId || seatName) && (
         <div className="mt-6 mb-10">
@@ -312,68 +319,22 @@ function Alerts() {
  * shown, because what the Spy saw on night two is not what is true on night
  * four and they are expected to remember which.
  */
-function TheGrimoire() {
+function TheGrimoire({ open }: { open: () => void }) {
   const grimoire = useStore((s) => s.grimoire)
-  const card = useRef<HTMLElement>(null)
-  // A held card cannot be scrolled: the finger is busy. So when one arrives it
-  // puts itself where it can be read in one go.
-  useEffect(() => {
-    if (grimoire) card.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [grimoire?.at, grimoire?.seats.length])
   if (!grimoire) return null
   return (
-    <section ref={card} className="mt-6 px-5">
-      <div className="mb-2 flex items-baseline justify-between">
-        <p className="caps text-(--text-faint)">The grimoire, as you saw it</p>
-        <span className="caps text-(--text-faint)">{grimoire.at}</span>
-      </div>
-      <HoldToReveal tall label="Press and hold" hint="Only you should be seeing this.">
-        <div className="absolute inset-0 flex">
-          <Grimoire
-            count={grimoire.seats.length}
-            keys={grimoire.seats.map((s) => s.name)}
-            showClock={false}
-            centre={<p className="caps text-(--text-faint)">{grimoire.at}</p>}
-          >
-            {(i) => <SpySeat seat={grimoire.seats[i]!} />}
-          </Grimoire>
-        </div>
-      </HoldToReveal>
-    </section>
-  )
-}
-
-/** One seat of the Grimoire, drawn as the Storyteller's own screen draws it. */
-function SpySeat({ seat }: { seat: SealedGrimoire['seats'][number] }) {
-  const character = getCharacter(idsFor([seat.character])[0] ?? '')
-  const alignment = character ? teamAlignment(character.team) : undefined
-  const shown = seat.tokens.slice(0, 2)
-  const extra = seat.tokens.length - shown.length
-  return (
-    <span className="relative flex flex-col items-center">
-      <Token
-        src={character ? characterArt(character, alignment === 'evil' ? 'e' : 'g') : undefined}
-        name={seat.name}
-        alignment={alignment ?? 'unknown'}
-        dead={seat.dead}
-      />
-      <span className="seat-name">{seat.name}</span>
-      {(seat.drunk || seat.tokens.length > 0) && (
-        <span className="chips">
-          {seat.drunk && (
-            <span className="chip" data-kind="drunk">
-              Drunk
-            </span>
-          )}
-          {shown.map((t) => (
-            <span key={t.label} className="chip" data-kind={t.kind}>
-              {t.label}
-            </span>
-          ))}
-          {extra > 0 && <span className="chip">+{extra}</span>}
+    <button
+      onClick={open}
+      className="mx-5 mt-4 flex w-[calc(100%-2.5rem)] items-center gap-3 rounded-2xl border border-(--accent) px-4 py-3 text-left"
+    >
+      <span className="min-w-0 flex-1">
+        <span className="caps block text-(--text-faint)">The grimoire, as you saw it</span>
+        <span className="display mt-0.5 block text-[19px] leading-tight text-(--text)">
+          The whole table, {grimoire.at}
         </span>
-      )}
-    </span>
+      </span>
+      <ChevronRight size={18} className="shrink-0 text-(--text-faint)" />
+    </button>
   )
 }
 

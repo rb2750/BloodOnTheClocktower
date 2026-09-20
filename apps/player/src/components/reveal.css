@@ -29,6 +29,31 @@
     min-height: min(72vh, 540px);
   }
 
+  /* Given a whole screen, take it: the ring sizes itself from its container,
+     so this is the difference between a diagram and the real thing. */
+  .reveal[data-fill] {
+    height: 100%;
+    min-height: 0;
+    flex: 1;
+  }
+
+  .reveal[data-fill] .reveal-content {
+    padding: 0.25rem;
+  }
+
+  .reveal[data-fill] .circle {
+    --pad: calc(var(--size) * 1.15);
+    /* The Storyteller's ring keeps its vertical radius within 1.42 of its
+       horizontal one, because it shares the screen with the night panel. This
+       screen is nothing but the ring, so it may follow the shape of the phone
+       instead of sitting squashed in the middle of it. */
+    --ry: min(calc(50cqh - var(--pad)), calc(var(--rx) * 2.8));
+  }
+
+  .reveal[data-fill] .chip {
+    max-width: none;
+  }
+
   .reveal[data-tall] .reveal-content {
     padding: 0.5rem;
   }
