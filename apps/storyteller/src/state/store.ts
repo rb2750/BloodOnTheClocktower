@@ -213,7 +213,7 @@ export const useStore = create<Store>()(
           return last.label
         },
 
-        newGame: ({ script, scriptName, names }) =>
+        newGame: ({ script, scriptName, names }) => {
           commit('Start game', (draft) => {
             draft.game = {
               id: id(),
