@@ -73,11 +73,22 @@ const http = createServer((request, response) => {
   if (request.url === '/health') {
     return response.writeHead(200, { ...CORS, 'Content-Type': 'text/plain' }).end('ok')
   }
+  const code = /^\/code\/([0-9A-Z]{4})$/.exec(request.url ?? '')
+  if (code) {
+    const text = codes.get(code[1])
+    if (!text) return response.writeHead(404, { ...CORS, 'Content-Type': 'text/plain' }).end('No game with that code')
+    return response.writeHead(200, { ...CORS, 'Content-Type': 'text/plain' }).end(text)
+  }
   if (request.url === '/vapid') {
     return response.writeHead(200, { ...CORS, 'Content-Type': 'text/plain' }).end(VAPID.publicKey)
   }
   response.writeHead(404, { ...CORS, 'Content-Type': 'text/plain' }).end('Not found')
 })
+
+// Four letters read out across the table stand in for the QR code. A code
+// maps to the same text the QR carries and lives as long as the process: the
+// Storyteller registers it again on every connect.
+const codes = new Map()
 
 const sockets = new WebSocketServer({ noServer: true, maxPayload: MAX_MESSAGE })
 
@@ -127,6 +138,12 @@ http.on('upgrade', (request, socket, head) => {
         } catch (err) {
           console.warn(`bad sub for ${seatId}: ${err?.message ?? err}`)
         }
+        return
+      }
+      if (body.startsWith('code:')) {
+        if (role !== 'host') return
+        const [, code, text] = body.split(':')
+        if (code && text) codes.set(code, text)
         return
       }
       if (body.startsWith('push:')) {

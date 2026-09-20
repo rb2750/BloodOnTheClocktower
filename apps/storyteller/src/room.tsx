@@ -4,7 +4,9 @@ import {
   characterIndex,
   exportPublicKey,
   generateKeyMaterial,
+  encodePayload,
   generateRoomId,
+  roomCode,
   keptSealingPair,
   indexesFor,
   sealFor,
@@ -126,6 +128,9 @@ export function RoomProvider({ children }: { children: ReactNode }) {
     const introduce = (client: Relay, pub: string) => {
       const now = useStore.getState().game
       client.send({ t: 'hello', pub })
+      client.sendRaw(
+        `code:${roomCode(room.key)}:${encodePayload({ kind: 'room', room: room.id, key: room.key, scriptHash: 0 })}`,
+      )
       // The Storyteller's own phone gets its notifications the same way a
       // player's does, under the name "host".
       void currentPush().then((sub) => {

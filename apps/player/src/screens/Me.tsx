@@ -1,8 +1,11 @@
+import { useState } from 'react'
+import { toast } from 'sonner'
 import { characterArt, getCharacter, teamAlignment } from '@botc/rules'
-import { AbilityText, Label, Rows, Row, Token, Qr, haptic } from '@botc/ui'
+import { AbilityText, Button, Label, Rows, Row, Token, Qr, haptic, inputClass } from '@botc/ui'
 import { useStore } from '../state.js'
 import { HoldToReveal } from '../components/HoldToReveal.js'
 import { useRelay } from '../room.js'
+import { RELAY_URL } from '../config.js'
 
 const TEAM_LABEL: Record<string, string> = {
   townsfolk: 'Townsfolk',
@@ -67,6 +70,30 @@ export function MeScreen() {
 }
 
 function Empty() {
+  const [code, setCode] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  // The four letters under the Storyteller's QR. The relay hands back the same
+  // text the QR carries, and it goes in through the address bar so a typed
+  // code and a scanned one take exactly the same path.
+  const join = async () => {
+    const typed = code.toUpperCase().replace(/O/g, '0').replace(/[IL]/g, '1')
+    if (typed.length !== 4) return
+    setBusy(true)
+    try {
+      const res = await fetch(`${RELAY_URL}/code/${typed}`)
+      if (!res.ok) {
+        toast.error('No game is using that code right now.')
+        return
+      }
+      window.location.hash = await res.text()
+    } catch {
+      toast.error('Could not reach the Storyteller. Check your signal.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <section className="flex min-h-[70vh] flex-col items-center justify-center gap-5 px-8 text-center">
       <Qr size={44} className="text-(--text-dim)" strokeWidth={1.25} />
@@ -75,6 +102,29 @@ function Empty() {
         Point your camera at the code they are holding. Your character, the script and your
         notes all live here afterwards, and it works with no signal.
       </p>
+      <form
+        className="mt-2 flex w-full max-w-[22ch] flex-col items-center gap-3"
+        onSubmit={(e) => {
+          e.preventDefault()
+          void join()
+        }}
+      >
+        <Label>Or type the four letters under it</Label>
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/[^0-9a-z]/gi, '').slice(0, 4))}
+          inputMode="text"
+          autoCapitalize="characters"
+          autoComplete="off"
+          spellCheck={false}
+          placeholder="ABCD"
+          aria-label="Game code"
+          className={`${inputClass} display text-center text-[26px] uppercase tracking-[0.3em]`}
+        />
+        <Button type="submit" className="w-full" disabled={code.length !== 4 || busy}>
+          Join
+        </Button>
+      </form>
     </section>
   )
 }
