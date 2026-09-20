@@ -325,7 +325,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
         character: s.characterId ? characterIndex(s.characterId) : -1,
         drunk: s.trueCharacterId === 'drunk',
         dead: !s.alive,
-        tokens: s.effects.map((e) => e.label),
+        tokens: s.effects.map((e) => ({ kind: e.kind, label: e.label })),
       })),
     })
     client.send({ t: 'grimoire', seatId, id: Math.random().toString(36).slice(2, 10), sealed })

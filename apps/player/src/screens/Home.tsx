@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
-import { baseComposition, characterArt, getCharacter } from '@botc/rules'
-import { idsFor } from '@botc/protocol'
-import { ChevronRight, Plus, Token, Button, BuildStamp, haptic, inputClass } from '@botc/ui'
+import { useEffect, useRef, useState } from 'react'
+import { baseComposition, characterArt, getCharacter, teamAlignment } from '@botc/rules'
+import { idsFor, type SealedGrimoire } from '@botc/protocol'
+import { ChevronRight, Plus, Token, Button, BuildStamp, Grimoire, haptic, inputClass } from '@botc/ui'
 import { useStore } from '../state.js'
 import { useRelay } from '../room.js'
 import { BUILD } from '../config.js'
@@ -314,40 +314,66 @@ function Alerts() {
  */
 function TheGrimoire() {
   const grimoire = useStore((s) => s.grimoire)
+  const card = useRef<HTMLElement>(null)
+  // A held card cannot be scrolled: the finger is busy. So when one arrives it
+  // puts itself where it can be read in one go.
+  useEffect(() => {
+    if (grimoire) card.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [grimoire?.at, grimoire?.seats.length])
   if (!grimoire) return null
   return (
-    <section className="mt-6 px-5">
+    <section ref={card} className="mt-6 px-5">
       <div className="mb-2 flex items-baseline justify-between">
         <p className="caps text-(--text-faint)">The grimoire, as you saw it</p>
         <span className="caps text-(--text-faint)">{grimoire.at}</span>
       </div>
-      <HoldToReveal label="Press and hold" hint="Only you should be seeing this.">
-        <div className="w-full px-1">
-          <ul className="m-0 list-none p-0">
-            {grimoire.seats.map((s) => {
-              const character = getCharacter(idsFor([s.character])[0] ?? '')
-              return (
-                <li
-                  key={s.name}
-                  className="flex items-baseline gap-2 border-b border-(--hairline) py-1.5 last:border-0"
-                >
-                  <span className={`w-[7ch] shrink-0 truncate text-[13px] ${s.dead ? 'text-(--text-faint) line-through' : 'text-(--text)'}`}>
-                    {s.name}
-                  </span>
-                  <span className="serif flex-1 text-left text-[14px] leading-snug text-(--text-dim)">
-                    {character?.name ?? 'nobody yet'}
-                    {s.drunk && ' · drunk'}
-                    {s.tokens.length > 0 && (
-                      <span className="text-(--text-faint)"> · {s.tokens.join(', ')}</span>
-                    )}
-                  </span>
-                </li>
-              )
-            })}
-          </ul>
+      <HoldToReveal tall label="Press and hold" hint="Only you should be seeing this.">
+        <div className="absolute inset-0 flex">
+          <Grimoire
+            count={grimoire.seats.length}
+            keys={grimoire.seats.map((s) => s.name)}
+            showClock={false}
+            centre={<p className="caps text-(--text-faint)">{grimoire.at}</p>}
+          >
+            {(i) => <SpySeat seat={grimoire.seats[i]!} />}
+          </Grimoire>
         </div>
       </HoldToReveal>
     </section>
+  )
+}
+
+/** One seat of the Grimoire, drawn as the Storyteller's own screen draws it. */
+function SpySeat({ seat }: { seat: SealedGrimoire['seats'][number] }) {
+  const character = getCharacter(idsFor([seat.character])[0] ?? '')
+  const alignment = character ? teamAlignment(character.team) : undefined
+  const shown = seat.tokens.slice(0, 2)
+  const extra = seat.tokens.length - shown.length
+  return (
+    <span className="relative flex flex-col items-center">
+      <Token
+        src={character ? characterArt(character, alignment === 'evil' ? 'e' : 'g') : undefined}
+        name={seat.name}
+        alignment={alignment ?? 'unknown'}
+        dead={seat.dead}
+      />
+      <span className="seat-name">{seat.name}</span>
+      {(seat.drunk || seat.tokens.length > 0) && (
+        <span className="chips">
+          {seat.drunk && (
+            <span className="chip" data-kind="drunk">
+              Drunk
+            </span>
+          )}
+          {shown.map((t) => (
+            <span key={t.label} className="chip" data-kind={t.kind}>
+              {t.label}
+            </span>
+          ))}
+          {extra > 0 && <span className="chip">+{extra}</span>}
+        </span>
+      )}
+    </span>
   )
 }
 

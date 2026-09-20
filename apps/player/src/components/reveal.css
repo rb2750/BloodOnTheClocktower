@@ -23,6 +23,29 @@
     -webkit-user-select: none;
   }
 
+  /* The grimoire is a ring of fifteen tokens, not a sentence, so its card is
+     given the height to draw one and almost none of the padding. */
+  .reveal[data-tall] {
+    min-height: min(72vh, 540px);
+  }
+
+  .reveal[data-tall] .reveal-content {
+    padding: 0.5rem;
+  }
+
+  /* The ring sizes itself from its container, and this container is a card
+     rather than a screen: a little more room at the edges keeps the lowest
+     names off the card's own border. */
+  .reveal[data-tall] .circle {
+    --pad: calc(var(--size) * 1.3);
+  }
+
+  /* The Storyteller reads these chips as pictures; the Spy gets them in words,
+     and a word that ends in an ellipsis is no use to anybody. */
+  .reveal[data-tall] .chip {
+    max-width: none;
+  }
+
   /* Grows from the centre so the alignment ring is the last thing to appear.
      A cross-fade would flash the red or blue across the whole card at 50%
      opacity, which gives the secret away from two seats over. */

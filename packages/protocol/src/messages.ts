@@ -49,8 +49,8 @@ export type SealedGrimoire = {
     /** A Drunk token sits alongside it. */
     drunk: boolean
     dead: boolean
-    /** Reminder tokens on that seat, in the Storyteller's own words. */
-    tokens: string[]
+    /** Reminder tokens on that seat, drawn the way the Storyteller sees them. */
+    tokens: { kind: string; label: string }[]
   }[]
 }
 
