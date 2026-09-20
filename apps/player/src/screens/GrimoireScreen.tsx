@@ -39,16 +39,6 @@ export function GrimoireScreen({ onBack }: { onBack: () => void }) {
             label="Press and hold"
             hint="For your eyes only."
           >
-                  {(i) => (
-                    <span className="relative flex flex-col items-center">
-                      <Token name={grimoire.seats[i]!.name} back dead={grimoire.seats[i]!.dead} />
-                      <span className="seat-name">{grimoire.seats[i]!.name}</span>
-                    </span>
-                  )}
-                </Grimoire>
-              </div>
-            }
-          >
             <div className="absolute inset-0 flex">
               <Grimoire
                 count={grimoire.seats.length}
