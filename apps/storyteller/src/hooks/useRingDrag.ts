@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { haptic } from '@botc/ui'
 
 const HOLD_MS = 220
 const SLOP = 8
@@ -24,7 +25,18 @@ export function useRingDrag({
   const [dragging, setDragging] = useState<string | null>(null)
   const [preview, setPreview] = useState<string[] | null>(null)
   const timer = useRef<number | null>(null)
-  const start = useRef<{ x: number; y: number; id: string; li: HTMLLIElement } | null>(null)
+  const start = useRef<{
+    x: number
+    y: number
+    id: string
+    li: HTMLLIElement
+    /** Where in the token the finger landed, so it does not jump on pickup. */
+    grabX: number
+    grabY: number
+    /** The ring's centre, measured once: it cannot move mid-drag. */
+    cx: number
+    cy: number
+  } | null>(null)
   const justDragged = useRef(false)
   const orderRef = useRef(order)
   orderRef.current = order
@@ -41,11 +53,10 @@ export function useRingDrag({
   useEffect(() => clear, [clear])
 
   const slotAt = (clientX: number, clientY: number) => {
-    const circle = document.querySelector<HTMLElement>('.circle')
-    if (!circle) return null
-    const box = circle.getBoundingClientRect()
-    const dx = clientX - (box.left + box.width / 2)
-    const dy = clientY - (box.top + box.height / 2)
+    const s = start.current
+    if (!s) return null
+    const dx = clientX - s.cx
+    const dy = clientY - s.cy
     // Seat 0 is at the top and angles run clockwise, matching the CSS.
     let turn = Math.atan2(dy, dx) / (Math.PI * 2) + 0.25
     turn = ((turn % 1) + 1) % 1
@@ -59,17 +70,30 @@ export function useRingDrag({
       const id = orderRef.current[index]
       if (!id) return
       const li = e.currentTarget
-      start.current = { x: e.clientX, y: e.clientY, id, li }
+      const seat = li.getBoundingClientRect()
+      const ring = li.closest('.circle')?.getBoundingClientRect()
+      start.current = {
+        x: e.clientX,
+        y: e.clientY,
+        id,
+        li,
+        grabX: e.clientX - (seat.left + seat.width / 2),
+        grabY: e.clientY - (seat.top + seat.height / 2),
+        cx: ring ? ring.left + ring.width / 2 : 0,
+        cy: ring ? ring.top + ring.height / 2 : 0,
+      }
+      // Owning the pointer from the first touch, not from the end of the hold:
+      // by then the browser may already have taken the gesture for itself.
+      try {
+        li.setPointerCapture(e.pointerId)
+      } catch {
+        /* the pointer may already be gone; the window listeners still work */
+      }
       timer.current = window.setTimeout(() => {
         // Held still long enough: this is a drag, not a tap.
         setDragging(id)
-        try {
-          li.setPointerCapture(e.pointerId)
-        } catch {
-          /* the pointer may already be gone; the window listeners still work */
-        }
         setPreview(orderRef.current)
-        navigator.vibrate?.(10)
+        haptic('pick')
       }, HOLD_MS)
     },
     [disabled],
@@ -85,7 +109,11 @@ export function useRingDrag({
         return
       }
       e.preventDefault()
-      s.li.style.translate = `calc(-50% + ${e.clientX - s.x}px + var(--rx) * cos(var(--a))) calc(-50% + ${e.clientY - s.y}px + var(--ry) * sin(var(--a)))`
+      // Placed from the ring's centre to the finger, never as an offset from
+      // where the drag began. The old way added the finger's travel to the
+      // seat's own chair position, and that position changes the moment the
+      // other seats shuffle: the token teleported instead of following.
+      s.li.style.translate = `calc(-50% + ${e.clientX - s.grabX - s.cx}px) calc(-50% + ${e.clientY - s.grabY - s.cy}px)`
       const slot = slotAt(e.clientX, e.clientY)
       if (slot === null) return
       setPreview((p) => {
@@ -95,6 +123,8 @@ export function useRingDrag({
         const next = [...base]
         next.splice(from, 1)
         next.splice(slot, 0, s.id)
+        // One tick per chair crossed, the way a picker clicks past its stops.
+        haptic('tick')
         return next
       })
     }
@@ -104,7 +134,10 @@ export function useRingDrag({
         const to = preview.indexOf(s.id)
         const from = orderRef.current.indexOf(s.id)
         justDragged.current = true
-        if (to !== from) onMove(s.id, to)
+        if (to !== from) {
+          haptic('drop')
+          onMove(s.id, to)
+        }
       }
       clear()
     }

@@ -397,6 +397,16 @@
     border: 1px solid var(--hairline-strong);
   }
 
+  /* A seat you can pick up owns the gesture from the first touch. Without
+     this the browser decides halfway through a long press that it was a scroll
+     or a text selection, cancels the pointer, and the token is dropped. */
+  .circle > li[data-draggable] {
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
   /* A seat being dragged to a new chair: lifted above the rest and following
      the finger, with no transition so it does not lag behind. */
   .circle > li[data-dragging='true'] {

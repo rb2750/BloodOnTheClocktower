@@ -67,6 +67,7 @@ export function Grimoire({
           <li
             key={keys?.[i] ?? i}
             data-seat-index={i}
+            data-draggable={onSeatPointerDown ? 'true' : undefined}
             data-dragging={dragging !== null && keys?.[i] === dragging ? 'true' : undefined}
             onPointerDown={onSeatPointerDown ? (e) => onSeatPointerDown(i, e) : undefined}
             style={{ ['--i' as string]: i } as CSSProperties}
