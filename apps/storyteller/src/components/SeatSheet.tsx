@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getCharacter, teamAlignment } from '@botc/rules'
-import { AbilityText, Button, Label, Sheet, Shroud, Heart, Ghost, Swap, Signpost, haptic, inputClass } from '@botc/ui'
+import { AbilityText, Button, Label, Sheet, Shroud, Heart, Ghost, Swap, Signpost, Bell, haptic, inputClass } from '@botc/ui'
 import { toast } from 'sonner'
 import { useStore } from '../state/store.js'
 import { CharacterToken } from './CharacterToken.js'
@@ -45,7 +45,7 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
 
   const [picking, setPicking] = useState<'perceived' | 'believed' | null>(null)
   const [telling, setTelling] = useState(false)
-  const { reachable } = useRoom()
+  const { reachable, nudge } = useRoom()
 
   // A seat that still says "drunk" is owed a choice, and the sheet opens on it.
   const owed = game?.seats.find((s) => s.id === seatId)?.characterId === 'drunk'
@@ -112,7 +112,7 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
 
         {/* Frequent, reversible actions: instant, with an undo toast. No dialog
             every time, which in a dim room would be torture. */}
-        <div className="mt-5 grid grid-cols-4 gap-1 border-y border-(--hairline) py-2">
+        <div className="mt-5 grid grid-cols-5 gap-1 border-y border-(--hairline) py-2">
           <Action
             icon={seat.alive ? <Shroud size={22} /> : <Heart size={22} />}
             label={seat.alive ? 'Kill' : 'Revive'}
@@ -127,6 +127,15 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
               picking Drunk asks what they believe; picking anything else makes
               them simply that, drunk no longer. */}
           <Action icon={<Swap size={22} />} label="Character" onClick={() => setPicking('perceived')} />
+          <Action
+            icon={<Bell size={22} />}
+            label="Nudge"
+            dim={!reachable.includes(seat.id)}
+            onClick={() => {
+              nudge(seat.id)
+              toast(`${seat.name}'s phone buzzed.`)
+            }}
+          />
           {!seat.alive && (
             <Action
               icon={<Ghost size={22} />}

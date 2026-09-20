@@ -9,6 +9,7 @@ const LINES = {
   day: 'Open your eyes.',
   chat: 'You have a message.',
   grimoire: 'The Storyteller is showing you the grimoire.',
+  nudge: 'The Storyteller needs you. Look up.',
 }
 
 self.addEventListener('push', (event) => {

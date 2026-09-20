@@ -73,6 +73,8 @@ export type PlayerState = {
   storytellerKey: string | null
   /** The Storyteller changed our character and we have not looked yet. */
   roleChanged: boolean
+  /** The last nudge this phone answered, so a replay of it stays silent. */
+  nudgedAt: number
   /** Stable id for this device, so a claimed seat survives a reload. */
   deviceId: string
   hasRevealed: boolean
@@ -91,6 +93,7 @@ export type PlayerActions = {
   setVote: (vote: VoteSnapshot | null) => void
   setStorytellerKey: (key: string) => void
   setGrimoire: (grimoire: SealedGrimoire) => void
+  setNudgedAt: (at: number) => void
   setCinematicPlayed: (key: string) => void
 
   ensureNote: (name: string) => void
@@ -127,6 +130,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
       vote: null,
       storytellerKey: null,
       roleChanged: false,
+      nudgedAt: 0,
       grimoire: null,
       deviceId: newId(),
       hasRevealed: false,
@@ -191,6 +195,8 @@ export const useStore = create<PlayerState & PlayerActions>()(
       setStorytellerKey: (storytellerKey) => set({ storytellerKey }),
 
       setGrimoire: (grimoire) => set({ grimoire }),
+
+      setNudgedAt: (nudgedAt) => set({ nudgedAt }),
 
       setSeat: (seatId, seatName, roomId) =>
         set((s) => {

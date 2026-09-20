@@ -101,8 +101,13 @@ export function App() {
         action: { label: 'Open', onClick: () => openThread(seatId) },
       })
     }
+    const onNudge = () => toast('The Storyteller needs you. Look up.', { duration: 6000 })
     window.addEventListener('botc:chat', onChat)
-    return () => window.removeEventListener('botc:chat', onChat)
+    window.addEventListener('botc:nudge', onNudge)
+    return () => {
+      window.removeEventListener('botc:chat', onChat)
+      window.removeEventListener('botc:nudge', onNudge)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [thread])
 

@@ -14,7 +14,7 @@ function flash() {
   window.setTimeout(() => document.documentElement.classList.remove('alerting'), 900)
 }
 
-export type Alert = 'word' | 'role' | 'vote' | 'closed' | 'night' | 'day' | 'hand' | 'seat' | 'chat'
+export type Alert = 'word' | 'role' | 'vote' | 'closed' | 'night' | 'day' | 'hand' | 'seat' | 'chat' | 'nudge'
 
 const BUZZ: Record<Alert, number | number[]> = {
   word: [60, 40, 60],
@@ -26,6 +26,7 @@ const BUZZ: Record<Alert, number | number[]> = {
   hand: 25,
   seat: [30, 30, 30],
   chat: [50, 40, 50],
+  nudge: [140, 70, 140, 70, 140],
 }
 
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { checkSeating, getCharacter } from '@botc/rules'
-import { Grimoire, Lock, Unlock, Eye, EyeOff, haptic } from '@botc/ui'
+import { Grimoire, Lock, Unlock, Eye, EyeOff, Bell, haptic } from '@botc/ui'
 import { toast } from 'sonner'
 import { useRoom } from '../room.js'
 import { useStore, phaseLabel } from '../state/store.js'
@@ -30,7 +30,7 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
   const setConcealed = useStore((s) => s.setConcealed)
 
   const [openSeat, setOpenSeat] = useState<string | null>(null)
-  const { talking } = useRoom()
+  const { talking, nudge } = useRoom()
   const [logOpen, setLogOpen] = useState(false)
   const [distributing, setDistributing] = useState(false)
   const [ending, setEnding] = useState(false)
@@ -110,6 +110,18 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
         fill
         trailing={
           <span className="flex items-center">
+            {/* One tap buzzes every phone: for the table that has drifted off. */}
+            <button
+              onClick={() => {
+                haptic('confirm')
+                nudge('*')
+                toast('Every phone buzzed.')
+              }}
+              aria-label="Wake everyone"
+              className="grid size-11 place-items-center text-(--text-faint)"
+            >
+              <Bell size={20} />
+            </button>
             {/* Hide every role at a tap, for when someone can see the phone. */}
             <button
               onClick={() => setConcealed(!concealed)}

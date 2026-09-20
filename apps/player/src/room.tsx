@@ -220,6 +220,16 @@ function useRelayConnection() {
             )
             return setSeats(message.seats)
           }
+          if (message.t === 'nudge') {
+            const { seatId: mine, nudgedAt, setNudgedAt } = useStore.getState()
+            if (message.seatId !== '*' && message.seatId !== mine) return
+            // The backlog replays this on every reconnect; only a fresh one buzzes.
+            if (message.at <= nudgedAt || Date.now() - message.at > 30_000) return
+            setNudgedAt(message.at)
+            alert('nudge')
+            window.dispatchEvent(new Event('botc:nudge'))
+            return
+          }
           if (message.t === 'phase') {
             const was = useStore.getState()
             if (was.phaseKnown && was.phase !== message.phase) {

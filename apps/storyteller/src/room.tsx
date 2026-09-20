@@ -38,6 +38,8 @@ type Room = {
   whisper: (seatId: string, text: string, id: string) => Promise<boolean>
   /** Show one player the whole Grimoire, as the Spy and the Widow are owed. */
   showGrimoire: (seatId: string) => Promise<boolean>
+  /** Buzz one phone, or every phone with '*'. */
+  nudge: (seatId: string) => void
   /** Send the relay this phone's own notification subscription. */
   subscribe: (sub: string) => void
 }
@@ -48,6 +50,7 @@ const RoomContext = createContext<Room>({
   reachable: [],
   whisper: async () => false,
   showGrimoire: async () => false,
+  nudge: () => {},
   subscribe: () => {},
 })
 
@@ -351,8 +354,15 @@ export function RoomProvider({ children }: { children: ReactNode }) {
     return true
   }
 
+  const nudge = (seatId: string) => {
+    const client = relay.current
+    if (!client) return
+    client.send({ t: 'nudge', seatId, at: Date.now() })
+    client.sendRaw(`push:${seatId}:nudge`)
+  }
+
   return (
-    <RoomContext.Provider value={{ status, reachable, talking, whisper, showGrimoire, subscribe }}>
+    <RoomContext.Provider value={{ status, reachable, talking, whisper, showGrimoire, nudge, subscribe }}>
       {children}
     </RoomContext.Provider>
   )

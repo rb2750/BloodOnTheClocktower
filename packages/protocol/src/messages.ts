@@ -28,6 +28,9 @@ export type RelayMessage =
    *  raised in the open, so who voted is public and travels as names. */
   | { t: 'vote'; nomination: VoteSnapshot | null }
   | { t: 'death'; seatId: string; alive: boolean }
+  /** A tap on the shoulder, to one seat or to '*' for the whole table. Nothing
+   *  to read, so it is not sealed; stamped so a replay never buzzes anyone. */
+  | { t: 'nudge'; seatId: string; at: number }
 
 export type VoteSnapshot = {
   id: string
