@@ -84,6 +84,11 @@
     inset: 0;
   }
 
+  .reveal[data-fill] .reveal-cover {
+    position: absolute;
+    inset: 0;
+  }
+
   .reveal[data-fill] .circle {
     --pad: calc(var(--size) * 1.15);
     /* The Storyteller's ring keeps its vertical radius within 1.42 of its
