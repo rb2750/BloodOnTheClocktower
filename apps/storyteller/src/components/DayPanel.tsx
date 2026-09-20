@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { canNominate, getCharacter, votesNeededPhrase } from '@botc/rules'
-import { Button, Sheet, Label, Point, Moon, Quote } from '@botc/ui'
+import { Button, Sheet, Label, Point, Moon, Quote , haptic } from '@botc/ui'
 import { toast } from 'sonner'
 import { useStore, currentBlock } from '../state/store.js'
 import type { Seat } from '../state/types.js'
@@ -47,7 +47,10 @@ export function DayPanel({ onOpenSeat, onEnd }: { onOpenSeat: (id: string) => vo
             blockVotes={block.votes}
             voters={open.voterIds}
             seats={game.seats}
-            onClose={() => settleNomination(open.id)}
+            onClose={() => {
+              haptic('confirm')
+              settleNomination(open.id)
+            }}
           />
         ) : (
           <>
@@ -146,6 +149,7 @@ export function DayPanel({ onOpenSeat, onEnd }: { onOpenSeat: (id: string) => vo
                 onClick={() => {
                   if (asNominator) setNominating({ nominatorId: seat.id })
                   else {
+                    haptic('confirm')
                     nominate(nominating!.nominatorId!, seat.id)
                     setNominating(null)
                     toast(`${seatName(nominating!.nominatorId!)} nominates ${seat.name}.`)

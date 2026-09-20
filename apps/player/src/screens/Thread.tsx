@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { getCharacter } from '@botc/rules'
-import { Button, ChevronLeft, inputClass } from '@botc/ui'
+import { Button, ChevronLeft, haptic, inputClass } from '@botc/ui'
 import { useStore } from '../state.js'
 import { useRelay } from '../room.js'
 import { useKeyboardViewport } from '../useKeyboardViewport.js'
@@ -44,6 +44,7 @@ export function ThreadScreen({ seatId, onBack }: { seatId: string; onBack: () =>
     const text = draft.trim()
     if (!text || sending) return
     setSending(true)
+    haptic('tap')
     const ok = await send(seatId, text)
     setSending(false)
     if (ok) setDraft('')

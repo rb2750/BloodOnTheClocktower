@@ -15,7 +15,7 @@ import {
   scriptCharacters,
   type Script,
 } from '@botc/rules'
-import { Button, Label, Rows, Row, inputClass, Plus, Close, Dice, Import, Grip } from '@botc/ui'
+import { Button, Label, Rows, Row, inputClass, Plus, Close, Dice, Import, Grip , haptic } from '@botc/ui'
 import { CharacterPicker } from '../components/CharacterPicker.js'
 import { useListDrag } from '../hooks/useListDrag.js'
 import { useStore } from '../state/store.js'
@@ -90,6 +90,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
 
   const deal = () => {
     if (!script) return
+    haptic('tap')
     const tableSize = playerCount - travellerCount
     const result = dealCharacters(script, { playerCount: tableSize, choices })
     if (result.shortfall.length > 0) {
@@ -128,6 +129,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
       setChoosingDrunk(true)
       return
     }
+    haptic('confirm')
     newGame({ script, scriptName, names })
     const seats = useStore.getState().game?.seats ?? []
     const shuffled = [...dealt].sort(() => Math.random() - 0.5)

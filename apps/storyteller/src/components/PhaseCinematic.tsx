@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Cinematic } from '@botc/ui'
+import { Cinematic, haptic } from '@botc/ui'
 import { useStore } from '../state/store.js'
 
 type Shown = { phase: 'night' | 'day'; title: string; sub: string; key: string }
@@ -33,6 +33,7 @@ export function PhaseCinematic() {
     setPlayed(key)
     if (!enabled) return
 
+    haptic(phase.k === 'night' ? 'warn' : 'confirm')
     setShown({
       phase: phase.k,
       key,

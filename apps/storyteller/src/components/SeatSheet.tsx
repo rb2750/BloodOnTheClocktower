@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getCharacter, teamAlignment } from '@botc/rules'
-import { AbilityText, Button, Label, Sheet, Shroud, Heart, Ghost, Swap, Signpost, inputClass } from '@botc/ui'
+import { AbilityText, Button, Label, Sheet, Shroud, Heart, Ghost, Swap, Signpost, haptic, inputClass } from '@botc/ui'
 import { toast } from 'sonner'
 import { useStore } from '../state/store.js'
 import { CharacterToken } from './CharacterToken.js'
@@ -283,7 +283,12 @@ function Action({
 }) {
   return (
     <button
-      onClick={onClick}
+      onClick={() => {
+        // Every action on a seat answers the thumb, since most of them change
+        // something the Storyteller cannot see from the button itself.
+        haptic('tap')
+        onClick()
+      }}
       className={`flex min-h-(--tap-min) flex-col items-center justify-center gap-1.5 rounded-(--radius-surface) py-1 active:bg-(--surface-raised) ${
         dim ? 'opacity-45' : ''
       }`}

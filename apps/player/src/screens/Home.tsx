@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { baseComposition, characterArt, getCharacter } from '@botc/rules'
-import { ChevronRight, Plus, Token, Button, BuildStamp, inputClass } from '@botc/ui'
+import { ChevronRight, Plus, Token, Button, BuildStamp, haptic, inputClass } from '@botc/ui'
 import { useStore } from '../state.js'
 import { useRelay } from '../room.js'
 import { BUILD } from '../config.js'
@@ -376,6 +376,7 @@ function Vote() {
           {may ? (
             <button
               onClick={() => {
+                haptic('tap')
                 setLost(false)
                 setWanted(!raised)
                 hand(!raised)

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type React from 'react'
 import type { ReactNode } from 'react'
+import { haptic } from '@botc/ui'
 import './reveal.css'
 
 /**
@@ -59,6 +60,8 @@ export function HoldToReveal({
 
   const reveal = useCallback(() => {
     setRevealed(true)
+    // The card opening is the one moment a player needs to know the hold took.
+    haptic('pick')
     if (!seen.current) {
       seen.current = true
       onFirstReveal?.()

@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
+import { haptic } from '@botc/ui'
 
 /**
  * Reorder a vertical list by dragging a handle.
@@ -32,6 +33,7 @@ export function useListDrag<T extends string>(items: T[], setItems: (next: T[]) 
         next.splice(from, 1)
         next.splice(to, 0, item)
         current.current = next
+        haptic('tick')
         setItems(next)
       }
     },
@@ -42,7 +44,7 @@ export function useListDrag<T extends string>(items: T[], setItems: (next: T[]) 
     e.preventDefault()
     ;(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId)
     setDragging(item)
-    navigator.vibrate?.(8)
+    haptic('pick')
   }, [])
 
   const listProps = {

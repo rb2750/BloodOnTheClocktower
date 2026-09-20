@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { checkSeating, getCharacter } from '@botc/rules'
-import { Grimoire, Lock, Unlock, Eye, EyeOff } from '@botc/ui'
+import { Grimoire, Lock, Unlock, Eye, EyeOff, haptic } from '@botc/ui'
 import { toast } from 'sonner'
 import { useRoom } from '../room.js'
 import { useStore, phaseLabel } from '../state/store.js'
@@ -102,6 +102,7 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
         onTitle={() => setLogOpen(true)}
         onTitleHold={() => {
           if (!canUndo) return
+          haptic('warn')
           const label = undo()
           if (label) toast(`Undid: ${label.toLowerCase()}`)
         }}
@@ -165,7 +166,10 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
                   if (openNomination) {
                     const canVote = seat.alive || seat.deadVoteAvailable
                     const voting = openNomination.voterIds.includes(seat.id)
-                    if (canVote || voting) toggleVote(openNomination.id, seat.id)
+                    if (canVote || voting) {
+                      haptic('tap')
+                      toggleVote(openNomination.id, seat.id)
+                    }
                     else toast(`${seat.name} has no vote left.`)
                     return
                   }

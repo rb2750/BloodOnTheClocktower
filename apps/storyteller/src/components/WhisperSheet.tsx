@@ -7,7 +7,7 @@ import {
   type Character,
   type InfoParts,
 } from '@botc/rules'
-import { Button, Chip, Label, Sheet, Switch, inputClass } from '@botc/ui'
+import { Button, Chip, Label, Sheet, Switch, haptic, inputClass } from '@botc/ui'
 import { toast } from 'sonner'
 import { useStore } from '../state/store.js'
 import { useRoom } from '../room.js'
@@ -79,6 +79,7 @@ export function WhisperSheet({
     const line = templated ? sentence : text.trim()
     if (!line) return
     setSending(true)
+    haptic('confirm')
     const id = Math.random().toString(36).slice(2, 10)
     const sent = await whisper(seat.id, line, id)
     setSending(false)

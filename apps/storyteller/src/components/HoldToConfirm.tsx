@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { haptic } from '@botc/ui'
 
 const HOLD_MS = 650
 
@@ -31,6 +32,7 @@ export function HoldToConfirm({ label, onConfirm }: { label: string; onConfirm: 
       setProgress(next)
       if (next >= 1) {
         stop()
+        haptic('confirm')
         onConfirm()
         return
       }

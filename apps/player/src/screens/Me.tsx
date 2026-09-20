@@ -1,5 +1,5 @@
 import { characterArt, getCharacter, teamAlignment } from '@botc/rules'
-import { AbilityText, Label, Rows, Row, Token, Qr } from '@botc/ui'
+import { AbilityText, Label, Rows, Row, Token, Qr, haptic } from '@botc/ui'
 import { useStore } from '../state.js'
 import { HoldToReveal } from '../components/HoldToReveal.js'
 import { useRelay } from '../room.js'
@@ -102,7 +102,13 @@ function Waiting() {
             a locked-out player mid-game is worse than the theft it prevents. */}
         <Rows>
           {seats.map((seat) => (
-            <Row key={seat.id} onClick={() => claim(seat)}>
+            <Row
+              key={seat.id}
+              onClick={() => {
+                haptic('confirm')
+                claim(seat)
+              }}
+            >
               {seat.name}
             </Row>
           ))}

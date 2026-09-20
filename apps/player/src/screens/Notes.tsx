@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { getCharacter, teamAlignment, type Character } from '@botc/rules'
-import { Button, Chip, Label, Sheet, Token, inputClass, Plus, Shroud, Trash, Close, ChevronRight } from '@botc/ui'
+import { Button, Chip, Label, Sheet, Token, inputClass, Plus, Shroud, Trash, Close, ChevronRight, haptic } from '@botc/ui'
 import { useStore } from '../state.js'
 import { CharacterToken } from '../components/CharacterToken.js'
 
@@ -85,7 +85,10 @@ export function NoteSheet({ name, onClose, onMessage, unread = 0, last }: SheetP
                 return (
                   <button
                     key={c.id}
-                    onClick={() => addClaim(note.name, c.id)}
+                    onClick={() => {
+                      haptic('tap')
+                      addClaim(note.name, c.id)
+                    }}
                     aria-pressed={current}
                     className={`flex flex-col items-center gap-1 rounded-xl py-1.5 ${
                       current ? 'bg-(--surface-raised)' : ''
@@ -126,7 +129,10 @@ export function NoteSheet({ name, onClose, onMessage, unread = 0, last }: SheetP
                 <Chip
                   key={stamp}
                   active={note.stamps.includes(stamp)}
-                  onClick={() => toggleStamp(note.name, stamp)}
+                  onClick={() => {
+                    haptic('tap')
+                    toggleStamp(note.name, stamp)
+                  }}
                 >
                   {stamp}
                 </Chip>

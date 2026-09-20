@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { getCharacter, placesReminder } from '@botc/rules'
-import { Button, ReminderText, Sheet, Label, ChevronLeft, ChevronRight, Qr, Dawn, Signpost } from '@botc/ui'
+import { Button, ReminderText, Sheet, Label, ChevronLeft, ChevronRight, Qr, Dawn, Signpost, haptic } from '@botc/ui'
 import { useStore } from '../state/store.js'
 import { useRoom } from '../room.js'
 import { WhisperSheet } from './WhisperSheet.js'
@@ -107,7 +107,10 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
             {entry.reminderTokens.map((label) => (
               <button
                 key={label}
-                onClick={() => setPlacing({ label, characterId: entry.id })}
+                onClick={() => {
+                  haptic('tap')
+                  setPlacing({ label, characterId: entry.id })
+                }}
                 className="min-h-9 rounded-full border border-(--hairline-strong) px-3 text-[13px] font-medium text-(--text)"
               >
                 place “{label}”
@@ -135,13 +138,21 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
             live
             aria-label="Previous step"
             disabled={step === 0}
-            onClick={() => setNightStep(step - 1)}
+            onClick={() => { haptic('tap'); setNightStep(step - 1) }}
             className="px-4"
           >
             <ChevronLeft size={22} />
           </Button>
           {isLast ? (
-            <Button live variant="primary" className="flex-1" onClick={toDay}>
+            <Button
+                live
+                variant="primary"
+                className="flex-1"
+                onClick={() => {
+                  haptic('confirm')
+                  toDay()
+                }}
+              >
               <Dawn size={20} />
               Call for eyes open
             </Button>
@@ -150,7 +161,7 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
               live
               variant="primary"
               className="flex-1"
-              onClick={() => setNightStep(step + 1)}
+              onClick={() => { haptic('tap'); setNightStep(step + 1) }}
             >
               Next
               <ChevronRight size={20} />

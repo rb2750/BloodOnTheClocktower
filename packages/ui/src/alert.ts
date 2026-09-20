@@ -36,3 +36,25 @@ export function alert(kind: Alert) {
   } catch {}
   flash()
 }
+
+export type Haptic = 'tap' | 'pick' | 'tick' | 'drop' | 'confirm' | 'warn'
+
+const HAPTIC: Record<Haptic, number | number[]> = {
+  tap: 8,
+  pick: 18,
+  tick: 6,
+  drop: [12, 40, 22],
+  confirm: 35,
+  warn: [30, 60, 30],
+}
+
+/**
+ * Feedback for something this phone just did, as opposed to something that
+ * arrived: a buzz and nothing else. No flash, because the eye is already on
+ * the thing that moved, and no sound anywhere in this app.
+ */
+export function haptic(kind: Haptic) {
+  try {
+    navigator.vibrate?.(HAPTIC[kind])
+  } catch {}
+}
