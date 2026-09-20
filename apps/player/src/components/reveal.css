@@ -125,23 +125,26 @@
     pointer-events: none;
   }
 
-  /* A silhouette is a hint, so it sits back. The token seal is not a hint, it
-     is the back of the card, and it keeps its weight. */
-  .reveal-shape-outline {
-    opacity: 0.28;
+  /* A sealed note, one per note waiting. */
+  .reveal-seal-small {
+    width: 44px;
+  }
+
+  /* The table face down fills its screen; the words sit in the empty middle
+     of the ring, where the phase sits once it is turned over, and stay narrow
+     enough not to run into the tokens either side. */
+  .reveal[data-fill] .reveal-cover {
+    padding-inline: 26%;
+  }
+  .reveal[data-fill] .reveal-shape .circle {
+    --pad: calc(var(--size) * 1.15);
+    --ry: min(calc(50cqh - var(--pad)), calc(var(--rx) * 2.8));
   }
 
   .reveal[data-fill] .reveal-shape {
     position: absolute;
     inset: 0;
     display: flex;
-  }
-
-  /* One line of a message, at roughly the width it will turn out to be. */
-  .reveal-line {
-    height: 9px;
-    border-radius: 999px;
-    background: var(--text-faint);
   }
 
   /* The back of a token: a plain disc with twelve ticks, the clock motif the

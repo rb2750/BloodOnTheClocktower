@@ -142,7 +142,7 @@ export function HoldToReveal({
       </div>
 
       <div className="reveal-cover" aria-hidden={revealed}>
-        <span className={`reveal-shape${outline ? ' reveal-shape-outline' : ''}`}>
+        <span className="reveal-shape">
           {outline ?? <span className="reveal-seal" />}
         </span>
         <span className="reveal-label">{label}</span>
