@@ -42,6 +42,36 @@ function claimOf(name: string, notes: ReturnType<typeof useStore.getState>['note
 }
 
 /** The table as it actually sits: a ring, in seat order, like the grimoire. */
+/**
+ * Out of this game and back to the code screen, for the next one. Two taps,
+ * because it throws away every note, and the second one arms itself for only
+ * a few seconds so a stray thumb cannot get there.
+ */
+function LeaveGame() {
+  const reset = useStore((s) => s.reset)
+  const [armed, setArmed] = useState(false)
+  useEffect(() => {
+    if (!armed) return
+    const t = window.setTimeout(() => setArmed(false), 4000)
+    return () => window.clearTimeout(t)
+  }, [armed])
+  return (
+    <div className="px-5 pt-6 text-center">
+      <Button
+        variant={armed ? 'danger' : 'text'}
+        className="w-full"
+        onClick={() => {
+          haptic(armed ? 'warn' : 'tap')
+          if (armed) reset()
+          else setArmed(true)
+        }}
+      >
+        {armed ? 'Tap again to leave and forget your notes' : 'Leave this game'}
+      </Button>
+    </div>
+  )
+}
+
 export function HomeScreen({
   openRoles,
   openThread,
@@ -135,6 +165,8 @@ export function HomeScreen({
           </button>
         </div>
       )}
+
+      {payload && <LeaveGame />}
 
       <BuildStamp build={BUILD} />
 
