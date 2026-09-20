@@ -43,6 +43,7 @@ const RoomContext = createContext<Room>({
   talking: [],
   reachable: [],
   whisper: async () => false,
+  subscribe: () => {},
 })
 
 export const useRoom = () => useContext(RoomContext)
