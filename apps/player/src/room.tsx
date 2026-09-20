@@ -76,8 +76,18 @@ function useRelayConnection() {
     [deviceId],
   )
 
+  // Hydration can finish between this state being read and the effect
+  // subscribing, and `onFinishHydration` never fires for something already
+  // finished: a phone that lost that race waited for a signal that would never
+  // come and never joined the room at all.
   const [hydrated, setHydrated] = useState(() => useStore.persist.hasHydrated())
-  useEffect(() => useStore.persist.onFinishHydration(() => setHydrated(true)), [])
+  useEffect(() => {
+    if (useStore.persist.hasHydrated()) {
+      setHydrated(true)
+      return
+    }
+    return useStore.persist.onFinishHydration(() => setHydrated(true))
+  }, [])
 
   useEffect(() => {
     if (!hydrated || !payload || payload.kind !== 'room' || !RELAY_URL) return
