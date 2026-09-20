@@ -24,7 +24,9 @@ const Note =
           : NoteSheet
 
 /**
- * Everyone at the table, in seat order, as the Storyteller last described it.
+ * Everyone else at the table, clockwise from the player's own left, as the
+ * Storyteller last described it. The seat order is the room's, so walking it
+ * from the player's own seat is what they see when they look round.
  * A game played with one code per player never sends a table, so the names
  * the player typed in stand in, all of them alive as far as this phone knows.
  */
@@ -32,7 +34,11 @@ function useTable(): { name: string; alive: boolean }[] {
   const table = useStore((s) => s.table)
   const notes = useStore((s) => s.notes)
   const seatName = useStore((s) => s.seatName)
-  if (table.length > 0) return table.filter((t) => t.name !== seatName)
+  if (table.length > 0) {
+    const me = table.findIndex((t) => t.name === seatName)
+    if (me < 0) return table
+    return [...table.slice(me + 1), ...table.slice(0, me)]
+  }
   return Object.keys(notes).map((name) => ({ name, alive: true }))
 }
 
@@ -109,9 +115,10 @@ export function HomeScreen({
           <Composition />
           <div className="relative mx-auto aspect-square w-[min(86vw,340px)]">
             {table.map(({ name, alive }, i) => {
-              // Seat one sits at the bottom, where the player is, so the ring
-              // matches the room rather than a clock face.
-              const angle = (i / table.length) * 2 * Math.PI + Math.PI / 2
+              // The player's own chair is the empty slot at the bottom of the
+              // ring, and everyone else goes round clockwise from it, so the
+              // ring matches the room rather than a clock face.
+              const angle = ((i + 1) / (table.length + 1)) * 2 * Math.PI + Math.PI / 2
               const note = notes[name]
               const noted = Boolean(
                 note && (note.claims.length || note.stamps.length || note.lines.length),
