@@ -18,7 +18,7 @@ export function GrimoireScreen({ onBack }: { onBack: () => void }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex shrink-0 items-center border-b border-(--hairline) bg-(--surface) px-2">
+      <div className="safe-top flex shrink-0 items-center border-b border-(--hairline) bg-(--surface) px-2">
         <button
           onClick={onBack}
           className="flex min-h-(--tap-min) items-center gap-1 px-3 text-[16px] text-(--text)"
@@ -33,7 +33,7 @@ export function GrimoireScreen({ onBack }: { onBack: () => void }) {
       </div>
 
       {grimoire ? (
-        <div className="flex min-h-0 flex-1 flex-col px-3 pb-3">
+        <div className="safe-bottom flex min-h-0 flex-1 flex-col px-3 pb-3">
           <HoldToReveal
             fill
             label="Press and hold"

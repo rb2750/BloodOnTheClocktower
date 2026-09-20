@@ -120,7 +120,7 @@ export function App() {
     <div className="flex h-full flex-col">
       {view !== 'home' && <BackBar onBack={() => history.back()} />}
 
-      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <main className={`safe-bottom min-h-0 flex-1 overflow-y-auto overscroll-contain${view === 'home' ? ' safe-top' : ''}`}>
         {view === 'home' && <HomeScreen openRoles={() => open('script')} openThread={openThread} openGrimoire={openGrimoire} />}
         {view === 'script' && <ScriptScreen />}
       </main>
@@ -145,7 +145,7 @@ export function App() {
 /** Says where back goes, because "back" alone is a guess in an unfamiliar app. */
 function BackBar({ onBack }: { onBack: () => void }) {
   return (
-    <div className="flex shrink-0 border-b border-(--hairline) bg-(--surface) px-2">
+    <div className="safe-top flex shrink-0 border-b border-(--hairline) bg-(--surface) px-2">
       <button
         onClick={onBack}
         className="flex min-h-(--tap-min) flex-1 items-center gap-1 px-3 text-left text-[16px] text-(--text)"

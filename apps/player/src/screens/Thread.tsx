@@ -56,7 +56,7 @@ export function ThreadScreen({ seatId, onBack }: { seatId: string; onBack: () =>
       className="fixed inset-x-0 flex flex-col bg-(--bg)"
       style={{ top: box.top, height: box.height }}
     >
-      <div className="flex shrink-0 items-center border-b border-(--hairline) bg-(--surface) px-2">
+      <div className="safe-top flex shrink-0 items-center border-b border-(--hairline) bg-(--surface) px-2">
         <button onClick={onBack} className="flex min-h-(--tap-min) items-center gap-1 px-3 text-[16px] text-(--text)">
           <ChevronLeft size={20} strokeWidth={1.75} />
           Back
