@@ -1,0 +1,9 @@
+{
+  "name": "blood-relay",
+  "private": true,
+  "type": "module",
+  "main": "server.mjs",
+  "dependencies": {
+    "ws": "8.18.3"
+  }
+}

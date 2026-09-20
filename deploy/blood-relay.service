@@ -1,0 +1,20 @@
+[Unit]
+Description=Blood on the Clocktower relay
+After=network.target
+
+[Service]
+Type=simple
+User=bloodrelay
+WorkingDirectory=/opt/blood-relay
+Environment=HOST=127.0.0.1
+Environment=PORT=8902
+ExecStart=/usr/bin/node /opt/blood-relay/server.mjs
+Restart=always
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
