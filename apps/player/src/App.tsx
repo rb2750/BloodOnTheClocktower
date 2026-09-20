@@ -6,6 +6,7 @@ import { useStore } from './state.js'
 import { ScriptScreen } from './screens/Script.js'
 import { HomeScreen } from './screens/Home.js'
 import { PlayerCinematic } from './components/PlayerCinematic.js'
+import { ThreadScreen } from './screens/Thread.js'
 
 type View = 'home' | 'script'
 
@@ -60,12 +61,25 @@ export function App() {
     setView(next)
   }
 
+  const [thread, setThread] = useState<string | null>(null)
+  const openThread = (seatId: string) => {
+    history.pushState({ view: 'thread' }, '')
+    setThread(seatId)
+  }
+  useEffect(() => {
+    const onPop = () => setThread(null)
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
+  if (thread) return <ThreadScreen seatId={thread} onBack={() => history.back()} />
+
   return (
     <div className="flex h-full flex-col">
       {view !== 'home' && <BackBar onBack={() => history.back()} />}
 
       <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        {view === 'home' && <HomeScreen openRoles={() => open('script')} />}
+        {view === 'home' && <HomeScreen openRoles={() => open('script')} openThread={openThread} />}
         {view === 'script' && <ScriptScreen />}
       </main>
 

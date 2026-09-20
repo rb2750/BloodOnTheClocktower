@@ -7,6 +7,7 @@ const LINES = {
   closed: 'Hands down.',
   night: 'Night falls. Close your eyes.',
   day: 'Open your eyes.',
+  chat: 'You have a message.',
 }
 
 self.addEventListener('push', (event) => {

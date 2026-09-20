@@ -11,10 +11,13 @@ import { CHARACTERS } from '@botc/rules'
  */
 export type RelayMessage =
   | { t: 'hello'; pub: string }
-  | { t: 'seats'; seats: { id: string; name: string; taken: boolean; alive?: boolean; ghostVote?: boolean; traveller?: boolean }[] }
+  | { t: 'seats'; seats: { id: string; name: string; taken: boolean; alive?: boolean; ghostVote?: boolean; traveller?: boolean; pub?: string }[] }
   | { t: 'claim'; seatId: string; deviceId: string; pub: string }
   /** A player raising or lowering their hand on the open nomination. */
   | { t: 'hand'; seatId: string; up: boolean }
+  /** A private line from one player to another, sealed between their two keys.
+   *  The envelope says who is talking; only the two of them can read what. */
+  | { t: 'chat'; id: string; from: string; to: string; sealed: string }
   | { t: 'role'; seatId: string; sealed: string }
   /** A private line from the Storyteller, sealed to one player's own key. */
   | { t: 'whisper'; seatId: string; id: string; sealed: string }
@@ -33,6 +36,9 @@ export type VoteSnapshot = {
   majority: number
   settled: boolean
 }
+
+/** What a sealed `chat` contains once opened. */
+export type SealedChat = { text: string; at: string }
 
 /** What a sealed `whisper` contains once opened. */
 export type SealedWhisper = { text: string; at: string }

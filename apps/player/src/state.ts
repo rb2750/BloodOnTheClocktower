@@ -60,7 +60,9 @@ export type PlayerState = {
   messages: { id: string; text: string; at: string }[]
   /** The table in seat order, who is alive, and who still holds a vote, as the
    *  Storyteller last said. A dead player has one vote for the rest of the game. */
-  table: { name: string; alive: boolean; ghostVote: boolean; traveller: boolean }[]
+  table: { id?: string; name: string; alive: boolean; ghostVote: boolean; traveller: boolean; pub?: string }[]
+  /** Private conversations, keyed by the other seat's id. */
+  chats: Record<string, { lines: { id: string; from: 'me' | 'them'; text: string; at: string }[]; unread: number }>
   /** The last phase change this phone played, so a reload does not replay it. */
   cinematicPlayed: string | null
   /** Today's nomination as the Storyteller is counting it. */
@@ -81,7 +83,9 @@ export type PlayerActions = {
   setPhase: (phase: string, day: number) => void
   markRevealed: () => void
   addMessage: (id: string, text: string, at: string) => void
-  setTable: (table: { name: string; alive: boolean; ghostVote: boolean; traveller: boolean }[]) => void
+  setTable: (table: { id?: string; name: string; alive: boolean; ghostVote: boolean; traveller: boolean; pub?: string }[]) => void
+  addChatLine: (seatId: string, line: { id: string; from: 'me' | 'them'; text: string; at: string }) => boolean
+  readChat: (seatId: string) => void
   setVote: (vote: VoteSnapshot | null) => void
   setStorytellerKey: (key: string) => void
   setCinematicPlayed: (key: string) => void
@@ -115,6 +119,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
       notes: {},
       messages: [],
       table: [],
+      chats: {},
       cinematicPlayed: null,
       vote: null,
       storytellerKey: null,
@@ -156,6 +161,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
             messages: [],
             notes: {},
             table: [],
+            chats: {},
             vote: null,
             cinematicPlayed: null,
             phaseKnown: false,
@@ -194,6 +200,31 @@ export const useStore = create<PlayerState & PlayerActions>()(
       setPhase: (phase, day) => set({ phase, day, phaseKnown: true }),
 
       setTable: (table) => set({ table }),
+
+      // Returns whether it was new: the backlog replays what this phone has
+      // already read, and a replay is not an alert.
+      addChatLine: (seatId, line) => {
+        const s = get()
+        const chat = s.chats[seatId] ?? { lines: [], unread: 0 }
+        if (chat.lines.some((l) => l.id === line.id)) return false
+        set({
+          chats: {
+            ...s.chats,
+            [seatId]: {
+              lines: [...chat.lines, line],
+              unread: chat.unread + (line.from === 'them' ? 1 : 0),
+            },
+          },
+        })
+        return true
+      },
+
+      readChat: (seatId) =>
+        set((s) => {
+          const chat = s.chats[seatId]
+          if (!chat || chat.unread === 0) return s
+          return { chats: { ...s.chats, [seatId]: { ...chat, unread: 0 } } }
+        }),
 
       setVote: (vote) => set({ vote }),
 
@@ -304,6 +335,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
           notes: {},
           messages: [],
           table: [],
+          chats: {},
           cinematicPlayed: null,
           phaseKnown: false,
           vote: null,

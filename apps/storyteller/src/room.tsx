@@ -28,6 +28,8 @@ import { RELAY_URL } from './config.js'
  */
 type Room = {
   status: RelayStatus
+  /** Pairs of seats that have exchanged a private message lately. Who, never what. */
+  talking: { a: string; b: string; at: number }[]
   /** Seats whose phone is connected and can be sent a private word. */
   reachable: string[]
   whisper: (seatId: string, text: string, id: string) => Promise<boolean>
@@ -35,14 +37,18 @@ type Room = {
 
 const RoomContext = createContext<Room>({
   status: 'offline',
+  talking: [],
   reachable: [],
   whisper: async () => false,
 })
 
 export const useRoom = () => useContext(RoomContext)
 
-function tableOf(game: ReturnType<typeof useStore.getState>['game']) {
+function tableOf(game: ReturnType<typeof useStore.getState>['game'], keys?: Map<string, string>) {
   return (game?.seats ?? []).map((s) => ({
+    // Public keys are public: every phone needs every other's to seal a
+    // message to it.
+    pub: keys?.get(s.id),
     id: s.id,
     name: s.name,
     taken: Boolean(game?.claims?.[s.id]),
@@ -84,6 +90,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
   const recordClaim = useStore((s) => s.recordClaim)
   const [status, setStatus] = useState<RelayStatus>('offline')
   const [reachable, setReachable] = useState<string[]>([])
+  const [talking, setTalking] = useState<{ a: string; b: string; at: number }[]>([])
 
   const relay = useRef<Relay | null>(null)
   const pair = useRef<CryptoKeyPair | null>(null)
@@ -112,7 +119,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
     const introduce = (client: Relay, pub: string) => {
       const now = useStore.getState().game
       client.send({ t: 'hello', pub })
-      client.send({ t: 'seats', seats: tableOf(now) })
+      client.send({ t: 'seats', seats: tableOf(now, keys.current) })
       const opening = phaseMessage(now)
       if (opening) client.send(opening)
       client.send(voteMessage(now))
@@ -196,6 +203,14 @@ export function RoomProvider({ children }: { children: ReactNode }) {
             }
             return
           }
+          if (message.t === 'chat') {
+            // Cannot be read here, and is not. The phone it is for gets its
+            // notification, and the grimoire notes that two people are talking.
+            client.sendRaw(`push:${message.to}:chat`)
+            const [a, b] = [message.from, message.to].sort()
+            setTalking((t) => [...t.filter((x) => !(x.a === a && x.b === b)), { a: a!, b: b!, at: Date.now() }].slice(-12))
+            return
+          }
           if (message.t !== 'claim') return
           const state = useStore.getState()
           const seat = state.game?.seats.find((s) => s.id === message.seatId)
@@ -203,6 +218,8 @@ export function RoomProvider({ children }: { children: ReactNode }) {
 
           if (!keys.current.has(seat.id)) alert('seat')
           keys.current.set(seat.id, message.pub)
+          // The table goes out again so everyone has this phone's key.
+          client.send({ t: 'seats', seats: tableOf(state.game, keys.current) })
           void idbSet(keysStore, Object.fromEntries(keys.current))
           setReachable([...keys.current.keys()])
           recordClaim(seat.id, message.deviceId)
@@ -244,8 +261,8 @@ export function RoomProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!relay.current || !seats) return
-    relay.current.send({ t: 'seats', seats: tableOf(useStore.getState().game) })
-  }, [seats, claims])
+    relay.current.send({ t: 'seats', seats: tableOf(useStore.getState().game, keys.current) })
+  }, [seats, claims, reachable])
 
   // And the time of day. Every phone shows it, and plays the same nightfall
   // the Storyteller's screen plays, so the room moves together.
@@ -288,6 +305,8 @@ export function RoomProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <RoomContext.Provider value={{ status, reachable, whisper }}>{children}</RoomContext.Provider>
+    <RoomContext.Provider value={{ status, reachable, talking, whisper }}>
+      {children}
+    </RoomContext.Provider>
   )
 }

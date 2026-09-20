@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { getCharacter, teamAlignment, type Character } from '@botc/rules'
-import { Button, Chip, Label, Sheet, Token, inputClass, Plus, Shroud, Trash, Close } from '@botc/ui'
+import { Button, Chip, Label, Sheet, Token, inputClass, Plus, Shroud, Trash, Close, ChevronRight } from '@botc/ui'
 import { useStore } from '../state.js'
 import { CharacterToken } from '../components/CharacterToken.js'
 
@@ -20,7 +20,16 @@ const STAMPS = [
   'Registered odd',
 ]
 
-export function NoteSheet({ name, onClose }: { name: string | null; onClose: () => void }) {
+export type SheetProps = {
+  name: string | null
+  onClose: () => void
+  /** Present when this person can be messaged: their phone is in the room. */
+  onMessage?: () => void
+  unread?: number
+  last?: string
+}
+
+export function NoteSheet({ name, onClose, onMessage, unread = 0, last }: SheetProps) {
   const notes = useStore((s) => s.notes)
   const scriptIds = useStore((s) => s.scriptIds)
   const phase = useStore((s) => s.phase)
@@ -49,6 +58,25 @@ export function NoteSheet({ name, onClose }: { name: string | null; onClose: () 
         subtitle={note.diedOnDay ? `Died on day ${note.diedOnDay}` : phase}
       >
         <div className="space-y-6 pb-2">
+          {onMessage && (
+            <button
+              onClick={onMessage}
+              className="-mt-2 flex w-full items-center gap-3 border-b border-(--hairline) py-4 text-left"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="display block text-[19px] leading-tight text-(--text)">Message {note.name}</span>
+                <span className="serif block truncate text-[13px] text-(--text-faint)">
+                  {last ?? 'Only the two of you can read it'}
+                </span>
+              </span>
+              {unread > 0 && (
+                <span className="grid min-w-5 place-items-center rounded-full bg-(--accent) px-1 text-[11px] font-semibold leading-5 text-(--bg)">
+                  {unread}
+                </span>
+              )}
+              <ChevronRight size={18} className="shrink-0 text-(--text-faint)" />
+            </button>
+          )}
           <div>
             <Label>Who do they say they are?</Label>
             <div className="grid grid-cols-4 gap-x-2 gap-y-3 sm:grid-cols-5">

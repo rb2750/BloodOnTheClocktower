@@ -42,14 +42,18 @@ function claimOf(name: string, notes: ReturnType<typeof useStore.getState>['note
 }
 
 /** The table as it actually sits: a ring, in seat order, like the grimoire. */
-export function HomeScreen({ openRoles }: { openRoles: () => void }) {
+export function HomeScreen({ openRoles, openThread }: { openRoles: () => void; openThread: (seatId: string) => void }) {
   const payload = useStore((s) => s.payload)
   const characterId = useStore((s) => s.characterId)
   const seatName = useStore((s) => s.seatName)
   const scriptIds = useStore((s) => s.scriptIds)
   const notes = useStore((s) => s.notes)
+  const chats = useStore((s) => s.chats)
+  const fullTable = useStore((s) => s.table)
   const table = useTable()
   const [open, setOpen] = useState<string | null>(null)
+  const unreadFor = (name: string) => chats[fullTable.find((t) => t.name === name)?.id ?? '']?.unread ?? 0
+  const unreadAll = Object.values(chats).reduce((n, c) => n + c.unread, 0)
 
   return (
     <>
@@ -88,6 +92,7 @@ export function HomeScreen({ openRoles }: { openRoles: () => void }) {
                     claim={claimOf(name, notes)}
                     dead={!alive}
                     noted={noted}
+                    unread={unreadFor(name)}
                     size="52px"
                   />
                 </button>
@@ -96,7 +101,9 @@ export function HomeScreen({ openRoles }: { openRoles: () => void }) {
             <div className="absolute inset-[26%] flex flex-col items-center justify-center gap-1 text-center">
               <p className="caps text-(--text-faint)">The table</p>
               <p className="serif text-[13px] leading-snug text-(--text-faint)">
-                Tap anyone to note what they claim
+                {unreadAll > 0
+                  ? `${unreadAll} new message${unreadAll === 1 ? '' : 's'}`
+                  : 'Tap anyone to note what they claim'}
               </p>
             </div>
           </div>
@@ -122,7 +129,21 @@ export function HomeScreen({ openRoles }: { openRoles: () => void }) {
 
       <BuildStamp build={BUILD} />
 
-      <Note name={open} onClose={() => setOpen(null)} />
+      <Note
+        name={open}
+        onClose={() => setOpen(null)}
+        onMessage={
+          open && fullTable.find((t) => t.name === open)?.pub
+            ? () => {
+                const id = fullTable.find((t) => t.name === open)!.id!
+                setOpen(null)
+                openThread(id)
+              }
+            : undefined
+        }
+        unread={open ? unreadFor(open) : 0}
+        last={open ? chats[fullTable.find((t) => t.name === open)?.id ?? '']?.lines.at(-1)?.text : undefined}
+      />
     </>
   )
 }
@@ -412,12 +433,14 @@ function Person({
   claim,
   dead = false,
   noted = false,
+  unread = 0,
   size,
 }: {
   name: string
   claim?: ReturnType<typeof getCharacter>
   dead?: boolean
   noted?: boolean
+  unread?: number
   size: string
 }) {
   return (
@@ -432,8 +455,14 @@ function Person({
         />
         {/* A mark for "you have written something here": brass, because red
             and blue mean alignment and nothing else. */}
-        {noted && (
-          <span className="absolute -top-0.5 -right-0.5 size-3 rounded-full border-2 border-(--bg) bg-(--accent)" />
+        {unread > 0 ? (
+          <span className="absolute -top-1 -right-1 grid min-w-5 place-items-center rounded-full bg-(--accent) px-1 text-[11px] font-semibold leading-5 text-(--bg)">
+            {unread}
+          </span>
+        ) : (
+          noted && (
+            <span className="absolute -top-0.5 -right-0.5 size-3 rounded-full border-2 border-(--bg) bg-(--accent)" />
+          )
         )}
       </span>
       <span

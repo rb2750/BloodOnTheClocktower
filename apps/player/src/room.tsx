@@ -18,6 +18,8 @@ import {
   type RelayStatus,
   type SealedRole,
   type SealedWhisper,
+  type SealedChat,
+  sealFor,
 } from '@botc/protocol'
 import { RELAY_URL } from './config.js'
 import { useStore } from './state.js'
@@ -47,6 +49,7 @@ function useRelayConnection() {
   const setTable = useStore((s) => s.setTable)
   const setVote = useStore((s) => s.setVote)
   const setStorytellerKey = useStore((s) => s.setStorytellerKey)
+  const addChatLine = useStore((s) => s.addChatLine)
   const addMessage = useStore((s) => s.addMessage)
 
   const [seats, setSeats] = useState<Seat[]>([])
@@ -128,6 +131,28 @@ function useRelayConnection() {
             }
             return
           }
+          if (message.t === 'chat') {
+            // Sealed between two keys, and the derived key is the same from
+            // either end, so this phone can open what it sent as well as what
+            // it received: a reload restores the whole conversation.
+            const me = useStore.getState().seatId
+            if (!me || !pair.current || (message.to !== me && message.from !== me)) return
+            const other = message.to === me ? message.from : message.to
+            const theirPub = useStore.getState().table.find((t) => t.id === other)?.pub
+            if (!theirPub) return
+            void openSealed<SealedChat>(pair.current, theirPub, message.sealed)
+              .then((line) => {
+                const fresh = addChatLine(other, {
+                  id: message.id,
+                  from: message.from === me ? 'me' : 'them',
+                  text: line.text,
+                  at: line.at,
+                })
+                if (fresh && message.from !== me) alert('chat')
+              })
+              .catch(() => {})
+            return
+          }
           if (message.t === 'whisper') {
             // Every phone in the room receives it; only one can open it.
             const mine = useStore.getState().seatId
@@ -152,6 +177,8 @@ function useRelayConnection() {
             rememberTable(message.seats.map((s) => s.name))
             setTable(
               message.seats.map((s) => ({
+                id: s.id,
+                pub: s.pub,
                 name: s.name,
                 alive: s.alive ?? true,
                 ghostVote: s.ghostVote ?? true,
@@ -209,7 +236,7 @@ function useRelayConnection() {
       relay.current?.close()
       relay.current = null
     }
-  }, [payload, setRole, setPhase, rememberTable, setTable, setVote, setStorytellerKey, addMessage, announceClaim])
+  }, [payload, setRole, setPhase, rememberTable, setTable, setVote, setStorytellerKey, addMessage, addChatLine, announceClaim])
 
   const claim = (seat: Seat) => {
     if (!payload || payload.kind !== 'room') return
@@ -221,6 +248,19 @@ function useRelayConnection() {
   // A hand is sent, not kept: the Storyteller's count comes back in the next
   // vote snapshot, and that is what the screen shows. A hand raised while the
   // line is down is lost, exactly as a hand nobody saw would be.
+  /** A private line to another seat. Sealed here; the relay and the Storyteller carry bytes. */
+  const chat = async (to: string, text: string) => {
+    const s = useStore.getState()
+    const theirPub = s.table.find((t) => t.id === to)?.pub
+    if (!s.seatId || !pair.current || !theirPub || !relay.current) return false
+    const id = Math.random().toString(36).slice(2, 10)
+    const at = s.phase
+    const sealed = await sealFor(pair.current, theirPub, { text, at })
+    relay.current.send({ t: 'chat', id, from: s.seatId, to, sealed })
+    addChatLine(to, { id, from: 'me', text, at })
+    return true
+  }
+
   /** Send the relay this phone's notification subscription, now and on every reconnect. */
   const subscribe = (sub: string) => {
     const mine = useStore.getState().seatId
@@ -233,7 +273,7 @@ function useRelayConnection() {
     relay.current.send({ t: 'hand', seatId: mine, up })
   }
 
-  return { seats, status, claim, claimed: seatId, hand, subscribe }
+  return { seats, status, claim, claimed: seatId, hand, subscribe, chat }
 }
 
 
@@ -246,6 +286,7 @@ const RoomContext = createContext<Room>({
   claimed: null,
   hand: () => {},
   subscribe: () => {},
+  chat: async () => false,
 })
 
 /** One connection for the whole app, rather than one per screen. */

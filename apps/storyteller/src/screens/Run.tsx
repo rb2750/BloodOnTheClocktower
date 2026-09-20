@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { checkSeating, getCharacter } from '@botc/rules'
 import { Grimoire, Lock, Unlock, Eye, EyeOff } from '@botc/ui'
 import { toast } from 'sonner'
+import { useRoom } from '../room.js'
 import { useStore, phaseLabel } from '../state/store.js'
 import { Screen } from '../components/Screen.js'
 import { SeatView } from '../components/SeatView.js'
@@ -29,6 +30,7 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
   const setConcealed = useStore((s) => s.setConcealed)
 
   const [openSeat, setOpenSeat] = useState<string | null>(null)
+  const { talking } = useRoom()
   const [logOpen, setLogOpen] = useState(false)
   const [distributing, setDistributing] = useState(false)
   const [ending, setEnding] = useState(false)
@@ -180,6 +182,18 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
           }}
         </Grimoire>
       </Screen>
+
+      {/* Who is talking to whom, never what. At a table you can see two people
+          walk off together, and this is that, for the last couple of minutes. */}
+      {talking.filter((t) => Date.now() - t.at < 120000).length > 0 && (
+        <p className="pointer-events-none fixed inset-x-0 bottom-[46%] z-30 px-5 text-center text-[11px] text-(--text-faint)">
+          {talking
+            .filter((t) => Date.now() - t.at < 120000)
+            .slice(-2)
+            .map((t) => `${game.seats.find((s) => s.id === t.a)?.name} and ${game.seats.find((s) => s.id === t.b)?.name} are talking`)
+            .join(' · ')}
+        </p>
+      )}
 
       {/* A believed role owed to the Drunk is the one thing that can ruin a
           game from this screen, so it is said here, in red, until it is done. */}

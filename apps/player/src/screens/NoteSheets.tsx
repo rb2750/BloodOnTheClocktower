@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { getCharacter, teamAlignment, type Character, type Team } from '@botc/rules'
 import { Button, Chip, Label, Sheet, inputClass, Plus, Shroud, ChevronRight } from '@botc/ui'
 import { useStore } from '../state.js'
+import type { SheetProps } from './Notes.js'
 import { CharacterToken } from '../components/CharacterToken.js'
 
 /** Preview only: three ways of asking the same three questions. */
@@ -66,7 +67,7 @@ function Face({
 
 /* ------------------------------------------------- one question at a time --- */
 
-export function SheetOne({ name, onClose }: { name: string | null; onClose: () => void }) {
+export function SheetOne({ name, onClose }: SheetProps) {
   const { note, characters, phase, day } = useSheet(name)
   const addClaim = useStore((s) => s.addClaim)
   const toggleStamp = useStore((s) => s.toggleStamp)
@@ -186,7 +187,7 @@ function Row({ title, hint, onClick }: { title: string; hint: string; onClick: (
 
 /* ------------------------------------------------------------ short list --- */
 
-export function SheetShort({ name, onClose }: { name: string | null; onClose: () => void }) {
+export function SheetShort({ name, onClose }: SheetProps) {
   const { note, characters, spoken, phase, day } = useSheet(name)
   const addClaim = useStore((s) => s.addClaim)
   const toggleStamp = useStore((s) => s.toggleStamp)
@@ -285,7 +286,7 @@ export function SheetShort({ name, onClose }: { name: string | null; onClose: ()
 
 /* ----------------------------------------------------------- team strips --- */
 
-export function SheetTeams({ name, onClose }: { name: string | null; onClose: () => void }) {
+export function SheetTeams({ name, onClose }: SheetProps) {
   const { note, characters, phase, day } = useSheet(name)
   const addClaim = useStore((s) => s.addClaim)
   const toggleStamp = useStore((s) => s.toggleStamp)
@@ -336,7 +337,7 @@ export function SheetTeams({ name, onClose }: { name: string | null; onClose: ()
 
 /* ----------------------------------------------- the menu, then the teams --- */
 
-export function SheetCombined({ name, onClose }: { name: string | null; onClose: () => void }) {
+export function SheetCombined({ name, onClose }: SheetProps) {
   const { note, characters, phase, day } = useSheet(name)
   const addClaim = useStore((s) => s.addClaim)
   const toggleStamp = useStore((s) => s.toggleStamp)
