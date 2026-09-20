@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Cinematic, haptic } from '@botc/ui'
 import { useStore } from '../state/store.js'
 
@@ -16,6 +16,10 @@ type Shown = { phase: 'night' | 'day'; title: string; sub: string; key: string }
  * It stays up until it is tapped: the Storyteller decides when the table is
  * ready, and a transition that dismisses itself mid-sentence is worse than
  * none. A tap at any point skips to the end.
+ *
+ * It plays on a change of phase and at no other time. A refresh, or a screen
+ * coming back, arrives at a phase that simply *is*: the first phase this
+ * screen sees is recorded and not played.
  */
 export function PhaseCinematic() {
   const game = useStore((s) => s.game)
@@ -23,12 +27,18 @@ export function PhaseCinematic() {
   const played = useStore((s) => s.cinematicPlayed)
   const setPlayed = useStore((s) => s.setCinematicPlayed)
   const [shown, setShown] = useState<Shown | null>(null)
+  const seen = useRef(false)
 
   const phase = game?.phase
 
   useEffect(() => {
     if (!phase || (phase.k !== 'night' && phase.k !== 'day')) return
     const key = `${phase.k}-${phase.n}`
+    if (!seen.current) {
+      seen.current = true
+      setPlayed(key)
+      return
+    }
     if (played === key) return
     setPlayed(key)
     if (!enabled) return

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Cinematic } from '@botc/ui'
 import { useStore } from '../state.js'
 
@@ -13,6 +13,11 @@ type Shown = { phase: 'night' | 'day'; title: string; sub: string; key: string }
  * not "everyone, close your eyes". It lets itself go after a few seconds,
  * because at night nobody is looking at it, and in the morning the phone is
  * about to be needed for something else.
+ *
+ * It plays on a change of phase and at no other time. Opening the app, coming
+ * back to it, closing a message thread and refreshing all arrive at a phase
+ * that simply *is*, and announcing night to somebody already sitting in it is
+ * noise. So the first phase this screen sees is recorded and not played.
  */
 export function PlayerCinematic() {
   const phase = useStore((s) => s.phase)
@@ -21,12 +26,18 @@ export function PlayerCinematic() {
   const played = useStore((s) => s.cinematicPlayed)
   const setPlayed = useStore((s) => s.setCinematicPlayed)
   const [shown, setShown] = useState<Shown | null>(null)
+  const seen = useRef(false)
 
   useEffect(() => {
     if (!known) return
     const kind = /^night/i.test(phase) ? 'night' : /^day/i.test(phase) ? 'day' : null
     if (!kind) return
     const key = `${kind}-${day}`
+    if (!seen.current) {
+      seen.current = true
+      setPlayed(key)
+      return
+    }
     if (played === key) return
     setPlayed(key)
     setShown({
