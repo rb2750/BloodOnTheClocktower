@@ -235,7 +235,7 @@ function useRelayConnection() {
             if (was.phaseKnown && was.phase !== message.phase) {
               alert(/^night/i.test(message.phase) ? 'night' : 'day')
             }
-            return setPhase(message.phase, message.day)
+            return setPhase(message.phase, message.day, message.at)
           }
           if (message.t === 'vote') {
             // A short buzz when a vote opens, a longer one when it closes, so a

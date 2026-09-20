@@ -23,7 +23,9 @@ export type RelayMessage =
   | { t: 'whisper'; seatId: string; id: string; sealed: string }
   /** The Grimoire itself, sealed to the one player entitled to see it. */
   | { t: 'grimoire'; seatId: string; id: string; sealed: string }
-  | { t: 'phase'; phase: string; day: number }
+  /** `at` is when the phase changed, so a phone joining an hour into the
+   *  night can tell an old night from one that has just fallen. */
+  | { t: 'phase'; phase: string; day: number; at?: number }
   /** Today's nomination, as the Storyteller is counting it, or none. Hands are
    *  raised in the open, so who voted is public and travels as names. */
   | { t: 'vote'; nomination: VoteSnapshot | null }

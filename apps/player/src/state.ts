@@ -54,6 +54,8 @@ export type PlayerState = {
   /** Whether the Storyteller has ever said what time it is. Until they have,
    *  "Day 1" is only a label for notes, not something to show or play. */
   phaseKnown: boolean
+  /** When the Storyteller said the phase changed, if they said. */
+  phaseAt: number | null
   /** Notes keyed by the other players' names. */
   notes: Record<string, PlayerNote>
   /** Private words from the Storyteller, oldest first. */
@@ -84,7 +86,7 @@ export type PlayerActions = {
   applyPayload: (payload: Payload) => void
   setRole: (characterId: string, scriptIds: string[], scriptName: string) => void
   setSeat: (seatId: string, seatName: string, roomId: string) => void
-  setPhase: (phase: string, day: number) => void
+  setPhase: (phase: string, day: number, at?: number) => void
   markRevealed: () => void
   addMessage: (id: string, text: string, at: string) => void
   setTable: (table: { id?: string; name: string; alive: boolean; ghostVote: boolean; traveller: boolean; pub?: string }[]) => void
@@ -122,6 +124,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
       phase: 'Day 1',
       day: 1,
       phaseKnown: false,
+      phaseAt: null,
       notes: {},
       messages: [],
       table: [],
@@ -210,7 +213,13 @@ export const useStore = create<PlayerState & PlayerActions>()(
           return { seatId, seatName, roomId, notes }
         }),
 
-      setPhase: (phase, day) => set({ phase, day, phaseKnown: true }),
+      // The relay replays every phase message it holds, oldest first, so a
+      // reconnect walks back through the night before landing on the day.
+      setPhase: (phase, day, at) =>
+        set((s) => {
+          if (at !== undefined && s.phaseAt !== null && at < s.phaseAt) return s
+          return { phase, day, phaseKnown: true, phaseAt: at ?? null }
+        }),
 
       setTable: (table) => set({ table }),
 

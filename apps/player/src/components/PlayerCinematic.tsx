@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Cinematic } from '@botc/ui'
 import { useStore } from '../state.js'
 
@@ -15,35 +15,29 @@ type Shown = { phase: 'night' | 'day'; title: string; sub: string; key: string }
  * about to be needed for something else.
  *
  * It plays on a change of phase and at no other time. Opening the app, coming
- * back to it, closing a message thread and refreshing all arrive at a phase
- * that simply *is*, and announcing night to somebody already sitting in it is
- * noise. So the first phase this screen sees is recorded and not played.
+ * back to it, closing a message thread, refreshing and joining a game already
+ * under way all arrive at a phase that simply *is*, and announcing night to
+ * somebody already sitting in it is noise. The Storyteller says when the phase
+ * changed, and only a change from the last few seconds is played.
  */
+const FRESH_MS = 20_000
 export function PlayerCinematic() {
   const phase = useStore((s) => s.phase)
   const day = useStore((s) => s.day)
   const known = useStore((s) => s.phaseKnown)
+  const at = useStore((s) => s.phaseAt)
   const played = useStore((s) => s.cinematicPlayed)
   const setPlayed = useStore((s) => s.setCinematicPlayed)
   const [shown, setShown] = useState<Shown | null>(null)
-  const seen = useRef(false)
 
   useEffect(() => {
     if (!known) return
     const kind = /^night/i.test(phase) ? 'night' : /^day/i.test(phase) ? 'day' : null
     if (!kind) return
     const key = `${kind}-${day}`
-    if (!seen.current) {
-      seen.current = true
-      // Arriving at a phase is not the same as it changing. The exception is a
-      // game that has played nothing yet, which is a night that has just begun.
-      if (played !== null) {
-        setPlayed(key)
-        return
-      }
-    }
     if (played === key) return
     setPlayed(key)
+    if (at === null || Date.now() - at > FRESH_MS) return
     setShown({
       phase: kind,
       key,
@@ -55,7 +49,7 @@ export function PlayerCinematic() {
             : 'Close your eyes.'
           : 'Open your eyes.',
     })
-  }, [phase, day, known, played, setPlayed])
+  }, [phase, day, at, known, played, setPlayed])
 
   if (!shown) return null
   return (

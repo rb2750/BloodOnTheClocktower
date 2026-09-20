@@ -74,7 +74,8 @@ function phaseMessage(game: ReturnType<typeof useStore.getState>['game']): Relay
   const phase = game?.phase
   if (!phase || phase.k === 'setup') return null
   const day = phase.k === 'ended' ? 0 : phase.n
-  return { t: 'phase', phase: phaseLabel(phase), day }
+  const at = game.log.filter((l) => l.kind === 'phase').at(-1)?.at
+  return { t: 'phase', phase: phaseLabel(phase), day, at }
 }
 
 function voteMessage(game: ReturnType<typeof useStore.getState>['game']): RelayMessage {
