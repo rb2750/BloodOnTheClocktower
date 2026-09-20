@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval'
-import { idsFor, type Payload, type VoteSnapshot } from '@botc/protocol'
+import { idsFor, type Payload, type SealedGrimoire, type VoteSnapshot } from '@botc/protocol'
 import { alert } from '@botc/ui'
 
 const idbStorage: StateStorage = {
@@ -67,6 +67,8 @@ export type PlayerState = {
   cinematicPlayed: string | null
   /** Today's nomination as the Storyteller is counting it. */
   vote: VoteSnapshot | null
+  /** The Grimoire, for the Spy and the Widow, as it stood when they looked. */
+  grimoire: SealedGrimoire | null
   /** The Storyteller's public key, kept so a restart can open what arrives. */
   storytellerKey: string | null
   /** The Storyteller changed our character and we have not looked yet. */
@@ -88,6 +90,7 @@ export type PlayerActions = {
   readChat: (seatId: string) => void
   setVote: (vote: VoteSnapshot | null) => void
   setStorytellerKey: (key: string) => void
+  setGrimoire: (grimoire: SealedGrimoire) => void
   setCinematicPlayed: (key: string) => void
 
   ensureNote: (name: string) => void
@@ -124,6 +127,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
       vote: null,
       storytellerKey: null,
       roleChanged: false,
+      grimoire: null,
       deviceId: newId(),
       hasRevealed: false,
 
@@ -167,6 +171,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
             phaseKnown: false,
             storytellerKey: null,
             roleChanged: false,
+            grimoire: null,
           }
         }),
 
@@ -184,6 +189,8 @@ export const useStore = create<PlayerState & PlayerActions>()(
         }),
 
       setStorytellerKey: (storytellerKey) => set({ storytellerKey }),
+
+      setGrimoire: (grimoire) => set({ grimoire }),
 
       setSeat: (seatId, seatName, roomId) =>
         set((s) => {
@@ -341,6 +348,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
           vote: null,
           storytellerKey: null,
           roleChanged: false,
+          grimoire: null,
           hasRevealed: false,
           deviceId: get().deviceId,
         }),

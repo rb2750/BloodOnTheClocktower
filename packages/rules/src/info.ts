@@ -31,6 +31,15 @@ function reminders(character: Character): string {
   return [character.firstNightReminder, character.otherNightReminder].filter(Boolean).join(' ')
 }
 
+/**
+ * Characters shown the Grimoire itself rather than told something: the Spy and
+ * the Widow. Read from the same reminders as everything else, so a script that
+ * adds another is covered without a list here.
+ */
+export function seesGrimoire(character: Character): boolean {
+  return /show the grimoire/i.test(reminders(character))
+}
+
 export function infoShape(character: Character): InfoShape {
   const text = reminders(character)
   const pair = PAIR.exec(text)

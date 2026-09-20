@@ -8,6 +8,7 @@ const LINES = {
   night: 'Night falls. Close your eyes.',
   day: 'Open your eyes.',
   chat: 'You have a message.',
+  grimoire: 'The Storyteller is showing you the grimoire.',
 }
 
 self.addEventListener('push', (event) => {

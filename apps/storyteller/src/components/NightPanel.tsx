@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
-import { getCharacter, placesReminder } from '@botc/rules'
-import { Button, ReminderText, Sheet, Label, ChevronLeft, ChevronRight, Qr, Dawn, Signpost, haptic } from '@botc/ui'
+import { getCharacter, placesReminder, seesGrimoire } from '@botc/rules'
+import { Button, ReminderText, Sheet, Label, ChevronLeft, ChevronRight, Qr, Dawn, Signpost, Eye, haptic } from '@botc/ui'
 import { useStore } from '../state/store.js'
 import { useRoom } from '../room.js'
 import { WhisperSheet } from './WhisperSheet.js'
@@ -21,7 +21,8 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
   const addEffect = useStore((s) => s.addEffect)
   const [placing, setPlacing] = useState<{ label: string; characterId: string } | null>(null)
   const [telling, setTelling] = useState<{ seatId: string; characterId: string } | null>(null)
-  const { reachable } = useRoom()
+  const { reachable, showGrimoire } = useRoom()
+  const [showed, setShowed] = useState<string | null>(null)
   const concealed = useStore((s) => s.concealed)
 
   const order = useMemo(() => nightOrder(), [nightOrder, game])
@@ -75,6 +76,33 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
             <Qr size={17} />
             Hand out characters
           </Button>
+        )}
+
+        {/* The Spy and the Widow are owed the Grimoire itself, not a sentence
+            about it. Their phone gets a sealed copy of the table as it stands,
+            which beats handing over yours with your notes on it. */}
+        {entry && seesGrimoire(getCharacter(entry.id) ?? ({} as never)) && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {entry.seats
+              .filter((s) => reachable.includes(s.seatId))
+              .map((s) => {
+                const seat = game.seats.find((x) => x.id === s.seatId)
+                if (!seat) return null
+                return (
+                  <button
+                    key={s.seatId}
+                    onClick={() => {
+                      haptic('confirm')
+                      void showGrimoire(seat.id).then((sent) => setShowed(sent ? seat.id : null))
+                    }}
+                    className="flex min-h-9 items-center gap-1.5 rounded-full border border-(--accent) px-3 text-[13px] font-medium text-(--text)"
+                  >
+                    <Eye size={14} />
+                    {showed === seat.id ? `${seat.name} is looking` : `show ${seat.name} the grimoire`}
+                  </button>
+                )
+              })}
+          </div>
         )}
 
         {/* Most steps exist to tell somebody something, and this is that step's

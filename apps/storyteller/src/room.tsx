@@ -34,6 +34,8 @@ type Room = {
   /** Seats whose phone is connected and can be sent a private word. */
   reachable: string[]
   whisper: (seatId: string, text: string, id: string) => Promise<boolean>
+  /** Show one player the whole Grimoire, as the Spy and the Widow are owed. */
+  showGrimoire: (seatId: string) => Promise<boolean>
   /** Send the relay this phone's own notification subscription. */
   subscribe: (sub: string) => void
 }
@@ -43,6 +45,7 @@ const RoomContext = createContext<Room>({
   talking: [],
   reachable: [],
   whisper: async () => false,
+  showGrimoire: async () => false,
   subscribe: () => {},
 })
 
@@ -309,6 +312,27 @@ export function RoomProvider({ children }: { children: ReactNode }) {
     relay.current?.sendRaw(`sub:host:${sub}`)
   }
 
+  const showGrimoire = async (seatId: string) => {
+    const client = relay.current
+    const ours = pair.current
+    const theirs = keys.current.get(seatId)
+    const game = useStore.getState().game
+    if (!client || !ours || !theirs || !game) return false
+    const sealed = await sealFor(ours, theirs, {
+      at: phaseLabel(game.phase),
+      seats: game.seats.map((s) => ({
+        name: s.name,
+        character: s.characterId ? characterIndex(s.characterId) : -1,
+        drunk: s.trueCharacterId === 'drunk',
+        dead: !s.alive,
+        tokens: s.effects.map((e) => e.label),
+      })),
+    })
+    client.send({ t: 'grimoire', seatId, id: Math.random().toString(36).slice(2, 10), sealed })
+    client.sendRaw(`push:${seatId}:grimoire`)
+    return true
+  }
+
   const whisper = async (seatId: string, text: string, id: string) => {
     const client = relay.current
     const ours = pair.current
@@ -323,7 +347,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <RoomContext.Provider value={{ status, reachable, talking, whisper, subscribe }}>
+    <RoomContext.Provider value={{ status, reachable, talking, whisper, showGrimoire, subscribe }}>
       {children}
     </RoomContext.Provider>
   )

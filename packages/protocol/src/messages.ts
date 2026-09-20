@@ -21,6 +21,8 @@ export type RelayMessage =
   | { t: 'role'; seatId: string; sealed: string }
   /** A private line from the Storyteller, sealed to one player's own key. */
   | { t: 'whisper'; seatId: string; id: string; sealed: string }
+  /** The Grimoire itself, sealed to the one player entitled to see it. */
+  | { t: 'grimoire'; seatId: string; id: string; sealed: string }
   | { t: 'phase'; phase: string; day: number }
   /** Today's nomination, as the Storyteller is counting it, or none. Hands are
    *  raised in the open, so who voted is public and travels as names. */
@@ -35,6 +37,21 @@ export type VoteSnapshot = {
   tally: number
   majority: number
   settled: boolean
+}
+
+/** What a sealed `grimoire` contains once opened: the table as it stands. */
+export type SealedGrimoire = {
+  at: string
+  seats: {
+    name: string
+    /** The character token in their slot, which is the one they believe. */
+    character: number
+    /** A Drunk token sits alongside it. */
+    drunk: boolean
+    dead: boolean
+    /** Reminder tokens on that seat, in the Storyteller's own words. */
+    tokens: string[]
+  }[]
 }
 
 /** What a sealed `chat` contains once opened. */

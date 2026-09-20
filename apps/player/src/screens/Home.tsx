@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { baseComposition, characterArt, getCharacter } from '@botc/rules'
+import { idsFor } from '@botc/protocol'
 import { ChevronRight, Plus, Token, Button, BuildStamp, haptic, inputClass } from '@botc/ui'
 import { useStore } from '../state.js'
 import { useRelay } from '../room.js'
@@ -64,6 +65,7 @@ export function HomeScreen({ openRoles, openThread }: { openRoles: () => void; o
       <Alerts />
       <MeScreen />
       <Whispers />
+      <TheGrimoire />
 
       {payload && (characterId || seatName) && (
         <div className="mt-6 mb-10">
@@ -299,6 +301,52 @@ function Alerts() {
           {busy ? 'Turning on…' : 'Turn on alerts'}
         </Button>
       )}
+    </section>
+  )
+}
+
+/**
+ * The Grimoire, for the one player entitled to see it.
+ *
+ * Under the same cover as everything else, and stamped with the night it was
+ * shown, because what the Spy saw on night two is not what is true on night
+ * four and they are expected to remember which.
+ */
+function TheGrimoire() {
+  const grimoire = useStore((s) => s.grimoire)
+  if (!grimoire) return null
+  return (
+    <section className="mt-6 px-5">
+      <div className="mb-2 flex items-baseline justify-between">
+        <p className="caps text-(--text-faint)">The grimoire, as you saw it</p>
+        <span className="caps text-(--text-faint)">{grimoire.at}</span>
+      </div>
+      <HoldToReveal label="Press and hold" hint="Only you should be seeing this.">
+        <div className="w-full px-1">
+          <ul className="m-0 list-none p-0">
+            {grimoire.seats.map((s) => {
+              const character = getCharacter(idsFor([s.character])[0] ?? '')
+              return (
+                <li
+                  key={s.name}
+                  className="flex items-baseline gap-2 border-b border-(--hairline) py-1.5 last:border-0"
+                >
+                  <span className={`w-[7ch] shrink-0 truncate text-[13px] ${s.dead ? 'text-(--text-faint) line-through' : 'text-(--text)'}`}>
+                    {s.name}
+                  </span>
+                  <span className="serif flex-1 text-left text-[14px] leading-snug text-(--text-dim)">
+                    {character?.name ?? 'nobody yet'}
+                    {s.drunk && ' · drunk'}
+                    {s.tokens.length > 0 && (
+                      <span className="text-(--text-faint)"> · {s.tokens.join(', ')}</span>
+                    )}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      </HoldToReveal>
     </section>
   )
 }

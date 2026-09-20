@@ -19,6 +19,7 @@ import {
   type SealedRole,
   type SealedWhisper,
   type SealedChat,
+  type SealedGrimoire,
   sealFor,
 } from '@botc/protocol'
 import { RELAY_URL } from './config.js'
@@ -50,6 +51,7 @@ function useRelayConnection() {
   const setVote = useStore((s) => s.setVote)
   const setStorytellerKey = useStore((s) => s.setStorytellerKey)
   const addChatLine = useStore((s) => s.addChatLine)
+  const setGrimoire = useStore((s) => s.setGrimoire)
   const addMessage = useStore((s) => s.addMessage)
 
   const [seats, setSeats] = useState<Seat[]>([])
@@ -172,6 +174,18 @@ function useRelayConnection() {
               .catch(() => {})
             return
           }
+          if (message.t === 'grimoire') {
+            const mine = useStore.getState().seatId
+            const theirs = storytellerKey.current
+            if (message.seatId !== mine || !theirs || !pair.current) return
+            void openSealed<SealedGrimoire>(pair.current, theirs, message.sealed)
+              .then((grimoire) => {
+                setGrimoire(grimoire)
+                alert('word')
+              })
+              .catch(() => sitDown())
+            return
+          }
           if (message.t === 'whisper') {
             // Every phone in the room receives it; only one can open it.
             const mine = useStore.getState().seatId
@@ -255,7 +269,7 @@ function useRelayConnection() {
       relay.current?.close()
       relay.current = null
     }
-  }, [hydrated, payload, setRole, setPhase, rememberTable, setTable, setVote, setStorytellerKey, addMessage, addChatLine, announceClaim])
+  }, [hydrated, payload, setRole, setPhase, rememberTable, setTable, setVote, setStorytellerKey, addMessage, addChatLine, setGrimoire, announceClaim])
 
   const claim = (seat: Seat) => {
     if (!payload || payload.kind !== 'room') return
