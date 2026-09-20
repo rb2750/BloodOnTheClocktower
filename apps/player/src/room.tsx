@@ -76,8 +76,11 @@ function useRelayConnection() {
     [deviceId],
   )
 
+  const [hydrated, setHydrated] = useState(() => useStore.persist.hasHydrated())
+  useEffect(() => useStore.persist.onFinishHydration(() => setHydrated(true)), [])
+
   useEffect(() => {
-    if (!payload || payload.kind !== 'room' || !RELAY_URL) return
+    if (!hydrated || !payload || payload.kind !== 'room' || !RELAY_URL) return
     let cancelled = false
 
     const run = async () => {
@@ -242,7 +245,7 @@ function useRelayConnection() {
       relay.current?.close()
       relay.current = null
     }
-  }, [payload, setRole, setPhase, rememberTable, setTable, setVote, setStorytellerKey, addMessage, addChatLine, announceClaim])
+  }, [hydrated, payload, setRole, setPhase, rememberTable, setTable, setVote, setStorytellerKey, addMessage, addChatLine, announceClaim])
 
   const claim = (seat: Seat) => {
     if (!payload || payload.kind !== 'room') return

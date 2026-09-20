@@ -43,9 +43,18 @@ export function App() {
         history.replaceState(null, '', window.location.pathname + window.location.search)
       }
     }
-    read()
+    // Not before the saved game has loaded: the store fills from IndexedDB
+    // after the first render, and anything written before that is written
+    // over. A phone scanning a new game's code was landing back in the old,
+    // finished one for exactly this reason.
+    let unsub: (() => void) | undefined
+    if (useStore.persist.hasHydrated()) read()
+    else unsub = useStore.persist.onFinishHydration(() => read())
     window.addEventListener('hashchange', read)
-    return () => window.removeEventListener('hashchange', read)
+    return () => {
+      unsub?.()
+      window.removeEventListener('hashchange', read)
+    }
   }, [applyPayload])
 
   // The phone's own back gesture is the one navigation every player already
