@@ -38,16 +38,7 @@ export function GrimoireScreen({ onBack }: { onBack: () => void }) {
             fill
             label="Press and hold"
             hint="For your eyes only."
-            outline={
-              // The table face down, names and all: exactly what the
-              // Storyteller's own screen shows with roles hidden. Who sits where
-              // is known to the whole room; what they are is the secret.
-              <div className="absolute inset-0 flex">
-                <Grimoire
-                  count={grimoire.seats.length}
-                  keys={grimoire.seats.map((s) => `back-${s.name}`)}
-                  showClock={false}
-                >
+          >
                   {(i) => (
                     <span className="relative flex flex-col items-center">
                       <Token name={grimoire.seats[i]!.name} back dead={grimoire.seats[i]!.dead} />

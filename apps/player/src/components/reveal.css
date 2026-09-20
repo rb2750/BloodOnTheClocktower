@@ -130,16 +130,6 @@
     width: 44px;
   }
 
-  /* The table face down fills its screen; the words sit in the empty middle
-     of the ring, where the phase sits once it is turned over, and stay narrow
-     enough not to run into the tokens either side. */
-  .reveal[data-fill] .reveal-cover {
-    padding-inline: 26%;
-  }
-  .reveal[data-fill] .reveal-shape .circle {
-    --pad: calc(var(--size) * 1.15);
-    --ry: min(calc(50cqh - var(--pad)), calc(var(--rx) * 2.8));
-  }
 
   .reveal[data-fill] .reveal-shape {
     position: absolute;
