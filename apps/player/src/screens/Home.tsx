@@ -177,7 +177,23 @@ function Whispers() {
           {messages.length === 1 ? newest.at : `${messages.length} things`}
         </span>
       </div>
-      <HoldToReveal label="Press and hold" hint="Only you should read this.">
+      <HoldToReveal
+        label="Press and hold"
+        hint="Only you should read this."
+        outline={
+          <span className="grid w-full max-w-[26ch] gap-2">
+            {messages.slice(-4).map((m, i) => (
+              // One bar per line, at roughly the width that line will turn out
+              // to be: enough to see there is something, never what it says.
+              <span
+                key={m.id}
+                className="reveal-line"
+                style={{ width: `${Math.min(100, 45 + ((m.text.length * 7 + i * 13) % 55))}%` }}
+              />
+            ))}
+          </span>
+        }
+      >
         <div className="flex flex-col gap-3 px-2 text-center">
           {[...messages].reverse().map((m) => (
             <p key={m.id} className="serif text-[16px] leading-snug text-(--text)">

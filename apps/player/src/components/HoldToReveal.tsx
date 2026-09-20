@@ -34,17 +34,17 @@ export function HoldToReveal({
   children,
   label = 'Press and hold',
   hint = 'Cup your hands so nobody else can see.',
-  tall = false,
   fill = false,
+  outline,
   onFirstReveal,
 }: {
   children: ReactNode
   label?: string
   hint?: string
-  /** For the one card that holds a whole table rather than a sentence. */
-  tall?: boolean
-  /** Fill the space given rather than standing at a fixed height. */
+  /** Fill the space given rather than sizing to what is inside. */
   fill?: boolean
+  /** A silhouette of what is underneath: the shape, never the secret. */
+  outline?: ReactNode
   onFirstReveal?: () => void
 }) {
   const [revealed, setRevealed] = useState(false)
@@ -109,7 +109,6 @@ export function HoldToReveal({
   return (
     <div
       className="reveal"
-      data-tall={tall || undefined}
       data-fill={fill || undefined}
       data-revealed={revealed || undefined}
       onPointerDown={press}
@@ -139,7 +138,7 @@ export function HoldToReveal({
       </div>
 
       <div className="reveal-cover" aria-hidden={revealed}>
-        <span className="reveal-seal" />
+        <span className="reveal-shape">{outline ?? <span className="reveal-seal" />}</span>
         <span className="reveal-label">{label}</span>
         <span className="reveal-hint">{hint}</span>
       </div>

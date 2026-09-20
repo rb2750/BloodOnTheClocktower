@@ -34,7 +34,24 @@ export function GrimoireScreen({ onBack }: { onBack: () => void }) {
 
       {grimoire ? (
         <div className="flex min-h-0 flex-1 flex-col px-3 pb-3">
-          <HoldToReveal fill label="Press and hold" hint="Only you should be seeing this.">
+          <HoldToReveal
+            fill
+            label="Press and hold"
+            hint="Only you should be seeing this."
+            outline={
+              // The table, face down: every seat where it sits, and not one
+              // word about who is in it.
+              <div className="absolute inset-0 flex">
+                <Grimoire
+                  count={grimoire.seats.length}
+                  keys={grimoire.seats.map((s) => `back-${s.name}`)}
+                  showClock={false}
+                >
+                  {() => <Token name="" back />}
+                </Grimoire>
+              </div>
+            }
+          >
             <div className="absolute inset-0 flex">
               <Grimoire
                 count={grimoire.seats.length}
