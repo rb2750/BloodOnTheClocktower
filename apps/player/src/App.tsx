@@ -72,7 +72,29 @@ export function App() {
     return () => window.removeEventListener('popstate', onPop)
   }, [])
 
-  if (thread) return <ThreadScreen seatId={thread} onBack={() => history.back()} />
+  // A message from another player: a few seconds of their name, with a way
+  // straight to it. Not shown while already reading that very thread.
+  useEffect(() => {
+    const onChat = (e: Event) => {
+      const { seatId, name } = (e as CustomEvent<{ seatId: string; name: string }>).detail
+      if (thread === seatId) return
+      toast(`${name} sent you a message`, {
+        duration: 6000,
+        action: { label: 'Open', onClick: () => openThread(seatId) },
+      })
+    }
+    window.addEventListener('botc:chat', onChat)
+    return () => window.removeEventListener('botc:chat', onChat)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [thread])
+
+  if (thread)
+    return (
+      <>
+        <ThreadScreen seatId={thread} onBack={() => history.back()} />
+        <Toaster position="top-center" theme="dark" toastOptions={{ style: { background: 'var(--surface-raised)', border: '1px solid var(--hairline)', color: 'var(--text)' } }} />
+      </>
+    )
 
   return (
     <div className="flex h-full flex-col">

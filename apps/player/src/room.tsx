@@ -148,7 +148,13 @@ function useRelayConnection() {
                   text: line.text,
                   at: line.at,
                 })
-                if (fresh && message.from !== me) alert('chat')
+                if (fresh && message.from !== me) {
+                  alert('chat')
+                  // Who, never what: the app puts the name on screen wherever
+                  // the player happens to be looking.
+                  const who = useStore.getState().table.find((t) => t.id === other)?.name ?? 'Someone'
+                  window.dispatchEvent(new CustomEvent('botc:chat', { detail: { seatId: other, name: who } }))
+                }
               })
               .catch(() => {})
             return
