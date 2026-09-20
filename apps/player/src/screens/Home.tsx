@@ -240,14 +240,17 @@ function Composition() {
   const c = baseComposition(seated)
   const part = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
   return (
-    <p className="caps mb-3 px-5 text-center text-(--text-faint)">
-      {[
-        part(c.townsfolk, 'Townsfolk', 'Townsfolk'),
-        part(c.outsider, 'Outsider', 'Outsiders'),
-        part(c.minion, 'Minion', 'Minions'),
-        part(c.demon, 'Demon', 'Demons'),
-      ].join(' · ')}
-    </p>
+    <div className="mb-3 px-5 text-center">
+      <p className="caps text-[10px] text-(--text-faint)">How a {seated}-player game starts</p>
+      <p className="caps mt-1 text-(--text-dim)">
+        {[
+          part(c.townsfolk, 'Townsfolk', 'Townsfolk'),
+          part(c.outsider, 'Outsider', 'Outsiders'),
+          part(c.minion, 'Minion', 'Minions'),
+          part(c.demon, 'Demon', 'Demons'),
+        ].join(' · ')}
+      </p>
+    </div>
   )
 }
 
