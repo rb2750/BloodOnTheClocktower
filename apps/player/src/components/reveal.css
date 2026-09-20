@@ -131,12 +131,6 @@
   }
 
 
-  .reveal[data-fill] .reveal-shape {
-    position: absolute;
-    inset: 0;
-    display: flex;
-  }
-
   /* The back of a token: a plain disc with twelve ticks, the clock motif the
      rest of the design uses. Flat, like everything else. */
   .reveal-seal {
