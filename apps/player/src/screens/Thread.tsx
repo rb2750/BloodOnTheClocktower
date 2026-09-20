@@ -3,6 +3,7 @@ import { getCharacter } from '@botc/rules'
 import { Button, ChevronLeft, inputClass } from '@botc/ui'
 import { useStore } from '../state.js'
 import { useRelay } from '../room.js'
+import { useKeyboardViewport } from '../useKeyboardViewport.js'
 
 /**
  * A private conversation with one other player.
@@ -21,6 +22,7 @@ export function ThreadScreen({ seatId, onBack }: { seatId: string; onBack: () =>
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
   const end = useRef<HTMLDivElement>(null)
+  const box = useKeyboardViewport()
 
   const name = person?.name ?? '…'
   const night = /^night/i.test(phase)
@@ -33,6 +35,11 @@ export function ThreadScreen({ seatId, onBack }: { seatId: string; onBack: () =>
     end.current?.scrollIntoView({ block: 'end' })
   }, [seatId, lines.length, readChat])
 
+  // The keyboard arriving shrinks the box; the last line must stay in view.
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: 'end' })
+  }, [box.height])
+
   const submit = async () => {
     const text = draft.trim()
     if (!text || sending) return
@@ -44,7 +51,10 @@ export function ThreadScreen({ seatId, onBack }: { seatId: string; onBack: () =>
 
   let lastDay = ''
   return (
-    <div className="flex h-full flex-col">
+    <div
+      className="fixed inset-x-0 flex flex-col bg-(--bg)"
+      style={{ top: box.top, height: box.height }}
+    >
       <div className="flex shrink-0 items-center border-b border-(--hairline) bg-(--surface) px-2">
         <button onClick={onBack} className="flex min-h-(--tap-min) items-center gap-1 px-3 text-[16px] text-(--text)">
           <ChevronLeft size={20} strokeWidth={1.75} />
@@ -107,6 +117,7 @@ export function ThreadScreen({ seatId, onBack }: { seatId: string; onBack: () =>
                 }
               }}
               rows={1}
+              onFocus={() => window.setTimeout(() => end.current?.scrollIntoView({ block: 'end' }), 300)}
               placeholder={`Say something to ${name}`}
               className={`${inputClass} flex-1 resize-none`}
             />
