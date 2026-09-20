@@ -7,6 +7,7 @@
     border-radius: 28px;
     border: 1px solid var(--hairline-strong);
     isolation: isolate;
+    overflow: hidden;
     cursor: pointer;
     /* The page still scrolls with a finger on the card; only the horizontal
        axis is claimed, which is what stops a swipe turning into a drag. iOS is
@@ -50,6 +51,7 @@
   /* The card is as tall as what it hides. A single line of a whisper should
      not stand in a box built for a character token and an ability. */
   .reveal-content {
+    grid-area: 1 / 1;
     display: grid;
     place-items: center;
     width: 100%;
@@ -77,6 +79,11 @@
     padding: 0.25rem;
   }
 
+  .reveal[data-fill] .reveal-cover {
+    position: absolute;
+    inset: 0;
+  }
+
   .reveal[data-fill] .circle {
     --pad: calc(var(--size) * 1.15);
     /* The Storyteller's ring keeps its vertical radius within 1.42 of its
@@ -93,8 +100,13 @@
   /* Opaque, never blurred, and over everything secret rather than the token
      alone: the ability names the character as surely as its picture does. */
   .reveal-cover {
-    position: absolute;
-    inset: 0;
+    /* Stacked in the same cell as the content rather than floated over it, so
+       the card is as tall as the taller of the two: a cover floated over a
+       one-line whisper spilled out of the card and across the page. */
+    grid-area: 1 / 1;
+    position: relative;
+    width: 100%;
+    height: 100%;
     z-index: 2;
     display: grid;
     place-items: center;
