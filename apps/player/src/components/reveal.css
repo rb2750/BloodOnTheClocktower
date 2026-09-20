@@ -22,6 +22,31 @@
     -webkit-user-select: none;
   }
 
+  /* The character card keeps the proportions it was designed with: this is the
+     moment the whole app exists for, and it is not a list item. Everything else
+     is as tall as what it hides, because a one-line whisper in a box built for
+     a token and an ability is the thing that looked wrong. */
+  .reveal[data-grand] {
+    min-height: min(58vh, 430px);
+  }
+
+  .reveal[data-grand] .reveal-content {
+    padding: 1.75rem 1.5rem;
+  }
+
+  .reveal[data-grand] .reveal-cover {
+    gap: 1.25rem;
+    padding: 2rem;
+  }
+
+  .reveal[data-grand] .reveal-seal {
+    width: 116px;
+  }
+
+  .reveal[data-grand] .reveal-label {
+    font-size: 27px;
+  }
+
   /* The card is as tall as what it hides. A single line of a whisper should
      not stand in a box built for a character token and an ability. */
   .reveal-content {
@@ -97,8 +122,13 @@
     place-items: center;
     gap: 0.5rem;
     width: 100%;
-    opacity: 0.28;
     pointer-events: none;
+  }
+
+  /* A silhouette is a hint, so it sits back. The token seal is not a hint, it
+     is the back of the card, and it keeps its weight. */
+  .reveal-shape-outline {
+    opacity: 0.28;
   }
 
   .reveal[data-fill] .reveal-shape {

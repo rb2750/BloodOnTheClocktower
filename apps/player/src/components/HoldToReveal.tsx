@@ -35,6 +35,7 @@ export function HoldToReveal({
   label = 'Press and hold',
   hint = 'Cup your hands so nobody else can see.',
   fill = false,
+  grand = false,
   outline,
   onFirstReveal,
 }: {
@@ -43,6 +44,8 @@ export function HoldToReveal({
   hint?: string
   /** Fill the space given rather than sizing to what is inside. */
   fill?: boolean
+  /** The character card: the one reveal that keeps a shape of its own. */
+  grand?: boolean
   /** A silhouette of what is underneath: the shape, never the secret. */
   outline?: ReactNode
   onFirstReveal?: () => void
@@ -110,6 +113,7 @@ export function HoldToReveal({
     <div
       className="reveal"
       data-fill={fill || undefined}
+      data-grand={grand || undefined}
       data-revealed={revealed || undefined}
       onPointerDown={press}
       onPointerMove={moved}
@@ -138,7 +142,9 @@ export function HoldToReveal({
       </div>
 
       <div className="reveal-cover" aria-hidden={revealed}>
-        <span className="reveal-shape">{outline ?? <span className="reveal-seal" />}</span>
+        <span className={`reveal-shape${outline ? ' reveal-shape-outline' : ''}`}>
+          {outline ?? <span className="reveal-seal" />}
+        </span>
         <span className="reveal-label">{label}</span>
         <span className="reveal-hint">{hint}</span>
       </div>

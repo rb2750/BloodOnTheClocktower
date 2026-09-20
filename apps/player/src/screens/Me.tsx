@@ -30,19 +30,7 @@ export function MeScreen() {
 
   return (
     <section className="px-5 pt-4">
-      <HoldToReveal
-        onFirstReveal={markRevealed}
-        outline={
-          // A token, a name and the two lines of an ability: the shape of a
-          // character card, with nothing in it.
-          <span className="grid w-full max-w-[24ch] justify-items-center gap-2.5">
-            <span className="reveal-seal" />
-            <span className="reveal-line" style={{ width: '45%' }} />
-            <span className="reveal-line" style={{ width: '92%' }} />
-            <span className="reveal-line" style={{ width: '68%' }} />
-          </span>
-        }
-      >
+      <HoldToReveal grand onFirstReveal={markRevealed}>
         {/* Everything secret is in here: the picture, the name, the team and
             the ability, which is the line a player actually needs to read. */}
         <div className="flex flex-col items-center gap-4 text-center">
