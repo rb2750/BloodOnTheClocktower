@@ -233,6 +233,7 @@ export const useStore = create<Store>()(
               }
             }
             pushLog(draft, 'phase', `New game on ${scriptName} with ${names.length} players.`)
+            draft.cinematicPlayed = null
           }),
 
         abandonGame: () =>

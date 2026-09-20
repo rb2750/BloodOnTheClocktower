@@ -36,8 +36,12 @@ export function PhaseCinematic() {
     const key = `${phase.k}-${phase.n}`
     if (!seen.current) {
       seen.current = true
-      setPlayed(key)
-      return
+      // Arriving at a phase is not the same as it changing. The exception is a
+      // game that has played nothing yet, which is a night that has just begun.
+      if (played !== null) {
+        setPlayed(key)
+        return
+      }
     }
     if (played === key) return
     setPlayed(key)
