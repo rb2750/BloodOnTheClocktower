@@ -82,16 +82,16 @@ export function useRingDrag({
         cx: ring ? ring.left + ring.width / 2 : 0,
         cy: ring ? ring.top + ring.height / 2 : 0,
       }
-      // Owning the pointer from the first touch, not from the end of the hold:
-      // by then the browser may already have taken the gesture for itself.
-      try {
-        li.setPointerCapture(e.pointerId)
-      } catch {
-        /* the pointer may already be gone; the window listeners still work */
-      }
       timer.current = window.setTimeout(() => {
-        // Held still long enough: this is a drag, not a tap.
+        // Held still long enough: this is a drag, not a tap. The pointer is
+        // captured only now: capturing at the first touch retargets the click
+        // that follows a plain tap, and the seat would never open.
         setDragging(id)
+        try {
+          li.setPointerCapture(e.pointerId)
+        } catch {
+          /* the pointer may already be gone; the window listeners still work */
+        }
         setPreview(orderRef.current)
         haptic('pick')
       }, HOLD_MS)
