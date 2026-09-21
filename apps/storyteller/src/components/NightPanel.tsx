@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { getCharacter, placesReminder, seesGrimoire } from '@botc/rules'
+import { bluffCandidates, getCharacter, placesReminder, seesGrimoire } from '@botc/rules'
 import { Button, ReminderText, Sheet, Label, ChevronLeft, ChevronRight, Qr, Dawn, Signpost, Eye, haptic } from '@botc/ui'
 import { useStore } from '../state/store.js'
 import { useRoom } from '../room.js'
 import { WhisperSheet } from './WhisperSheet.js'
+import { CharacterToken } from './CharacterToken.js'
 import { GameOverHint } from './GameOverHint.js'
 
 /**
@@ -13,6 +14,58 @@ import { GameOverHint } from './GameOverHint.js'
  * twice and show tokens. So this panel says what to *do* and what to *show* —
  * never a sentence to read aloud. Speech belongs to the day.
  */
+/**
+ * The Demon's bluffs, on the step that shows them.
+ *
+ * Chosen at the deal and kept for the recap, which is fine for the record and
+ * useless at the table on the night they are shown. A tap swaps one for the
+ * next character not in play, in the same order the dealer ranked them.
+ */
+function Bluffs() {
+  const game = useStore((s) => s.game)
+  const setBluffs = useStore((s) => s.setBluffs)
+  const concealed = useStore((s) => s.concealed)
+  if (!game) return null
+
+  const inPlay = game.seats.flatMap((s) => [s.characterId, s.trueCharacterId]).filter((id): id is string => Boolean(id))
+  const candidates = bluffCandidates(game.script, inPlay).map((c) => c.id)
+  const bluffs = game.bluffs.length > 0 ? game.bluffs : candidates.slice(0, 3)
+
+  const swap = (index: number) => {
+    const free = candidates.filter((id) => !bluffs.includes(id))
+    if (free.length === 0) return
+    const at = candidates.indexOf(bluffs[index]!)
+    const next = free.find((id) => candidates.indexOf(id) > at) ?? free[0]!
+    haptic('tick')
+    setBluffs(bluffs.map((id, i) => (i === index ? next : id)))
+  }
+
+  return (
+    <div className="mt-3">
+      <Label>Show the Demon these</Label>
+      <div className="grid grid-cols-3 gap-2">
+        {bluffs.map((id, i) => {
+          const character = getCharacter(id)
+          return (
+            <button
+              key={id}
+              onClick={() => swap(i)}
+              aria-label={`Swap ${character?.name ?? id}`}
+              className="flex min-h-(--tap-min) flex-col items-center gap-1.5 rounded-(--radius-surface) border border-(--hairline-strong) px-2 py-2 active:bg-(--surface-raised)"
+            >
+              <CharacterToken character={concealed ? undefined : character} size="52px" />
+              <span className="text-center text-[12px] leading-tight text-(--text)">
+                {concealed ? 'Hidden' : (character?.name ?? id)}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+      <p className="caps mt-1.5 text-(--text-faint)">Tap one to swap it</p>
+    </div>
+  )
+}
+
 export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd: () => void }) {
   const game = useStore((s) => s.game)
   const nightOrder = useStore((s) => s.nightOrder)
@@ -67,6 +120,10 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
             for eyes open, so the last wake cannot be timed.
           </p>
         )}
+
+        {/* The three bluffs are the point of the Demon's step, so they sit on
+            it as tokens to be shown, not as a sentence about showing them. */}
+        {entry?.id === 'demoninfo' && <Bluffs />}
 
         {/* Handing out characters belongs at dusk on the first night, which is
             exactly when it happens at a table. Offered here rather than buried
