@@ -10,6 +10,8 @@ const LINES = {
   chat: 'You have a message.',
   grimoire: 'The Storyteller is showing you the grimoire.',
   nudge: 'The Storyteller needs you. Look up.',
+  floor: 'You have the floor. Speak.',
+  nominations: 'Nominations are open.',
 }
 
 self.addEventListener('push', (event) => {

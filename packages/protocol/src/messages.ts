@@ -33,9 +33,37 @@ export type RelayMessage =
   /** A tap on the shoulder, to one seat or to '*' for the whole table. Nothing
    *  to read, so it is not sealed; stamped so a replay never buzzes anyone. */
   | { t: 'nudge'; seatId: string; at: number }
+  /** Who may speak. In `queue` the hands form a line the Storyteller calls
+   *  from; `silent` is the count, when nobody talks. */
+  | { t: 'floor'; mode: FloorMode; queue: string[]; speaking: string | null }
+  /** A player asking for the floor, or giving it up. */
+  | { t: 'speak'; seatId: string; want: boolean }
+  /** Whether nominations are open, and who is waiting to make one. */
+  | {
+      t: 'nominations'
+      open: boolean
+      queue: NominationRequest[]
+      /** Today's nominations so far. Public at the table, so public here, and
+       *  it is what tells a phone who has a nomination left. */
+      today: { nominatorId: string; nomineeId: string; exile?: boolean }[]
+    }
+  /** A player's nomination, which the Storyteller takes when they are ready.
+   *  Carries its own id so a replayed backlog never queues it twice. */
+  | { t: 'nominate'; id: string; seatId: string; nomineeId: string }
+  | { t: 'withdraw'; id: string; seatId: string }
+
+export type FloorMode = 'open' | 'queue' | 'silent'
+
+export type NominationRequest = {
+  id: string
+  nominatorId: string
+  nomineeId: string
+}
 
 export type VoteSnapshot = {
   id: string
+  /** An exile: the whole table may vote, and the dead vote for free. */
+  exile?: boolean
   nominator: string
   nominee: string
   voters: string[]

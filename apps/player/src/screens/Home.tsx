@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { baseComposition, characterArt, getCharacter } from '@botc/rules'
+import { baseComposition, canNominate, characterArt, getCharacter } from '@botc/rules'
 import { ChevronRight, Plus, Token, Button, BuildStamp, haptic, inputClass } from '@botc/ui'
 import { useStore } from '../state.js'
 import { useRelay } from '../room.js'
@@ -78,6 +78,215 @@ function LeaveGame() {
   )
 }
 
+/**
+ * Asking to speak.
+ *
+ * Nothing in the rules says who may talk, so this appears only when the
+ * Storyteller has asked the table to raise hands, and disappears the moment
+ * they stop. The queue is the useful part: a room cannot remember the order
+ * eight hands went up in, and a phone can.
+ */
+function Speak() {
+  const floor = useStore((s) => s.floor)
+  const vote = useStore((s) => s.vote)
+  const seatId = useStore((s) => s.seatId)
+  const { speak, status } = useRelay()
+
+  // A count is its own kind of quiet, and the vote card owns that moment.
+  if (!seatId || (vote && !vote.settled)) return null
+  if (floor.mode === 'open') return null
+
+  if (floor.mode === 'silent') {
+    return (
+      <section className="mx-5 mt-4 rounded-2xl border border-(--hairline-strong) bg-(--surface) px-4 py-3">
+        <p className="caps text-(--text-faint)">The floor</p>
+        <p className="display mt-1 text-[20px] leading-tight text-(--text)">Quiet, please</p>
+        <p className="serif mt-1 text-[15px] leading-snug text-(--text-dim)">
+          The Storyteller has asked the table to listen.
+        </p>
+      </section>
+    )
+  }
+
+  const mine = floor.speaking === seatId
+  const place = floor.queue.indexOf(seatId)
+  const waiting = place >= 0
+
+  return (
+    <section
+      className={`mx-5 mt-4 rounded-2xl border px-4 py-3 ${
+        mine ? 'border-(--accent) bg-(--accent)/10' : 'border-(--hairline-strong) bg-(--surface)'
+      }`}
+    >
+      <p className="caps text-(--text-faint)">The floor</p>
+      <p className="display mt-1 text-[20px] leading-tight text-(--text)">
+        {mine ? 'You have the floor' : waiting ? 'Your hand is up' : 'Hands up to speak'}
+      </p>
+      <p className="serif mt-1 text-[15px] leading-snug text-(--text-dim)">
+        {mine
+          ? 'The table is listening.'
+          : waiting
+            ? place === 0
+              ? 'You are next.'
+              : `${place} ahead of you.`
+            : 'The Storyteller is calling on people one at a time.'}
+      </p>
+      <button
+        onClick={() => {
+          haptic('tap')
+          speak(!(mine || waiting))
+        }}
+        disabled={status !== 'open'}
+        aria-pressed={mine || waiting}
+        className={`mt-3 min-h-(--tap-min) w-full rounded-full border px-4 text-[16px] font-medium disabled:opacity-40 ${
+          mine || waiting
+            ? 'border-(--accent) bg-(--accent) text-(--bg)'
+            : 'border-(--hairline-strong) text-(--text)'
+        }`}
+      >
+        {mine ? 'I have finished' : waiting ? 'Lower my hand' : 'Raise my hand'}
+      </button>
+    </section>
+  )
+}
+
+/**
+ * Nominating from the phone.
+ *
+ * The phone asks and the Storyteller takes it, because only one nomination can
+ * be on the floor at a time and the rules may have changed in the seconds in
+ * between: somebody died, or the person you chose was nominated by someone
+ * faster. The same check runs here and there, so what is offered is what will
+ * be accepted, and the reason is on screen when it is not.
+ */
+function Nominate() {
+  const seatId = useStore((s) => s.seatId)
+  const nominations = useStore((s) => s.nominations)
+  const myRequest = useStore((s) => s.myRequest)
+  const table = useStore((s) => s.table)
+  const { askNominate, withdrawNomination, status } = useRelay()
+  const [choosing, setChoosing] = useState(false)
+
+  if (!seatId || !nominations.open) return null
+
+  const nameOf = (id: string) => table.find((t) => t.id === id)?.name ?? 'Someone'
+  const records = nominations.today.map((n) => ({
+    day: 0,
+    nominator: n.nominatorId,
+    nominee: n.nomineeId,
+    voters: [],
+    tally: 0,
+    majority: 0,
+    succeeded: false,
+    exile: n.exile,
+    at: 0,
+  }))
+  const aliveOf = (id: string) => table.find((t) => t.id === id)?.alive ?? false
+  const travellerOf = (id: string) => table.find((t) => t.id === id)?.traveller ?? false
+  const mine = canNominate(seatId, null, records, aliveOf, travellerOf)
+  const travellers = table.some((t) => t.traveller)
+
+  return (
+    <section className="mx-5 mt-4 rounded-2xl border border-(--hairline-strong) bg-(--surface) px-4 py-3">
+      <p className="caps text-(--text-faint)">Nominations are open</p>
+
+      {myRequest ? (
+        <>
+          <p className="display mt-1 text-[20px] leading-tight text-(--text)">
+            You nominate {nameOf(myRequest.nomineeId)}
+          </p>
+          <p className="serif mt-1 text-[15px] leading-snug text-(--text-dim)">
+            {nominations.queue.findIndex((r) => r.id === myRequest.id) > 0
+              ? `${nominations.queue.findIndex((r) => r.id === myRequest.id)} ahead of you.`
+              : 'Waiting for the Storyteller.'}
+          </p>
+          <button
+            onClick={() => {
+              haptic('tap')
+              withdrawNomination()
+            }}
+            className="caps mt-3 min-h-(--tap-min) w-full rounded-full border border-(--hairline-strong) px-4 text-[11px] text-(--text-dim)"
+          >
+            Take it back
+          </button>
+        </>
+      ) : !mine.allowed && !travellers ? (
+        <p className="serif mt-1 text-[15px] leading-snug text-(--text-dim)">
+          {mine.reason === 'They have already nominated today.'
+            ? 'You have already nominated today.'
+            : 'The dead may not nominate.'}
+        </p>
+      ) : choosing ? (
+        <>
+          <p className="serif mt-1 mb-2 text-[15px] leading-snug text-(--text-dim)">
+            Who do you nominate?
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {table.map((seat) => {
+              if (!seat.id) return null
+              const check = canNominate(seatId, seat.id, records, aliveOf, travellerOf)
+              // Somebody got in first. Still allowed, because a request is not
+              // a nomination until the Storyteller takes one of them.
+              const asked = nominations.queue.some((r) => r.nomineeId === seat.id)
+              return (
+                <button
+                  key={seat.id}
+                  disabled={!check.allowed || status !== 'open'}
+                  onClick={() => {
+                    haptic('confirm')
+                    askNominate(seat.id!)
+                    setChoosing(false)
+                  }}
+                  className="flex min-h-(--tap-min) flex-col items-start justify-center rounded-(--radius-surface) border border-(--hairline-strong) px-3 py-2 text-left disabled:opacity-30"
+                >
+                  <span className="text-[14px] text-(--text)">{seat.name}</span>
+                  <span className="caps text-[9.5px] text-(--text-faint)">
+                    {!check.allowed
+                      ? check.reason
+                      : asked
+                        ? 'Already asked for'
+                        : seat.traveller
+                          ? 'Exile'
+                          : seat.alive
+                            ? 'Alive'
+                            : 'Dead'}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+          <button
+            onClick={() => setChoosing(false)}
+            className="caps mt-2 min-h-(--tap-min) w-full text-[11px] text-(--text-faint)"
+          >
+            Not now
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="serif mt-1 text-[15px] leading-snug text-(--text-dim)">
+            {mine.allowed
+              ? 'You have one nomination today.'
+              : mine.reason === 'Dead players may not nominate.'
+                ? 'The dead may not nominate, but you may call for a Traveller to be exiled.'
+                : 'You have nominated today, but you may still call for a Traveller to be exiled.'}
+          </p>
+          <button
+            onClick={() => {
+              haptic('tap')
+              setChoosing(true)
+            }}
+            disabled={status !== 'open'}
+            className="mt-3 min-h-(--tap-min) w-full rounded-full border border-(--hairline-strong) px-4 text-[16px] font-medium text-(--text) disabled:opacity-40"
+          >
+            Nominate someone
+          </button>
+        </>
+      )}
+    </section>
+  )
+}
+
 export function HomeScreen({
   openRoles,
   openThread,
@@ -104,6 +313,8 @@ export function HomeScreen({
       <Clock />
       <Seat name={seatName} />
       <Vote />
+      <Speak />
+      <Nominate />
       <Changed />
       <Alerts />
       <MeScreen />
@@ -440,19 +651,30 @@ function Vote() {
   const me = table.find((t) => t.name === seatName)
   const raised = wanted ?? counted
   // Alive, or dead with the one vote still in hand. A hand already up can
-  // always come down, which is how a spent ghost vote is taken back.
-  const may = Boolean(me && (me.alive || me.ghostVote || raised))
+  // always come down, which is how a spent ghost vote is taken back. An exile
+  // is the exception: the dead vote on those for nothing.
+  const may = Boolean(me && (me.alive || me.ghostVote || raised || vote.exile))
 
   return (
     <section className="mx-5 mt-4 rounded-2xl border border-(--hairline-strong) bg-(--surface) px-4 py-3">
-      <p className="caps text-(--text-faint)">{vote.settled ? 'Vote closed' : 'On the block'}</p>
+      <p className="caps text-(--text-faint)">
+        {vote.settled ? 'Vote closed' : vote.exile ? 'Exile' : 'On the block'}
+      </p>
       <p className="display mt-1 text-[22px] leading-tight text-(--text)">
-        {you ? `${vote.nominator} nominates you` : `${vote.nominator} nominates ${vote.nominee}`}
+        {vote.exile
+          ? you
+            ? `${vote.nominator} calls for you to be exiled`
+            : `${vote.nominator} calls for ${vote.nominee} to be exiled`
+          : you
+            ? `${vote.nominator} nominates you`
+            : `${vote.nominator} nominates ${vote.nominee}`}
       </p>
       <p className="serif mt-1 text-[15px] leading-snug text-(--text-dim)">
         {vote.settled
-          ? `${vote.tally} ${vote.tally === 1 ? 'vote' : 'votes'}, ${enough ? 'enough to execute' : 'not enough'}.`
-          : `${vote.tally} of ${vote.majority} needed to execute.`}
+          ? `${vote.tally} ${vote.tally === 1 ? 'vote' : 'votes'}, ${
+              enough ? (vote.exile ? 'enough to exile' : 'enough to execute') : 'not enough'
+            }.`
+          : `${vote.tally} of ${vote.majority} needed to ${vote.exile ? 'exile' : 'execute'}.`}
       </p>
       {vote.voters.length > 0 && (
         <p className="mt-1 text-[12px] text-(--text-faint)">Voting: {vote.voters.join(', ')}</p>
@@ -486,7 +708,7 @@ function Vote() {
               The Storyteller did not get that. Try again.
             </p>
           )}
-          {!me.alive && may && !raised && (
+          {!me.alive && may && !raised && !vote.exile && (
             <p className="mt-2 text-center text-[12px] text-(--text-faint)">
               You are dead. This is your one vote for the rest of the game.
             </p>

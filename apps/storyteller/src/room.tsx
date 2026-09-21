@@ -13,7 +13,7 @@ import {
   type RelayMessage,
   type RelayStatus,
 } from '@botc/protocol'
-import { getCharacter } from '@botc/rules'
+import { canNominate, getCharacter } from '@botc/rules'
 import { alert } from '@botc/ui'
 import { currentPush } from './push.js'
 import { get as idbGet, set as idbSet } from 'idb-keyval'
@@ -78,6 +78,51 @@ function phaseMessage(game: ReturnType<typeof useStore.getState>['game']): Relay
   return { t: 'phase', phase: phaseLabel(phase), day, at }
 }
 
+function floorMessage(game: ReturnType<typeof useStore.getState>['game']): RelayMessage {
+  const floor = game?.floor
+  return {
+    t: 'floor',
+    mode: floor?.mode ?? 'open',
+    queue: floor?.queue ?? [],
+    speaking: floor?.speaking ?? null,
+  }
+}
+
+function nominationsMessage(game: ReturnType<typeof useStore.getState>['game']): RelayMessage {
+  return {
+    t: 'nominations',
+    open: Boolean(game?.nominationsOpen),
+    queue: (game?.nominationQueue ?? []).map((r) => ({
+      id: r.id,
+      nominatorId: r.nominatorId,
+      nomineeId: r.nomineeId,
+    })),
+    today: todayFor(game).map((n) => ({
+      nominatorId: n.nominator,
+      nomineeId: n.nominee,
+      exile: n.exile,
+    })),
+  }
+}
+
+/** Today's nominations in the shape the rules module reads. */
+function todayFor(game: ReturnType<typeof useStore.getState>['game']) {
+  const day = game?.phase.k === 'day' ? game.phase.n : null
+  return (game?.nominations ?? [])
+    .filter((n) => n.day === day)
+    .map((n) => ({
+      day: n.day,
+      nominator: n.nominatorId,
+      nominee: n.nomineeId,
+      voters: n.voterIds,
+      tally: n.tally,
+      majority: n.majority,
+      succeeded: false,
+      exile: n.exile,
+      at: n.at,
+    }))
+}
+
 function voteMessage(game: ReturnType<typeof useStore.getState>['game']): RelayMessage {
   const today = game?.phase.k === 'day' ? game.phase.n : null
   const nomination = game?.nominations.filter((n) => n.day === today).at(-1)
@@ -87,6 +132,7 @@ function voteMessage(game: ReturnType<typeof useStore.getState>['game']): RelayM
     t: 'vote',
     nomination: {
       id: nomination.id,
+      exile: nomination.exile,
       nominator: name(nomination.nominatorId),
       nominee: name(nomination.nomineeId),
       voters: nomination.voterIds.map(name),
@@ -144,6 +190,8 @@ export function RoomProvider({ children }: { children: ReactNode }) {
       const opening = phaseMessage(now)
       if (opening) client.send(opening)
       client.send(voteMessage(now))
+      client.send(floorMessage(now))
+      client.send(nominationsMessage(now))
     }
 
     const sendRole = (client: Relay, seatId: string) => {
@@ -225,6 +273,45 @@ export function RoomProvider({ children }: { children: ReactNode }) {
             }
             return
           }
+          if (message.t === 'speak') {
+            const state = useStore.getState()
+            if (state.game?.floor?.mode !== 'queue') return
+            const already = state.game.floor.queue.includes(message.seatId)
+            if (already === message.want) return
+            state.wantsFloor(message.seatId, message.want)
+            if (message.want) alert('hand')
+            return
+          }
+          if (message.t === 'withdraw') {
+            useStore.getState().dropNominationRequest(message.id)
+            return
+          }
+          if (message.t === 'nominate') {
+            // The phone checked before it asked, but time passed: somebody may
+            // have died or been nominated since. The Storyteller's copy is the
+            // one that counts, so it checks again and drops what is no longer
+            // allowed rather than queueing something it would have to refuse.
+            const state = useStore.getState()
+            const game = state.game
+            if (!game || game.phase.k !== 'day' || !game.nominationsOpen) return
+            if (message.seatId !== message.nomineeId && !game.seats.some((s) => s.id === message.nomineeId)) return
+            const check = canNominate(
+              message.seatId,
+              message.nomineeId,
+              todayFor(game),
+              (id) => game.seats.find((s) => s.id === id)?.alive ?? false,
+              (id) => game.seats.find((s) => s.id === id)?.isTraveller ?? false,
+            )
+            if (!check.allowed) return
+            state.askToNominate({
+              id: message.id,
+              nominatorId: message.seatId,
+              nomineeId: message.nomineeId,
+            })
+            alert('seat')
+            client.sendRaw('push:host:seat')
+            return
+          }
           if (message.t === 'chat') {
             // Cannot be read here, and is not. The phone it is for gets its
             // notification, and the grimoire notes that two people are talking.
@@ -289,6 +376,30 @@ export function RoomProvider({ children }: { children: ReactNode }) {
     if (!relay.current || !seats) return
     relay.current.send({ t: 'seats', seats: tableOf(useStore.getState().game, keys.current) })
   }, [seats, claims, reachable])
+
+  // The floor and the nomination queue, whenever either moves. Both are short
+  // and public, so they go to the whole room rather than seat by seat.
+  const floor = game?.floor
+  const nominationsOpen = game?.nominationsOpen
+  const nominationQueue = game?.nominationQueue
+  const spoke = useRef<string | null>(null)
+  useEffect(() => {
+    if (!relay.current) return
+    relay.current.send(floorMessage(useStore.getState().game))
+    const speaking = floor?.speaking ?? null
+    if (speaking && spoke.current !== speaking) relay.current.sendRaw(`push:${speaking}:floor`)
+    spoke.current = speaking
+  }, [floor])
+
+  const wasOpen = useRef<boolean | null>(null)
+  useEffect(() => {
+    if (!relay.current) return
+    relay.current.send(nominationsMessage(useStore.getState().game))
+    if (wasOpen.current !== null && wasOpen.current !== Boolean(nominationsOpen) && nominationsOpen) {
+      relay.current.sendRaw('push:*:nominations')
+    }
+    wasOpen.current = Boolean(nominationsOpen)
+  }, [nominationsOpen, nominationQueue])
 
   // And the time of day. Every phone shows it, and plays the same nightfall
   // the Storyteller's screen plays, so the room moves together.

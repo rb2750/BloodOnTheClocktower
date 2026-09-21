@@ -5,6 +5,7 @@ import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval'
 import {
   buildNightOrder,
   editionScript,
+  exileThreshold,
   getCharacter,
   majorityThreshold,
   resolveBlock,
@@ -12,6 +13,7 @@ import {
   type NightEntry,
   type Script,
 } from '@botc/rules'
+import type { FloorMode } from '@botc/protocol'
 import type { Effect, Game, LogEntry, LogKind, Nomination, Phase, Seat } from './types.js'
 
 enablePatches()
@@ -116,6 +118,12 @@ export type StoreActions = {
   setNightStep: (step: number) => void
 
   nominate: (nominatorId: string, nomineeId: string) => void
+  setFloorMode: (mode: FloorMode) => void
+  wantsFloor: (seatId: string, want: boolean) => void
+  giveFloor: (seatId: string | null) => void
+  setNominationsOpen: (open: boolean) => void
+  askToNominate: (request: { id: string; nominatorId: string; nomineeId: string }) => void
+  dropNominationRequest: (id: string) => void
   toggleVote: (nominationId: string, seatId: string) => void
   settleNomination: (nominationId: string) => void
   execute: (seatId: string | null) => void
@@ -165,6 +173,21 @@ export const useStore = create<Store>()(
             { label, inverse, at: Date.now() },
           ].slice(-UNDO_DEPTH),
         })
+      }
+
+      /**
+       * A change nobody would want to undo.
+       *
+       * Hands going up and down and the Storyteller calling the next speaker
+       * happen constantly and are their own opposite, so they stay out of the
+       * undo stack: burying an execution under forty raised hands would make
+       * undo useless exactly when it is needed.
+       */
+      const quiet = (recipe: (draft: StoreState) => void) => {
+        const [next] = produceWithPatches(getState(), (draft) => {
+          recipe(draft as unknown as StoreState)
+        })
+        set(next as StoreState)
       }
 
       const pushLog = (
@@ -444,6 +467,9 @@ export const useStore = create<Store>()(
             if (!draft.game) return
             const n = draft.game.phase.k === 'day' ? draft.game.phase.n + 1 : 1
             draft.game.phase = { k: 'night', n, step: 0 }
+            draft.game.nominationsOpen = false
+            draft.game.nominationQueue = []
+            if (draft.game.floor) draft.game.floor = { ...draft.game.floor, queue: [], speaking: null }
             pushLog(draft, 'phase', `Night ${n} begins.`)
           }),
 
@@ -452,6 +478,11 @@ export const useStore = create<Store>()(
             if (!draft.game) return
             const n = draft.game.phase.k === 'night' ? draft.game.phase.n : 1
             draft.game.phase = { k: 'day', n }
+            // Nominations are the Storyteller's to call for, so a new day never
+            // opens them by itself.
+            draft.game.nominationsOpen = false
+            draft.game.nominationQueue = []
+            if (draft.game.floor) draft.game.floor = { ...draft.game.floor, queue: [], speaking: null }
             pushLog(draft, 'phase', `Day ${n} begins.`)
           }),
 
@@ -467,23 +498,100 @@ export const useStore = create<Store>()(
             const alive = draft.game.seats.filter((s) => s.alive && !s.isTraveller).length
             const nominator = draft.game.seats.find((s) => s.id === nominatorId)
             const nominee = draft.game.seats.find((s) => s.id === nomineeId)
+            // A Traveller is exiled, not executed, and the whole table votes:
+            // half of everyone, living or dead, rather than half of the living.
+            const exile = Boolean(nominee?.isTraveller)
             const nomination: Nomination = {
               id: id(),
               day,
+              exile,
               nominatorId,
               nomineeId,
               voterIds: [],
               tally: 0,
-              majority: majorityThreshold(alive),
+              majority: exile
+                ? exileThreshold(draft.game.seats.length)
+                : majorityThreshold(alive),
               settled: false,
               at: Date.now(),
             }
             draft.game.nominations.push(nomination)
+            // Whoever asked for this one is no longer waiting, and nobody holds
+            // the floor while a vote is being counted.
+            draft.game.nominationQueue = (draft.game.nominationQueue ?? []).filter(
+              (r) => r.nominatorId !== nominatorId || r.nomineeId !== nomineeId,
+            )
+            if (draft.game.floor) draft.game.floor.speaking = null
             pushLog(
               draft,
               'nomination',
-              `${nominator?.name ?? '?'} nominated ${nominee?.name ?? '?'}.`,
+              exile
+                ? `${nominator?.name ?? '?'} called for ${nominee?.name ?? '?'} to be exiled.`
+                : `${nominator?.name ?? '?'} nominated ${nominee?.name ?? '?'}.`,
               [nominatorId, nomineeId],
+            )
+          }),
+
+        // The floor and the nomination queue. All quiet: they are the state of
+        // the room right now, not steps in the game's history.
+        setFloorMode: (mode) =>
+          quiet((draft) => {
+            if (!draft.game) return
+            draft.game.floor = {
+              mode,
+              // Changing the rule for talking starts the line again, so nobody
+              // is left holding a place in a queue that no longer applies.
+              queue: [],
+              speaking: null,
+            }
+          }),
+
+        wantsFloor: (seatId, want) =>
+          quiet((draft) => {
+            if (!draft.game) return
+            const floor = draft.game.floor ?? { mode: 'open' as FloorMode, queue: [], speaking: null }
+            const queue = floor.queue.filter((s) => s !== seatId)
+            if (want) queue.push(seatId)
+            draft.game.floor = {
+              ...floor,
+              queue,
+              speaking: want || floor.speaking !== seatId ? floor.speaking : null,
+            }
+          }),
+
+        giveFloor: (seatId) =>
+          quiet((draft) => {
+            if (!draft.game) return
+            const floor = draft.game.floor ?? { mode: 'open' as FloorMode, queue: [], speaking: null }
+            draft.game.floor = {
+              ...floor,
+              queue: floor.queue.filter((s) => s !== seatId),
+              speaking: seatId,
+            }
+          }),
+
+        setNominationsOpen: (open) =>
+          quiet((draft) => {
+            if (!draft.game) return
+            draft.game.nominationsOpen = open
+            if (!open) draft.game.nominationQueue = []
+          }),
+
+        askToNominate: (request) =>
+          quiet((draft) => {
+            if (!draft.game) return
+            const queue = draft.game.nominationQueue ?? []
+            // The relay replays what it holds, so the same request arrives more
+            // than once; it is the id that makes it the same request.
+            if (queue.some((r) => r.id === request.id)) return
+            draft.game.nominationQueue = [...queue, { ...request, at: Date.now() }]
+          }),
+
+        dropNominationRequest: (id) =>
+          quiet((draft) => {
+            if (!draft.game) return
+            draft.game.nominationQueue = (draft.game.nominationQueue ?? []).filter(
+              (r) => r.id !== id,
             )
           }),
 
@@ -494,15 +602,18 @@ export const useStore = create<Store>()(
             const seat = draft.game.seats.find((s) => s.id === seatId)
             if (!nomination || !seat) return
 
+            // The dead vote on an exile for nothing: it is the one vote that
+            // does not cost them their one vote.
+            const costs = !seat.alive && !nomination.exile
             const voting = nomination.voterIds.includes(seatId)
             if (voting) {
               nomination.voterIds = nomination.voterIds.filter((v) => v !== seatId)
               // A ghost vote spent in error must come back.
-              if (!seat.alive) seat.deadVoteAvailable = true
+              if (costs) seat.deadVoteAvailable = true
             } else {
-              if (!seat.alive && !seat.deadVoteAvailable) return
+              if (costs && !seat.deadVoteAvailable) return
               nomination.voterIds.push(seatId)
-              if (!seat.alive) seat.deadVoteAvailable = false
+              if (costs) seat.deadVoteAvailable = false
             }
 
             nomination.tally = tallyVotes(
@@ -528,6 +639,12 @@ export const useStore = create<Store>()(
               }, needing ${nomination.majority}.`,
               [nomination.nomineeId],
             )
+            // An exile takes effect the moment the hands come down, rather than
+            // at dusk with the day's execution.
+            if (nomination.exile && nominee && nomination.tally >= nomination.majority) {
+              nominee.alive = false
+              pushLog(draft, 'death', `${nominee.name} was exiled.`, [nominee.id])
+            }
           }),
 
         execute: (seatId) =>
@@ -623,7 +740,9 @@ export const useStore = create<Store>()(
 export function currentBlock(game: Game | null) {
   if (!game || game.phase.k !== 'day') return { seatId: null, votes: 0, tied: false }
   const alive = game.seats.filter((s) => s.alive && !s.isTraveller).length
-  const today = game.nominations.filter((n) => n.day === game.phase.n && n.settled)
+  // Exile is not execution: a Traveller voted out is gone at once and is
+  // never "about to die", so those votes stay out of the block entirely.
+  const today = game.nominations.filter((n) => n.day === game.phase.n && n.settled && !n.exile)
   return resolveBlock(
     today.map((n) => ({
       day: n.day,

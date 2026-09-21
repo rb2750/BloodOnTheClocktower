@@ -49,6 +49,8 @@ function useRelayConnection() {
   const rememberTable = useStore((s) => s.rememberTable)
   const setTable = useStore((s) => s.setTable)
   const setVote = useStore((s) => s.setVote)
+  const setFloor = useStore((s) => s.setFloor)
+  const setNominations = useStore((s) => s.setNominations)
   const setStorytellerKey = useStore((s) => s.setStorytellerKey)
   const addChatLine = useStore((s) => s.addChatLine)
   const setGrimoire = useStore((s) => s.setGrimoire)
@@ -220,6 +222,29 @@ function useRelayConnection() {
             )
             return setSeats(message.seats)
           }
+          if (message.t === 'floor') {
+            const state = useStore.getState()
+            const mine = state.seatId
+            // Being called on is the one thing here worth a buzz: it is the
+            // moment the room is waiting for this phone's owner to speak.
+            if (mine && message.speaking === mine && state.floor.speaking !== mine) {
+              alert('word')
+            }
+            return setFloor({
+              mode: message.mode,
+              queue: message.queue,
+              speaking: message.speaking,
+            })
+          }
+          if (message.t === 'nominations') {
+            const before = useStore.getState().nominations
+            if (message.open && !before.open) alert('vote')
+            return setNominations({
+              open: message.open,
+              queue: message.queue,
+              today: message.today,
+            })
+          }
           if (message.t === 'nudge') {
             const { seatId: mine, nudgedAt, setNudgedAt } = useStore.getState()
             if (message.seatId !== '*' && message.seatId !== mine) return
@@ -279,7 +304,7 @@ function useRelayConnection() {
       relay.current?.close()
       relay.current = null
     }
-  }, [hydrated, payload, setRole, setPhase, rememberTable, setTable, setVote, setStorytellerKey, addMessage, addChatLine, setGrimoire, announceClaim])
+  }, [hydrated, payload, setRole, setPhase, rememberTable, setTable, setVote, setFloor, setNominations, setStorytellerKey, addMessage, addChatLine, setGrimoire, announceClaim])
 
   const claim = (seat: Seat) => {
     if (!payload || payload.kind !== 'room') return
@@ -316,7 +341,44 @@ function useRelayConnection() {
     relay.current.send({ t: 'hand', seatId: mine, up })
   }
 
-  return { seats, status, claim, claimed: seatId, hand, subscribe, chat }
+  /** Ask for the floor, or give it up. */
+  const speak = (want: boolean) => {
+    const mine = useStore.getState().seatId
+    if (!mine || !relay.current) return
+    relay.current.send({ t: 'speak', seatId: mine, want })
+  }
+
+  /**
+   * Ask to nominate. The Storyteller decides when it happens and checks the
+   * rules again at that moment, so this is a request and says so.
+   */
+  const askNominate = (nomineeId: string) => {
+    const mine = useStore.getState().seatId
+    if (!mine || !relay.current) return
+    const id = Math.random().toString(36).slice(2, 10)
+    useStore.getState().setMyRequest({ id, nomineeId })
+    relay.current.send({ t: 'nominate', id, seatId: mine, nomineeId })
+  }
+
+  const withdrawNomination = () => {
+    const s = useStore.getState()
+    if (!s.myRequest || !s.seatId || !relay.current) return
+    relay.current.send({ t: 'withdraw', id: s.myRequest.id, seatId: s.seatId })
+    s.setMyRequest(null)
+  }
+
+  return {
+    seats,
+    status,
+    claim,
+    claimed: seatId,
+    hand,
+    speak,
+    askNominate,
+    withdrawNomination,
+    subscribe,
+    chat,
+  }
 }
 
 
@@ -328,6 +390,9 @@ const RoomContext = createContext<Room>({
   claim: () => {},
   claimed: null,
   hand: () => {},
+  speak: () => {},
+  askNominate: () => {},
+  withdrawNomination: () => {},
   subscribe: () => {},
   chat: async () => false,
 })

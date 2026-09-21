@@ -17,6 +17,8 @@ export type NominationRecord = {
   majority: number
   /** Whether this nomination put the nominee about to die. */
   succeeded: boolean
+  /** A call for a Traveller's exile, which plays by its own rules. */
+  exile?: boolean
   at: number
 }
 
@@ -32,19 +34,33 @@ export function exileThreshold(totalPlayers: number): number {
 
 export type NominationCheck = { allowed: boolean; reason?: string }
 
+/**
+ * Whether one seat may nominate another right now.
+ *
+ * Pass `null` as the nominee to ask only whether this seat has a nomination
+ * left in them at all, which is what a "who is nominating?" list needs.
+ *
+ * Exile is not a nomination and is not counted as one: any player, living or
+ * dead, may call for a Traveller's exile, as often as they like, and doing so
+ * costs them nothing. So an exile call is allowed outright, and past exile
+ * calls are ignored when counting who has nominated whom today.
+ */
 export function canNominate(
   nominator: string,
-  nominee: string,
+  nominee: string | null,
   today: readonly NominationRecord[],
   alive: (seatId: string) => boolean,
+  traveller: (seatId: string) => boolean = () => false,
 ): NominationCheck {
+  if (nominee !== null && traveller(nominee)) return { allowed: true }
+  const executions = today.filter((n) => !n.exile)
   if (!alive(nominator)) {
     return { allowed: false, reason: 'Dead players may not nominate.' }
   }
-  if (today.some((n) => n.nominator === nominator)) {
+  if (executions.some((n) => n.nominator === nominator)) {
     return { allowed: false, reason: 'They have already nominated today.' }
   }
-  if (today.some((n) => n.nominee === nominee)) {
+  if (nominee !== null && executions.some((n) => n.nominee === nominee)) {
     return { allowed: false, reason: 'They have already been nominated today.' }
   }
   return { allowed: true }

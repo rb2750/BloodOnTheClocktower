@@ -1,7 +1,14 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval'
-import { idsFor, type Payload, type SealedGrimoire, type VoteSnapshot } from '@botc/protocol'
+import {
+  idsFor,
+  type FloorMode,
+  type NominationRequest,
+  type Payload,
+  type SealedGrimoire,
+  type VoteSnapshot,
+} from '@botc/protocol'
 import { alert } from '@botc/ui'
 
 const idbStorage: StateStorage = {
@@ -69,6 +76,17 @@ export type PlayerState = {
   cinematicPlayed: string | null
   /** Today's nomination as the Storyteller is counting it. */
   vote: VoteSnapshot | null
+  /** Who may speak, and who is waiting to. */
+  floor: { mode: FloorMode; queue: string[]; speaking: string | null }
+  /** Whether the Storyteller is taking nominations, who is waiting, and what
+   *  has already been nominated today. */
+  nominations: {
+    open: boolean
+    queue: NominationRequest[]
+    today: { nominatorId: string; nomineeId: string; exile?: boolean }[]
+  }
+  /** The nomination this phone asked for and has not seen taken. */
+  myRequest: { id: string; nomineeId: string } | null
   /** The Grimoire, for the Spy and the Widow, as it stood when they looked. */
   grimoire: SealedGrimoire | null
   /** The Storyteller's public key, kept so a restart can open what arrives. */
@@ -93,6 +111,9 @@ export type PlayerActions = {
   addChatLine: (seatId: string, line: { id: string; from: 'me' | 'them'; text: string; at: string }) => boolean
   readChat: (seatId: string) => void
   setVote: (vote: VoteSnapshot | null) => void
+  setFloor: (floor: { mode: FloorMode; queue: string[]; speaking: string | null }) => void
+  setNominations: (nominations: PlayerState['nominations']) => void
+  setMyRequest: (request: { id: string; nomineeId: string } | null) => void
   setStorytellerKey: (key: string) => void
   setGrimoire: (grimoire: SealedGrimoire) => void
   setNudgedAt: (at: number) => void
@@ -131,6 +152,9 @@ export const useStore = create<PlayerState & PlayerActions>()(
       chats: {},
       cinematicPlayed: null,
       vote: null,
+      floor: { mode: 'open', queue: [], speaking: null },
+      nominations: { open: false, queue: [], today: [] },
+      myRequest: null,
       storytellerKey: null,
       roleChanged: false,
       nudgedAt: 0,
@@ -174,6 +198,9 @@ export const useStore = create<PlayerState & PlayerActions>()(
             table: [],
             chats: {},
             vote: null,
+            floor: { mode: 'open', queue: [], speaking: null },
+            nominations: { open: false, queue: [], today: [] },
+            myRequest: null,
             cinematicPlayed: null,
             phaseKnown: false,
             storytellerKey: null,
@@ -249,6 +276,21 @@ export const useStore = create<PlayerState & PlayerActions>()(
         }),
 
       setVote: (vote) => set({ vote }),
+
+      setFloor: (floor) => set({ floor }),
+
+      // A request this phone made is finished the moment the Storyteller takes
+      // it or drops it, and either way it leaves the queue.
+      setNominations: (nominations) =>
+        set((s) => ({
+          nominations,
+          myRequest:
+            s.myRequest && nominations.queue.some((r) => r.id === s.myRequest!.id)
+              ? s.myRequest
+              : null,
+        })),
+
+      setMyRequest: (myRequest) => set({ myRequest }),
 
       setCinematicPlayed: (key) => set({ cinematicPlayed: key }),
 
@@ -361,6 +403,9 @@ export const useStore = create<PlayerState & PlayerActions>()(
           cinematicPlayed: null,
           phaseKnown: false,
           vote: null,
+          floor: { mode: 'open', queue: [], speaking: null },
+          nominations: { open: false, queue: [], today: [] },
+          myRequest: null,
           storytellerKey: null,
           roleChanged: false,
           grimoire: null,

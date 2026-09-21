@@ -1,4 +1,5 @@
 import type { Alignment, Script } from '@botc/rules'
+import type { FloorMode } from '@botc/protocol'
 
 /** When an effect stops applying. Most tools model poison as an untyped
  *  boolean and get this wrong: "tonight and tomorrow day" is not "permanent". */
@@ -82,6 +83,9 @@ export type LogEntry = {
 export type Nomination = {
   id: string
   day: number
+  /** A call for a Traveller's exile: judged by a different threshold, open to
+   *  the dead, and not counted against anyone's one nomination a day. */
+  exile?: boolean
   nominatorId: string
   nomineeId: string
   voterIds: string[]
@@ -111,5 +115,12 @@ export type Game = {
   /** Which device claimed each seat, so nobody can take a seat that is spoken
    *  for and the same phone is recognised on a later scan. */
   claims?: Record<string, string>
+  /** Who may speak, and who is waiting to. Games begun before this feature
+   *  have none of it, so every reader supplies the defaults. */
+  floor?: { mode: FloorMode; queue: string[]; speaking: string | null }
+  /** Whether the Storyteller has called for nominations. */
+  nominationsOpen?: boolean
+  /** Nominations the table has asked for, in the order they arrived. */
+  nominationQueue?: { id: string; nominatorId: string; nomineeId: string; at: number }[]
   finishedAt?: number
 }
