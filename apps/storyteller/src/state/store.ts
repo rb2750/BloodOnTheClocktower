@@ -81,6 +81,8 @@ export type StoreActions = {
 
   newGame: (opts: { script: Script; scriptName: string; names: string[] }) => void
   abandonGame: () => void
+  /** Bring a shelved game back: whatever is live now is shelved in its place. */
+  resumeGame: (gameId: string) => void
   finishGame: (winner: 'good' | 'evil', rationale: string) => void
 
   setSeatCharacter: (seatId: string, characterId: string | undefined) => void
@@ -190,6 +192,21 @@ export const useStore = create<Store>()(
         set(next as StoreState)
       }
 
+      /**
+       * Put the live game on the shelf before anything replaces it.
+       *
+       * Starting a second game at a busy table used to drop the first one on
+       * the floor: only a finished game was ever kept. A finished game is
+       * already on the shelf, so it is not kept twice.
+       */
+      const shelve = (draft: StoreState) => {
+        const game = draft.game
+        if (!game || draft.history.some((g) => g.id === game.id)) return
+        // A game still being set up is a list of names, not a game.
+        if (game.phase.k === 'setup') return
+        draft.history.unshift(JSON.parse(JSON.stringify(game)) as Game)
+      }
+
       const pushLog = (
         draft: StoreState,
         kind: LogKind,
@@ -238,6 +255,7 @@ export const useStore = create<Store>()(
 
         newGame: ({ script, scriptName, names }) => {
           commit('Start game', (draft) => {
+            shelve(draft)
             draft.game = {
               id: id(),
               createdAt: Date.now(),
@@ -264,8 +282,26 @@ export const useStore = create<Store>()(
 
         abandonGame: () =>
           commit('Abandon game', (draft) => {
+            shelve(draft)
             draft.game = null
           }),
+
+        resumeGame: (gameId) => {
+          commit('Continue game', (draft) => {
+            const found = draft.history.find((g) => g.id === gameId)
+            if (!found) return
+            shelve(draft)
+            draft.history = draft.history.filter((g) => g.id !== gameId)
+            // The shelf is JSON, so the room key came back as a plain object
+            // and the relay would choke on it: same revival as hydration does.
+            draft.game = {
+              ...found,
+              room: found.room ? { id: found.room.id, key: toBytes(found.room.key) } : undefined,
+            }
+          })
+          // Coming back to a night already under way is not the night falling.
+          set({ cinematicPlayed: 'resumed' })
+        },
 
         finishGame: (winner, rationale) =>
           commit('Finish game', (draft) => {

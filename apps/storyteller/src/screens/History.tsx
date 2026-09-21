@@ -1,12 +1,15 @@
 import { useState } from 'react'
-import { Button, Label, Rows, Row, Export } from '@botc/ui'
-import { useStore } from '../state/store.js'
+import { Button, Rows, Row, Export, haptic } from '@botc/ui'
+import { toast } from 'sonner'
+import { phaseLabel, useStore } from '../state/store.js'
 import { Screen } from '../components/Screen.js'
 import type { Screen as ScreenName } from '../App.js'
 import { RecapScreen } from './Recap.js'
 
 export function HistoryScreen({ go }: { go: (s: ScreenName) => void }) {
   const history = useStore((s) => s.history)
+  const resumeGame = useStore((s) => s.resumeGame)
+  const undo = useStore((s) => s.undo)
   const [openId, setOpenId] = useState<string | null>(null)
   const game = history.find((g) => g.id === openId)
 
@@ -39,14 +42,25 @@ export function HistoryScreen({ go }: { go: (s: ScreenName) => void }) {
     >
       {history.length === 0 ? (
         <p className="py-10 text-center text-[14px] text-(--text-faint)">
-          Finished games are kept here, with a walk through what happened.
+          Finished games are kept here with a walk through what happened, and a game
+          you set aside waits here to be continued.
         </p>
       ) : (
         <Rows className="pb-6">
           {history.map((g) => (
             <Row
               key={g.id}
-              onClick={() => setOpenId(g.id)}
+              onClick={() => {
+                // A finished game opens its recap. An unfinished one picks up
+                // where it left off, and whatever was live takes its place here.
+                if (g.phase.k === 'ended') return setOpenId(g.id)
+                haptic('confirm')
+                resumeGame(g.id)
+                toast(`Continuing ${g.scriptName}.`, {
+                  action: { label: 'Undo', onClick: () => undo() },
+                })
+                go('run')
+              }}
               trailing={
                 <span
                   className={
@@ -61,7 +75,7 @@ export function HistoryScreen({ go }: { go: (s: ScreenName) => void }) {
                     ? g.phase.winner === 'good'
                       ? 'Good won'
                       : 'Evil won'
-                    : 'Unfinished'}
+                    : `${phaseLabel(g.phase)} · continue`}
                 </span>
               }
             >
