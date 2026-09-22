@@ -304,34 +304,65 @@ export function ThreadPage({ seatId, onBack }: { seatId: string; onBack: () => v
 /* ------------------------------------------------------------------ the Storyteller's letters */
 
 /** One letter, sealed until held. */
-export function Letter({ text, at, seal = true, onRead }: { text: string; at: string; seal?: boolean; onRead?: () => void }) {
-  const [open, setOpen] = useState(false)
-  const h = useHold({
-    ms: 420,
-    onDone: () => {
-      haptic('pick')
-      setOpen(true)
-      onRead?.()
-    },
-    onEnd: () => setOpen(false),
-  })
+/** The characters and players a note names, in the order it names them. */
+function castOf(text: string, scriptIds: string[], table: { name: string }[]) {
+  const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const found: { at: number; character?: Character; name?: string }[] = []
+  for (const id of scriptIds) {
+    const c = getCharacter(id)
+    if (!c) continue
+    const m = new RegExp(`\\b${esc(c.name)}\\b`, 'i').exec(text)
+    if (m) found.push({ at: m.index, character: c })
+  }
+  for (const s of table) {
+    const m = new RegExp(`\\b${esc(s.name)}\\b`).exec(text)
+    if (m && !found.some((f) => f.character?.name.toLowerCase() === s.name.toLowerCase())) found.push({ at: m.index, name: s.name })
+  }
+  return found.sort((a, b) => a.at - b.at)
+}
+
+/**
+ * A note from the Storyteller: a folded letter under a wax seal. A tap opens
+ * it, a tap folds it again, and every character or player it names is shown
+ * as a token so the message can be taken in at a glance.
+ */
+export function Letter({ text, at, seal = true, open: openAtFirst = false, onRead }: { text: string; at: string; seal?: boolean; open?: boolean; onRead?: () => void }) {
+  const [open, setOpen] = useState(openAtFirst)
+  const scriptIds = useStore((s) => s.scriptIds)
+  const table = useStore((s) => s.table)
+  const cast = useMemo(() => castOf(text, scriptIds, table), [text, scriptIds, table])
+  const toggle = () => {
+    haptic('pick')
+    if (!open) onRead?.()
+    setOpen(!open)
+  }
   return (
-    <div className={`rw-letter${open ? ' open' : ''}`} {...h.bind} style={{ paddingBottom: open ? 34 : 24 }}>
-      {seal && (
-        <>
-          <span className="rw-seal l" />
-          <span className="rw-seal r" />
-        </>
+    <button type="button" className={`rw-letter${open ? ' open' : ''}${seal && !open ? ' sealed' : ''}`} onClick={toggle} aria-expanded={open}>
+      <span className={`rw-seal l${seal ? '' : ' broken'}`} />
+      <span className={`rw-seal r${seal ? '' : ' broken'}`} />
+      {!open ? (
+        <div className="shut">
+          <div style={{ font: "italic 600 22px 'Cormorant Garamond'", color: '#6A5A3E' }}>{at}</div>
+          <div style={{ fontSize: 15, color: '#6A5A3E', marginTop: 4 }}>{seal ? 'A sealed note. Tap to open it.' : 'Tap to read it again'}</div>
+        </div>
+      ) : (
+        <div className="said">
+          <div style={{ fontSize: 15, color: '#6A5A3E' }}>From the Storyteller, {at.toLowerCase()}</div>
+          <p style={{ font: "italic 600 26px/1.25 'Cormorant Garamond'", margin: '12px 0 0' }}>{text}</p>
+          {cast.length > 0 && (
+            <div className="rw-cast">
+              {cast.map((c, i) => (
+                <div key={i} className="rw-cast-one" style={{ animationDelay: `${0.15 + i * 0.08}s` }}>
+                  <Tok character={c.character} name={c.name} size={62} />
+                  <span>{c.character?.name ?? c.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div style={{ fontSize: 13, color: '#8A7A5E', marginTop: 16 }}>Tap to fold it away</div>
+        </div>
       )}
-      <div className="shut" style={open ? { position: 'absolute', inset: '34px 26px 24px' } : undefined}>
-        <div style={{ font: "italic 600 22px 'Cormorant Garamond'", color: '#6A5A3E' }}>{seal ? 'Sealed' : at}</div>
-        <div style={{ fontSize: 15, color: '#6A5A3E', marginTop: 4 }}>{seal ? `${at}. Hold to break the seal.` : 'Hold to read it again'}</div>
-      </div>
-      <div className="said" style={open ? undefined : { position: 'absolute', inset: '34px 26px 24px' }}>
-        <div style={{ fontSize: 15, color: '#6A5A3E' }}>From the Storyteller, {at.toLowerCase()}</div>
-        <p style={{ font: "italic 600 28px/1.25 'Cormorant Garamond'", margin: '14px 0 0' }}>{text}</p>
-      </div>
-    </div>
+    </button>
   )
 }
 
@@ -341,10 +372,11 @@ export function LettersPage({ onBack }: { onBack: () => void }) {
   const seeWhispers = useStore((s) => s.seeWhispers)
   return (
     <div className="rw-page">
-      <Header title="From the Storyteller" sub="Hold a note to read it. It seals itself again when you let go." back="Messages" onBack={onBack} />
+      <Header title="From the Storyteller" sub="Tap a note to open it, and again to fold it. They stay here for the whole game." back="Messages" onBack={onBack} />
       <div className="rw-list" style={{ paddingTop: 36, display: 'flex', flexDirection: 'column', gap: 40 }}>
+        {messages.length === 0 && <div className="rw-help">Nothing yet. Notes the Storyteller sends you collect here.</div>}
         {[...messages].reverse().map((m, i) => (
-          <Letter key={m.id} text={m.text} at={m.at} seal={messages.length - 1 - i >= whispersSeen} onRead={seeWhispers} />
+          <Letter key={m.id} text={m.text} at={m.at} seal={messages.length - 1 - i >= whispersSeen} open={i === 0} onRead={seeWhispers} />
         ))}
       </div>
     </div>

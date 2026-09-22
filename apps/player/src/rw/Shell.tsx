@@ -267,7 +267,7 @@ export function Shell() {
           <div className="veil" style={{ background: 'rgba(2,3,8,.7)' }} />
           <div className="disp rw-rise" style={{ position: 'relative', fontSize: 34, lineHeight: 1.15, marginBottom: 50 }}>The Storyteller has a note for you</div>
           <div className="rw-rise" style={{ position: 'relative', width: '100%', animationDelay: '.15s' }}>
-            <Letter text={messages[whispersSeen]!.text} at={messages[whispersSeen]!.at} onRead={() => undefined} />
+            <Letter text={messages[whispersSeen]!.text} at={messages[whispersSeen]!.at} open onRead={() => undefined} />
           </div>
           <div style={{ position: 'relative', marginTop: 26, display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
             <button className="rw-btn line" onClick={seeWhispers}>I’ve read it</button>

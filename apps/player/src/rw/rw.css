@@ -570,6 +570,8 @@
 /* ---------------------------------------------------------------- letters */
 .rw-letter {
   position: relative;
+  display: block;
+  width: 100%;
   background: var(--paper);
   color: var(--ink);
   border-radius: 18px;
@@ -579,7 +581,10 @@
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+  cursor: pointer;
+  transition: transform 0.35s var(--out);
 }
+.rw-letter:active { transform: scale(0.985); }
 .rw-letter::after {
   content: '';
   position: absolute;
@@ -602,11 +607,29 @@
 }
 .rw-seal.l { clip-path: polygon(0 0, 50% 0, 46% 100%, 0 100%); }
 .rw-seal.r { clip-path: polygon(50% 0, 100% 0, 100% 100%, 46% 100%); }
-.rw-letter.open .rw-seal.l { transform: translate(-22px, 26px) rotate(-38deg); opacity: 0; }
-.rw-letter.open .rw-seal.r { transform: translate(22px, 30px) rotate(34deg); opacity: 0; }
-.rw-letter .shut, .rw-letter .said { transition: opacity 0.4s; }
-.rw-letter.open .shut { opacity: 0; }
-.rw-letter:not(.open) .said { opacity: 0; }
+.rw-letter.open .rw-seal.l, .rw-seal.l.broken { transform: translate(-22px, 26px) rotate(-38deg); opacity: 0; }
+.rw-letter.open .rw-seal.r, .rw-seal.r.broken { transform: translate(22px, 30px) rotate(34deg); opacity: 0; }
+.rw-letter .said { animation: rw-fade 0.4s var(--out) both; }
+.rw-letter .shut { animation: rw-fade 0.3s var(--out) both; }
+.rw-cast {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px 18px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 0.7px solid rgba(90, 70, 40, 0.3);
+}
+.rw-cast-one {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font: 600 14px 'Alegreya Sans', sans-serif;
+  color: #4A3A22;
+  animation: rw-rise 0.5s var(--out) both;
+}
+.rw-cast-one .rw-tok { box-shadow: 0 8px 14px -8px #000; }
 
 /* ---------------------------------------------------------------- overlays */
 .rw-over {

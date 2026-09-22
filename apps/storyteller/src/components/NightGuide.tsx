@@ -205,7 +205,7 @@ export function NightGuide({ entry }: { entry: NightEntry }) {
       if (done(pickKey)) parts.push(<Done key="p" text={game.log.find((l) => l.phase === `Night ${night}` && l.text.startsWith(pickKey))!.text} />)
       else
         parts.push(
-          <Button key="pick" className="mt-2 w-full" disabled={!first && victims.length > 0 && !done(deathKey)} onClick={() => setPick({ title: `Who did ${actor.name} poison?`, count: 1, allow: alive, onDone: ([s]) => { place(s!, 'Poisoned', 'pukka'); mark(`${pickKey}: ${s!.name} is poisoned until the Pukka’s next turn.`, [s!.id]); haptic('confirm') } })}>
+          <Button key="pick" className="mt-2 w-full" disabled={!first && victims.length > 0 && !done(deathKey)} onClick={() => setPick({ title: `Who did ${actor.name} poison?`, hint: 'They may point at a dead player. Nothing happens then, but the choice stands.', count: 1, allow: () => null, onDone: ([s]) => { if (s!.alive) place(s!, 'Poisoned', 'pukka'); mark(s!.alive ? `${pickKey}: ${s!.name} is poisoned until the Pukka’s next turn.` : `${pickKey}: chose ${s!.name}, who is dead. Nothing happens.`, [s!.id]); haptic('confirm') } })}>
             Who did {actor.name} point at? (poisoned)
           </Button>,
         )
@@ -217,7 +217,7 @@ export function NightGuide({ entry }: { entry: NightEntry }) {
       if (done(key)) { body = <Done text={game.log.find((l) => l.phase === `Night ${night}` && l.text.startsWith(key))!.text} />; break }
       const last = game.seats.find((s) => s.effects.some((e) => e.label === 'Chosen' && e.sourceCharacterId === 'exorcist'))
       body = (
-        <Button className="mt-3 w-full" onClick={() => setPick({ title: `Who did ${actor.name} point at?`, count: 1, allow: (s) => (!s.alive ? 'dead' : last?.id === s.id ? 'same as last night' : null), onDone: ([s]) => {
+        <Button className="mt-3 w-full" onClick={() => setPick({ title: `Who did ${actor.name} point at?`, count: 1, allow: (s) => (last?.id === s.id ? 'same as last night' : null), onDone: ([s]) => {
           for (const x of game.seats) clear(x, 'Chosen', 'exorcist')
           place(s!, 'Chosen', 'exorcist')
           if (demon && s!.id === demon.id) {
@@ -247,7 +247,7 @@ export function NightGuide({ entry }: { entry: NightEntry }) {
       const used = actor.effects.some((e) => e.label === 'No Ability')
       if (used) { body = <p className="mt-3 text-[14px] text-(--text-dim)">{actor.name} has already used their kill. Tap Next.</p>; break }
       body = (
-        <Button variant="danger" className="mt-3 w-full" onClick={() => setPick({ title: `Who did ${actor.name} choose to kill?`, hint: 'Only if they gave a thumbs up. Nothing can stop this kill.', count: 1, allow: alive, onDone: ([s]) => { place(actor, 'No Ability', 'assassin'); kill(s!, 'assassin', 'The Assassin'); mark(`Assassin ${actor.name}: killed ${s!.name}.`, [s!.id]) } })}>
+        <Button variant="danger" className="mt-3 w-full" onClick={() => setPick({ title: `Who did ${actor.name} choose to kill?`, hint: 'Only if they gave a thumbs up. Nothing can stop this kill. They may choose a dead player: nothing happens, but the kill is used up.', count: 1, allow: () => null, onDone: ([s]) => { place(actor, 'No Ability', 'assassin'); if (s!.alive) { kill(s!, 'assassin', 'The Assassin'); mark(`Assassin ${actor.name}: killed ${s!.name}.`, [s!.id]) } else { mark(`Assassin ${actor.name}: chose ${s!.name}, who is already dead. The kill is used up.`, [s!.id]); toast(`${s!.name} is already dead. The Assassin’s kill is used up.`) } } })}>
           {actor.name} used their kill: who?
         </Button>
       )
@@ -276,7 +276,7 @@ export function NightGuide({ entry }: { entry: NightEntry }) {
       const key = `Chambermaid ${actor.name}`
       if (done(key)) { body = <Done text={game.log.find((l) => l.phase === `Night ${night}` && l.text.startsWith(key))!.text} />; break }
       body = (
-        <Button className="mt-3 w-full" onClick={() => setPick({ title: `Which 2 players did ${actor.name} point at?`, count: 2, allow: (s) => (!s.alive ? 'dead' : s.id === actor.id ? 'themselves' : null), onDone: (ss) => {
+        <Button className="mt-3 w-full" onClick={() => setPick({ title: `Which 2 players did ${actor.name} point at?`, hint: 'Dead players may be chosen.', count: 2, allow: (s) => (s.id === actor.id ? 'themselves' : null), onDone: (ss) => {
           const woke = ss.filter((s) => WAKES(game, s, night)).length
           mark(`${key}: chose ${ss[0]!.name} and ${ss[1]!.name}. Show ${woke} finger${woke === 1 ? '' : 's'}.`, ss.map((s) => s.id))
           toast(`Show ${actor.name} ${woke} finger${woke === 1 ? '' : 's'}.`, { duration: 8000 })
@@ -317,7 +317,7 @@ export function NightGuide({ entry }: { entry: NightEntry }) {
       if (actor.alive) { body = <p className="mt-3 text-[14px] text-(--text-dim)">{actor.name} is alive, so nothing happens. Tap Next.</p>; break }
       if (done(key)) { body = <Done text={game.log.find((l) => l.phase === `Night ${night}` && l.text.startsWith(key))!.text} />; break }
       body = (
-        <Button variant="danger" className="mt-3 w-full" onClick={() => setPick({ title: `Who did ${actor.name} choose when they died?`, hint: 'If that player is good, they die now. If evil, nothing happens.', count: 1, allow: alive, onDone: ([s]) => { if (isGood(s!)) { kill(s!, 'other', 'The Moonchild'); mark(`${key}: chose ${s!.name}, who is good.`, [s!.id]) } else { mark(`${key}: chose ${s!.name}, who is evil. Nothing happens.`, [s!.id]); toast(`${s!.name} is evil: nothing happens.`) } } })}>
+        <Button variant="danger" className="mt-3 w-full" onClick={() => setPick({ title: `Who did ${actor.name} choose when they died?`, hint: 'If that player is good, they die now. If evil or already dead, nothing happens.', count: 1, allow: () => null, onDone: ([s]) => { if (isGood(s!) && s!.alive) { kill(s!, 'other', 'The Moonchild'); mark(`${key}: chose ${s!.name}, who is good.`, [s!.id]) } else { mark(`${key}: chose ${s!.name}, who is evil. Nothing happens.`, [s!.id]); toast(`${s!.name} is evil: nothing happens.`) } } })}>
           Who did {actor.name} choose?
         </Button>
       )
@@ -330,7 +330,7 @@ export function NightGuide({ entry }: { entry: NightEntry }) {
       const used = actor.effects.some((e) => e.label === 'No Ability')
       if (used) { body = <p className="mt-3 text-[14px] text-(--text-dim)">{actor.name} has already used their ability. Tap Next.</p>; break }
       body = (
-        <Button className="mt-3 w-full" onClick={() => setPick({ title: `Whose character did ${actor.name} name?`, hint: 'Pick the player who has that character. If nobody does, tap Nobody.', count: 1, allow: alive, onDone: ([s]) => { place(actor, 'No Ability', 'courtier'); place(s!, 'Drunk 3', 'courtier'); mark(`Courtier ${actor.name}: ${s!.name} is drunk for 3 nights and 3 days.`, [s!.id]) } })}>
+        <Button className="mt-3 w-full" onClick={() => setPick({ title: `Whose character did ${actor.name} name?`, hint: 'Pick the player who has that character, alive or dead. If nobody does, tap Nobody.', count: 1, allow: () => null, onDone: ([s]) => { place(actor, 'No Ability', 'courtier'); place(s!, 'Drunk 3', 'courtier'); mark(`Courtier ${actor.name}: ${s!.name} is drunk for 3 nights and 3 days.`, [s!.id]) } })}>
           {actor.name} used it: whose character?
         </Button>
       )
