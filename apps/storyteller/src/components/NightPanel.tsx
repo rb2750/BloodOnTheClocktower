@@ -8,6 +8,7 @@ import { WhisperSheet } from './WhisperSheet.js'
 import { CharacterToken } from './CharacterToken.js'
 import { Coach, RulesButton } from './Coach.js'
 import { effectFor } from '../reminders.js'
+import { evilNotes } from '../evil-info.js'
 import { balance, nightCoach } from '../coach.js'
 import { GameOverHint } from './GameOverHint.js'
 
@@ -84,19 +85,7 @@ function SendEvilInfo({ step }: { step: 'demoninfo' | 'minioninfo' }) {
   const { whisper, reachable } = useRoom()
   const [busy, setBusy] = useState(false)
   if (!game) return null
-  const teamOf = (s: (typeof game.seats)[number]) => getCharacter(s.trueCharacterId ?? s.characterId ?? '')?.team
-  const demon = game.seats.find((s) => teamOf(s) === 'demon')
-  const minions = game.seats.filter((s) => teamOf(s) === 'minion')
-  const names = (xs: { name: string }[]) =>
-    xs.length <= 1 ? (xs[0]?.name ?? 'nobody') : `${xs.slice(0, -1).map((x) => x.name).join(', ')} and ${xs.at(-1)!.name}`
-  const bluffs = game.bluffs.map((id) => getCharacter(id)?.name ?? id)
-  const notes =
-    step === 'demoninfo' && demon
-      ? [{ seat: demon, text: `You are the Demon. Your ${minions.length === 1 ? 'Minion is' : 'Minions are'} ${names(minions)}. These characters are not in play: ${names(bluffs.map((name) => ({ name })))}. They are safe for you to claim.` }]
-      : minions.map((m) => ({
-          seat: m,
-          text: `Your Demon is ${demon?.name ?? 'unknown'}.${minions.length > 1 ? ` Your fellow ${minions.length === 2 ? 'Minion is' : 'Minions are'} ${names(minions.filter((x) => x.id !== m.id))}.` : ''}`,
-        }))
+  const notes = evilNotes(game).filter((n) => (step === 'demoninfo') === n.demon)
   const sent = (seatId: string, text: string) => game.log.some((l) => l.kind === 'info' && l.info?.toSeatId === seatId && l.info.given === text)
 
   return (

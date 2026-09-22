@@ -10,6 +10,7 @@ import { CharacterPicker } from './CharacterPicker.js'
 import { WhisperSheet } from './WhisperSheet.js'
 import { EXPLAIN } from '../rules-explained.js'
 import { effectFor } from '../reminders.js'
+import { evilNotes } from '../evil-info.js'
 import { useRoom } from '../room.js'
 import type { EffectKind } from '../state/types.js'
 
@@ -47,7 +48,8 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
 
   const [picking, setPicking] = useState<'perceived' | 'believed' | null>(null)
   const [telling, setTelling] = useState(false)
-  const { reachable, nudge } = useRoom()
+  const { reachable, nudge, whisper } = useRoom()
+  const log = useStore((s) => s.log)
 
   // A seat that still says "drunk" is owed a choice, and the sheet opens on it.
   const owed = game?.seats.find((s) => s.id === seatId)?.characterId === 'drunk'
@@ -173,6 +175,30 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
 
         <div className="mt-5">
           <Label>Privately</Label>
+          {/* Evil's first-night information, to send or send again at any
+              point: a Demon asking "what were my bluffs?" on day three. */}
+          {evilNotes(game)
+            .filter((n) => n.seat.id === seat.id)
+            .map((n) => (
+              <Button
+                key="evil"
+                variant="primary"
+                className="mb-2 w-full"
+                onClick={async () => {
+                  const id = Math.random().toString(36).slice(2, 10)
+                  const ok = await whisper(seat.id, n.text, id)
+                  if (!ok) {
+                    toast.error(`${seat.name}’s phone is not connected.`)
+                    return
+                  }
+                  log('info', `Told ${seat.name}: ${n.text}`, [seat.id], { toSeatId: seat.id, given: n.text, truthful: true, id })
+                  toast(`Sent to ${seat.name}’s phone.`)
+                }}
+              >
+                <Signpost size={17} />
+                {n.demon ? `Send ${seat.name} their Minions and bluffs` : `Send ${seat.name} who their Demon is`}
+              </Button>
+            ))}
           <Button className="w-full" onClick={() => setTelling(true)}>
             <Signpost size={17} />
             {reachable.includes(seat.id)
