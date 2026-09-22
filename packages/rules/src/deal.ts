@@ -205,3 +205,41 @@ export function pickBluffs(
   const strong = candidates.slice(0, Math.max(3, Math.ceil(candidates.length / 2)))
   return shuffle(strong, rng).slice(0, 3).map((c) => c.id)
 }
+
+/**
+ * A setup chosen for a Storyteller's first time on a script, in the order to
+ * add characters as the table grows.
+ *
+ * Every pick here asks nothing of the Storyteller mid-game: no drunkenness to
+ * track, no characters that make them improvise a death or an alignment. Good
+ * gets steady information and enough protection to survive the script's
+ * death rate; evil gets a kill that ignores protection and a way to save a
+ * Minion. Each list is long enough for fifteen players.
+ */
+const FIRST_GAME: Record<string, Record<BagTeam, string[]>> = {
+  bmr: {
+    townsfolk: ['grandmother', 'sailor', 'chambermaid', 'exorcist', 'innkeeper', 'professor', 'fool', 'gambler', 'tealady'],
+    outsider: ['tinker', 'moonchild'],
+    minion: ['assassin', 'devilsadvocate', 'mastermind'],
+    demon: ['pukka'],
+  },
+}
+
+/** The first-game setup for this script and table size, or null if the script has none. */
+export function firstGameSetup(script: Script, playerCount: number): string[] | null {
+  const onScript = new Set(scriptCharacters(script).map((c) => c.id))
+  const target = baseComposition(playerCount)
+  for (const lists of Object.values(FIRST_GAME)) {
+    const picked: string[] = []
+    for (const team of BAG_TEAMS) {
+      const ids = lists[team].slice(0, target[team])
+      if (ids.length < target[team] || ids.some((id) => !onScript.has(id))) {
+        picked.length = 0
+        break
+      }
+      picked.push(...ids)
+    }
+    if (picked.length === playerCount) return picked
+  }
+  return null
+}

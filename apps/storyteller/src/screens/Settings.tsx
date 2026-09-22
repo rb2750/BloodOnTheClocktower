@@ -1,6 +1,9 @@
 import { PROVENANCE } from '@botc/rules'
 import { Label, Rows, Row, Switch } from '@botc/ui'
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { useStore } from '../state/store.js'
+import { hostKey } from '../state/sync.js'
 import { Screen } from '../components/Screen.js'
 import type { Screen as ScreenName } from '../App.js'
 
@@ -63,6 +66,7 @@ export function SettingsScreen({ go }: { go: (s: ScreenName) => void }) {
             <Row trailing={String(history.length)} onClick={() => go('history')}>
               Past games
             </Row>
+            <OtherDevice />
           </Rows>
         </div>
 
@@ -80,5 +84,30 @@ export function SettingsScreen({ go }: { go: (s: ScreenName) => void }) {
         </div>
       </section>
     </Screen>
+  )
+}
+
+/**
+ * The game is kept on the server under this phone's key. The link carries the
+ * key, so opening it on a laptop or a second phone opens the same game. Anyone
+ * with the link can see every character, so it is copied, never shown.
+ */
+function OtherDevice() {
+  const [key, setKey] = useState<string | null>(null)
+  useEffect(() => void hostKey().then(setKey), [])
+  if (!key) return null
+  const link = `${window.location.origin}/#host=${key}`
+  return (
+    <Row
+      trailing="copy link"
+      onClick={() => {
+        void navigator.clipboard?.writeText(link).then(
+          () => toast('Link copied. Open it on the other device. Keep it private: it shows every character.'),
+          () => toast.error('Could not copy the link.'),
+        )
+      }}
+    >
+      Open this game on another device
+    </Row>
   )
 }

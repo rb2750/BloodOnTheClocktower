@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { dealCharacters, seededRng, pickBluffs, shuffle } from '../src/deal.js'
+import { dealCharacters, firstGameSetup, seededRng, pickBluffs, shuffle } from '../src/deal.js'
 import { editionScript, parseScript, serialiseScript, scriptCharacter } from '../src/script.js'
-import { compositionTotal } from '../src/composition.js'
+import { baseComposition, compositionTotal } from '../src/composition.js'
 import { getCharacter } from '../src/data.js'
 import type { BagTeam } from '../src/types.js'
 
@@ -223,5 +223,26 @@ describe('script import and export', () => {
     for (const id of TB.characterIds) {
       expect(['fabled', 'loric']).not.toContain(getCharacter(id)!.team)
     }
+  })
+})
+
+describe('firstGameSetup', () => {
+  const bmr = editionScript('bmr', 'Bad Moon Rising')
+
+  it('fills every Bad Moon Rising table from five to fifteen with the right counts', () => {
+    for (let n = 5; n <= 15; n++) {
+      const ids = firstGameSetup(bmr, n)!
+      const want = baseComposition(n)
+      const teams = ids.map((id) => getCharacter(id)!.team)
+      expect(new Set(ids).size).toBe(n)
+      for (const team of ['townsfolk', 'outsider', 'minion', 'demon'] as const) {
+        expect(teams.filter((t) => t === team).length).toBe(want[team])
+      }
+      expect(ids).toContain('pukka')
+    }
+  })
+
+  it('has nothing to offer a script it was not written for', () => {
+    expect(firstGameSetup(editionScript('tb', 'Trouble Brewing'), 7)).toBeNull()
   })
 })

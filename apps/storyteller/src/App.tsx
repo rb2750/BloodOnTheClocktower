@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Toaster } from 'sonner'
 import { useStore } from './state/store.js'
+import { startSync } from './state/sync.js'
 import { RoomProvider } from './room.js'
 import { HomeScreen } from './screens/Home.js'
 import { PlanScreen } from './screens/Plan.js'
@@ -19,6 +20,19 @@ export function App() {
   const [screen, setScreen] = useState<Screen>('home')
   const [hydrated, setHydrated] = useState(() => useStore.persist.hasHydrated())
   useEffect(() => useStore.persist.onFinishHydration(() => setHydrated(true)), [])
+
+  // The game is kept on the server; another device's changes arrive here.
+  useEffect(
+    () =>
+      startSync(
+        // Undo steps were recorded against the old copy and would corrupt the new one.
+        () => Promise.resolve(useStore.persist.rehydrate()).then(() => {
+          useStore.setState({ undoStack: [] })
+        }),
+        () => useStore.persist.hasHydrated(),
+      ),
+    [],
+  )
 
   // A live game is holding the phone for ninety minutes; keep the screen on.
   useWakeLock(keepAwake && game !== null && game.phase.k !== 'setup')

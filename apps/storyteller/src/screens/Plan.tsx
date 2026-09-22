@@ -14,6 +14,7 @@ import {
   resolveSetup,
   scriptCharacters,
   type Script,
+  firstGameSetup,
 } from '@botc/rules'
 import { Button, Label, Rows, Row, inputClass, Plus, Close, Dice, Import, Grip , haptic } from '@botc/ui'
 import { CharacterPicker } from '../components/CharacterPicker.js'
@@ -121,6 +122,18 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
     }
   }
 
+  // A balanced setup for a first time on this script, when there is one.
+  // Past fifteen the extra seats are Travellers, and those are the Storyteller's call.
+  const firstGame = script && playerCount >= 5 && travellerCount === 0 ? firstGameSetup(script, playerCount) : null
+  const dealFirstGame = () => {
+    if (!firstGame) return
+    haptic('confirm')
+    setDealt(firstGame)
+    setDrunkAs(null)
+    setTravellers([])
+  }
+  const isFirstGame = Boolean(firstGame && dealt && firstGame.every((id) => dealt.includes(id)))
+
   const drunkDealt = Boolean(dealt?.includes('drunk'))
 
   const begin = () => {
@@ -221,9 +234,16 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
             </div>
           </div>
         ) : step === 'deal' ? (
-          <Button variant="primary" className="w-full" onClick={deal}>
-            Deal {playerCount} characters
-          </Button>
+          <div className="flex flex-col gap-2">
+            {firstGame && (
+              <Button variant="primary" className="w-full" onClick={dealFirstGame}>
+                Deal a balanced first game
+              </Button>
+            )}
+            <Button variant={firstGame ? 'quiet' : 'primary'} className="w-full" onClick={deal}>
+              Deal {playerCount} characters at random
+            </Button>
+          </div>
         ) : null
       }
     >
@@ -378,7 +398,7 @@ export function PlanScreen({ go }: { go: (s: ScreenName) => void }) {
           {dealt ? (
             <>
               <div className="mt-5" />
-              <Label>In play — tap one to change it</Label>
+              <Label>{isFirstGame ? 'Balanced for a first game — tap one to change it' : 'In play — tap one to change it'}</Label>
               <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
                 {dealt.map((cid, i) => {
                   const c = getCharacter(cid)

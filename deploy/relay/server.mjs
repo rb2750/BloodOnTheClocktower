@@ -15,7 +15,8 @@
  * replays it in order.
  */
 import { createServer } from 'node:http'
-import { readFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { WebSocketServer } from 'ws'
 import webpush from 'web-push'
 
@@ -42,11 +43,89 @@ const PING_MS = 30 * 1000
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+  'Access-Control-Allow-Methods': 'GET,POST,PUT,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 }
 
 const rooms = new Map()
+
+/*
+ * The Storyteller's game, kept on the server.
+ *
+ * One record per Storyteller, named by a long random key that only their
+ * devices hold: knowing the key is the permission. The record is the app's
+ * own saved state, opaque here. Each write carries the version it was based
+ * on, and a write from a device that has fallen behind is refused and handed
+ * the newer copy, so a phone left asleep can never overwrite a game that was
+ * changed somewhere else.
+ */
+const STORE_DIR = process.env.STORE_DIR ?? '/var/lib/blood-relay/stores'
+mkdirSync(STORE_DIR, { recursive: true })
+const STORE_PATH = /^\/store\/([a-z0-9]{24,64})(\/version)?$/
+const MAX_STORE = 8 * 1024 * 1024
+const stores = new Map()
+
+function readStore(key) {
+  if (stores.has(key)) return stores.get(key)
+  try {
+    const record = JSON.parse(readFileSync(join(STORE_DIR, `${key}.json`), 'utf8'))
+    stores.set(key, record)
+    return record
+  } catch {
+    return null
+  }
+}
+
+function writeStore(key, record) {
+  const file = join(STORE_DIR, `${key}.json`)
+  writeFileSync(`${file}.tmp`, JSON.stringify(record))
+  renameSync(`${file}.tmp`, file)
+  stores.set(key, record)
+}
+
+function json(response, status, body) {
+  response.writeHead(status, { ...CORS, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }).end(JSON.stringify(body))
+}
+
+function handleStore(request, response, key, versionOnly) {
+  if (request.method === 'GET') {
+    const record = readStore(key)
+    if (!record) return json(response, 404, { version: 0 })
+    return json(response, 200, versionOnly ? { version: record.version } : record)
+  }
+  if (request.method !== 'PUT') return json(response, 405, {})
+  let size = 0
+  const chunks = []
+  request.on('data', (chunk) => {
+    size += chunk.length
+    if (size > MAX_STORE) {
+      json(response, 413, {})
+      request.destroy()
+      return
+    }
+    chunks.push(chunk)
+  })
+  request.on('end', () => {
+    if (size > MAX_STORE) return
+    let body
+    try {
+      body = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+    } catch {
+      return json(response, 400, {})
+    }
+    if (typeof body?.value !== 'string' || typeof body?.base !== 'number') return json(response, 400, {})
+    const current = readStore(key)
+    if (current && body.base !== current.version) return json(response, 409, current)
+    const record = { version: (current?.version ?? 0) + 1, updatedAt: Date.now(), value: body.value }
+    try {
+      writeStore(key, record)
+    } catch (err) {
+      console.warn(`store write failed for ${key.slice(0, 6)}: ${err?.message ?? err}`)
+      return json(response, 500, {})
+    }
+    json(response, 200, { version: record.version })
+  })
+}
 
 function room(id) {
   let found = rooms.get(id)
@@ -70,6 +149,8 @@ function broadcast(sockets, body) {
 
 const http = createServer((request, response) => {
   if (request.method === 'OPTIONS') return response.writeHead(204, CORS).end()
+  const store = STORE_PATH.exec(request.url ?? '')
+  if (store) return handleStore(request, response, store[1], Boolean(store[2]))
   if (request.url === '/health') {
     return response.writeHead(200, { ...CORS, 'Content-Type': 'text/plain' }).end('ok')
   }

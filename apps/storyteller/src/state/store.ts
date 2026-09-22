@@ -1,7 +1,6 @@
 import { create } from 'zustand'
-import { persist, createJSONStorage, type StateStorage } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import { applyPatches, enablePatches, produceWithPatches, type Patch } from 'immer'
-import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval'
 import {
   buildNightOrder,
   editionScript,
@@ -14,19 +13,11 @@ import {
   type Script,
 } from '@botc/rules'
 import type { FloorMode } from '@botc/protocol'
+import { serverStorage } from './sync.js'
 import type { Effect, Game, LogEntry, LogKind, Nomination, Phase, Seat } from './types.js'
 
 enablePatches()
 
-const idbStorage: StateStorage = {
-  getItem: async (name) => (await idbGet(name)) ?? null,
-  setItem: async (name, value) => {
-    await idbSet(name, value)
-  },
-  removeItem: async (name) => {
-    await idbDel(name)
-  },
-}
 
 export function phaseLabel(phase: Phase): string {
   switch (phase.k) {
@@ -747,7 +738,7 @@ export const useStore = create<Store>()(
     {
       name: 'botc-storyteller',
       version: 1,
-      storage: createJSONStorage(() => idbStorage),
+      storage: createJSONStorage(() => serverStorage),
       // The undo stack is deliberately not persisted: undoing across a reload,
       // possibly days later, is more surprising than useful.
       partialize: (state) => ({
