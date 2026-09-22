@@ -49,6 +49,7 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
   const [picking, setPicking] = useState<'perceived' | 'believed' | null>(null)
   const [telling, setTelling] = useState(false)
   const { reachable, nudge, whisper } = useRoom()
+  const concealed = useStore((s) => s.concealed)
   const log = useStore((s) => s.log)
 
   // A seat that still says "drunk" is owed a choice, and the sheet opens on it.
@@ -62,13 +63,16 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
 
   const character = getCharacter(seat.characterId ?? '')
   const drunk = seat.trueCharacterId === 'drunk'
-  const shown = character
+  // With roles hidden the sheet still works, but names no character anywhere.
+  const shown = concealed ? undefined : character
   const alignment = seat.alignmentOverride ?? (shown ? teamAlignment(shown.team) : undefined)
   const timeline = game.log.filter((l) => l.seatIds.includes(seat.id))
 
-  const roleLine = shown
-    ? `${shown.name} · ${TEAM_LABEL[shown.team] ?? shown.team}${drunk ? ' · drunk' : ''}`
-    : 'No character yet'
+  const roleLine = concealed
+    ? 'Roles hidden'
+    : shown
+      ? `${shown.name} · ${TEAM_LABEL[shown.team] ?? shown.team}${drunk ? ' · drunk' : ''}`
+      : 'No character yet'
 
   return (
     <>
@@ -95,7 +99,7 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
             >
               {roleLine}
             </div>
-          {drunk && (
+          {drunk && !concealed && (
             <button
               onClick={() => setSeatTrueCharacter(seat.id, undefined)}
               className="caps mt-1 min-h-8 text-[10px] text-(--text-faint)"
@@ -113,14 +117,14 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
               {EXPLAIN[shown.id] && (
                 <p className="serif m-0 mt-2 text-[14px] leading-snug text-(--text-dim)">{EXPLAIN[shown.id]}</p>
               )}
-              {drunk && (
+              {drunk && !concealed && (
                 <p className="serif m-0 mt-2 text-[14px] leading-snug text-(--color-red-2)">
                   Really the Drunk: their ability never works. Give them believable information, which can be wrong.
                 </p>
               )}
             </>
           ) : (
-            <p className="serif text-[15px] text-(--text-faint)">Tap the token to assign one.</p>
+            <p className="serif text-[15px] text-(--text-faint)">{concealed ? 'Roles are hidden. Tap the eye on the grimoire to show them.' : 'Tap the token to assign one.'}</p>
           )}
         </div>
 
@@ -178,7 +182,7 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
           {/* Evil's first-night information, to send or send again at any
               point: a Demon asking "what were my bluffs?" on day three. */}
           {evilNotes(game)
-            .filter((n) => n.seat.id === seat.id)
+            .filter((n) => n.seat.id === seat.id && !concealed)
             .map((n) => (
               <Button
                 key="evil"
@@ -207,6 +211,8 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
           </Button>
         </div>
 
+        {/* Reminder tokens and the timeline both name characters. */}
+        {!concealed && (
         <div className="mt-5">
           <Label>Reminders</Label>
           <div className="flex flex-wrap gap-2">
@@ -256,6 +262,8 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
           </div>
         </div>
 
+        )}
+
         <div className="mt-6">
           <Label>Your notes on {seat.name}</Label>
           <textarea
@@ -267,7 +275,7 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
           />
         </div>
 
-        {timeline.length > 0 && (
+        {timeline.length > 0 && !concealed && (
           <div className="mt-6">
             <Label>Their game so far</Label>
             <ol className="space-y-2 border-l border-(--hairline) pl-4">

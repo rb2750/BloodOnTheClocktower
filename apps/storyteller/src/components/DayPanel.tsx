@@ -30,6 +30,7 @@ export function DayPanel({ onOpenSeat, onEnd }: { onOpenSeat: (id: string) => vo
   const giveFloor = useStore((s) => s.giveFloor)
   const setNominationsOpen = useStore((s) => s.setNominationsOpen)
   const dropNominationRequest = useStore((s) => s.dropNominationRequest)
+  const concealed = useStore((s) => s.concealed)
 
   const [nominating, setNominating] = useState<{ nominatorId?: string } | null>(null)
 
@@ -83,8 +84,9 @@ export function DayPanel({ onOpenSeat, onEnd }: { onOpenSeat: (id: string) => vo
                   : 'I am about to call for nominations.'}
             </SayThis>
 
-            <Coach tips={[...dayCoach(game, block, today.length), ...(today.length === 0 ? balance(game) : [])]} />
-            <RulesButton />
+            {/* The coach names characters, so it goes with the roles when they are hidden. */}
+            {!concealed && <Coach tips={[...dayCoach(game, block, today.length), ...(today.length === 0 ? balance(game) : [])]} />}
+            {!concealed && <RulesButton />}
 
             <GameOverHint onEnd={onEnd} />
 
