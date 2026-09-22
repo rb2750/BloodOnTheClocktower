@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { bluffCandidates, getCharacter, placesReminder, seesGrimoire } from '@botc/rules'
+import { bluffCandidates, getCharacter, seesGrimoire } from '@botc/rules'
 import { Button, ReminderText, Sheet, Label, ChevronLeft, ChevronRight, Qr, Dawn, Signpost, Eye, haptic } from '@botc/ui'
 import { toast } from 'sonner'
 import { useStore } from '../state/store.js'
@@ -7,6 +7,7 @@ import { useRoom } from '../room.js'
 import { WhisperSheet } from './WhisperSheet.js'
 import { CharacterToken } from './CharacterToken.js'
 import { Coach, RulesButton } from './Coach.js'
+import { effectFor } from '../reminders.js'
 import { balance, nightCoach } from '../coach.js'
 import { GameOverHint } from './GameOverHint.js'
 
@@ -269,11 +270,17 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
         )}
 
         {/* Reminder tokens the current step wants placed, one tap each. */}
-        {entry && entry.reminderTokens.length > 0 && placesReminder(entry.reminder) && (
+        {/* Every token the character has, not only when the official text
+            says to place one: the Grandmother's grandchild is placed on
+            night 1 but her night 1 text never mentions it. */}
+        {entry && entry.reminderTokens.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
-            {entry.reminderTokens.map((label) => (
+            {/* A character can carry two tokens of the same name (the Pukka's
+                two "Poisoned"): one button each is enough, and the key must
+                change with the step or a stale button survives into the next. */}
+            {[...new Set(entry.reminderTokens)].map((label) => (
               <button
-                key={label}
+                key={`${entry.key}-${label}`}
                 onClick={() => {
                   haptic('tap')
                   setPlacing({ label, characterId: entry.id })
@@ -352,21 +359,10 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
               key={seat.id}
               onClick={() => {
                 if (!placing) return
-                const kind =
-                  placing.label.toLowerCase() === 'poisoned'
-                    ? 'poisoned'
-                    : placing.label.toLowerCase() === 'drunk'
-                      ? 'drunk'
-                      : placing.label.toLowerCase() === 'protected'
-                        ? 'protected'
-                        : 'custom'
                 addEffect(seat.id, {
-                  kind,
                   label: placing.label,
                   sourceCharacterId: placing.characterId,
-                  // Poison from a night ability lasts into the next day, so it
-                  // expires at the following dusk rather than immediately.
-                  expiry: kind === 'poisoned' ? { kind: 'dusk' } : { kind: 'permanent' },
+                  ...effectFor(placing.label, placing.characterId),
                 })
                 setPlacing(null)
               }}

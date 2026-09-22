@@ -9,6 +9,7 @@ import { ReminderChip, ReminderOption } from './ReminderChip.js'
 import { CharacterPicker } from './CharacterPicker.js'
 import { WhisperSheet } from './WhisperSheet.js'
 import { EXPLAIN } from '../rules-explained.js'
+import { effectFor } from '../reminders.js'
 import { useRoom } from '../room.js'
 import type { EffectKind } from '../state/types.js'
 
@@ -195,6 +196,23 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
                 }}
               />
             ))}
+            {/* Every token belonging to a character in play, so any of them
+                can go on anyone at any time: the Grandchild, the Pukka's
+                poison, the Exorcist's choice. */}
+            {[...new Set(game.seats.map((s) => s.trueCharacterId ?? s.characterId).filter(Boolean) as string[])]
+              .flatMap((cid) => (getCharacter(cid)?.reminders ?? []).map((label) => ({ cid, label })))
+              .filter((r, i, all) => all.findIndex((x) => x.cid === r.cid && x.label === r.label) === i)
+              .filter((r) => !seat.effects.some((e) => e.label === r.label && e.sourceCharacterId === r.cid))
+              .map((r) => (
+                <ReminderOption
+                  key={`${r.cid}-${r.label}`}
+                  kind={effectFor(r.label, r.cid).kind}
+                  label={`${r.label} (${getCharacter(r.cid)?.name})`}
+                  onClick={() =>
+                    addEffect(seat.id, { label: r.label, sourceCharacterId: r.cid, ...effectFor(r.label, r.cid) })
+                  }
+                />
+              ))}
             {QUICK_EFFECTS.filter((q) => !seat.effects.some((e) => e.kind === q.kind)).map((e) => (
               <ReminderOption
                 key={e.kind}
