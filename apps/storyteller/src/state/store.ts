@@ -451,8 +451,21 @@ export const useStore = create<Store>()(
             if (draft.game) draft.game.bluffs = ids
           }),
 
-        concealed: false,
-        setConcealed: (concealed) => set({ concealed }),
+        // Hidden roles stay hidden across a reload: this phone remembers it,
+        // not the shared game, so hiding on one device hides only that device.
+        concealed: (() => {
+          try {
+            return localStorage.getItem('botc-concealed') === '1'
+          } catch {
+            return false
+          }
+        })(),
+        setConcealed: (concealed) => {
+          try {
+            localStorage.setItem('botc-concealed', concealed ? '1' : '0')
+          } catch {}
+          set({ concealed })
+        },
         cinematicPlayed: null,
         setCinematicPlayed: (key) => set({ cinematicPlayed: key }),
 
