@@ -237,7 +237,11 @@ export function ThreadPage({ seatId, onBack }: { seatId: string; onBack: () => v
     readChat(seatId)
     end.current?.scrollIntoView({ block: 'end' })
   }, [seatId, lines.length, readChat])
-  useEffect(() => end.current?.scrollIntoView({ block: 'end' }), [box.height])
+  useEffect(() => {
+    // Braced: scrollIntoView returns a promise in newer browsers, and a
+    // promise handed back to React as a cleanup crashes the page on leaving.
+    end.current?.scrollIntoView({ block: 'end' })
+  }, [box.height])
 
   const submit = async () => {
     const text = draft.trim()

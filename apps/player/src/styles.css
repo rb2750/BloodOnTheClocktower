@@ -45,8 +45,8 @@ textarea {
 /* Installed on an iPhone the page runs under the status bar and over the home
    indicator, so every top bar and every scrolling bottom keeps clear of them. */
 .safe-top {
-  padding-top: env(safe-area-inset-top);
+  padding-top: var(--safe-top, env(safe-area-inset-top));
 }
 .safe-bottom {
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: var(--safe-bottom, env(safe-area-inset-bottom));
 }

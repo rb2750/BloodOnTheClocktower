@@ -24,7 +24,7 @@ export function Sheet({ open, onOpenChange, title, subtitle, children }: SheetPr
         <Drawer.Overlay className="fixed inset-0 z-50 bg-black/70" />
         <Drawer.Content
           className="fixed inset-x-0 bottom-0 z-50 flex max-h-[88dvh] flex-col rounded-t-[14px] border-t border-(--hairline-strong) bg-(--surface) shadow-[0_-12px_40px_rgb(0_0_0/0.6)] outline-none"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+          style={{ paddingBottom: 'var(--safe-bottom, env(safe-area-inset-bottom))' }}
         >
           <div className="mx-auto mt-3 h-[3px] w-9 shrink-0 rounded-full bg-(--hairline-strong)" />
           {title && (

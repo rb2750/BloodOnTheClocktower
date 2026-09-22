@@ -216,7 +216,7 @@ export function Shell() {
           ].map((el, i) => (
             <div key={i} className="rw-rise" style={{ position: 'relative', animationDelay: `${0.35 + i * 0.12}s` }}>{el}</div>
           ))}
-          <div className="rw-help" style={{ position: 'absolute', bottom: 'calc(40px + env(safe-area-inset-bottom))', left: 0, right: 0 }}>Let go to hide</div>
+          <div className="rw-help" style={{ position: 'absolute', bottom: 'calc(40px + var(--safe-bottom, env(safe-area-inset-bottom)))', left: 0, right: 0 }}>Let go to hide</div>
         </div>
       )}
 
@@ -273,7 +273,7 @@ export function Shell() {
 
       <Toaster
         position="top-center"
-        offset={{ top: 'calc(12px + env(safe-area-inset-top))' }}
+        offset={{ top: 'calc(12px + var(--safe-top, env(safe-area-inset-top)))' }}
         toastOptions={{
           style: {
             background: 'rgba(18,22,34,.96)',

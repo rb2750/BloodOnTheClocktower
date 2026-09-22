@@ -24,7 +24,7 @@ export function HomeScreen({ go }: { go: (s: ScreenName) => void }) {
     <div className="flex h-full flex-col bg-(--bg)">
       <main
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5"
-        style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)' }}
+        style={{ paddingTop: 'max(var(--safe-top, env(safe-area-inset-top)), 12px)' }}
       >
         <div className="pt-10 text-center">
           <h1 className="display text-[44px] leading-none">Grimoire</h1>
@@ -79,7 +79,7 @@ export function HomeScreen({ go }: { go: (s: ScreenName) => void }) {
 
       <div
         className="shrink-0 border-t border-(--hairline) bg-(--surface) px-5 pt-3"
-        style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 14px)' }}
+        style={{ paddingBottom: 'max(var(--safe-bottom, env(safe-area-inset-bottom)), 14px)' }}
       >
         <Button variant="primary" live className="w-full" onClick={() => go('plan')}>
           {live ? 'Start another game' : 'New game'}
