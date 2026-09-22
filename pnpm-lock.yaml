@@ -38,6 +38,15 @@ importers:
       '@fontsource-variable/libre-franklin':
         specifier: 5.3.0
         version: 5.3.0
+      '@fontsource/alegreya-sans':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/cormorant-garamond':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/cormorant-sc':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@fontsource/libre-caslon-display':
         specifier: 5.3.0
         version: 5.3.0
@@ -1098,6 +1107,15 @@ packages:
 
   '@fontsource-variable/libre-franklin@5.3.0':
     resolution: {integrity: sha512-PEQemCKVRtkLZJNpfvR4wG7x87c8iG05XJuEaX59ogMcAQpdtCZz/NXZUrXLJyvyx3/HD70W4LUppWLBdEdU2g==}
+
+  '@fontsource/alegreya-sans@5.3.0':
+    resolution: {integrity: sha512-Uf0RbuwzhSS3NQrBFcRzEUm7TxDQW3qdAbQ6JIOhsIW6V+YN2dqlR99lhfEE38R3GHgMCMJBzqSp7aJxhNXSOw==}
+
+  '@fontsource/cormorant-garamond@5.3.0':
+    resolution: {integrity: sha512-weuGsCirGVWBWqpt6YUp0yLThTe4G8YO45noq8wxeJCRvEpq5lFrxNMFSTxcyOyV5k5otzJ8guDzYegdYlcLMQ==}
+
+  '@fontsource/cormorant-sc@5.3.0':
+    resolution: {integrity: sha512-4iTWFRwm6x6UJ2tJpcMYShL2KLgLSwiXt5KTPSe6GHpDr54ZzkH3/JXXvczGWV3MnzTUc4PCqPsbh/VLNPlxGg==}
 
   '@fontsource/libre-caslon-display@5.3.0':
     resolution: {integrity: sha512-WZEyiWTKBoXHWHNfdFQcexxmUOQ22XpSK4ivzczY2AnSt/u8DfmzRpYX6eKwUaFjva5BhSbUUArmouHTDwSEFQ==}
@@ -4445,6 +4463,12 @@ snapshots:
     optional: true
 
   '@fontsource-variable/libre-franklin@5.3.0': {}
+
+  '@fontsource/alegreya-sans@5.3.0': {}
+
+  '@fontsource/cormorant-garamond@5.3.0': {}
+
+  '@fontsource/cormorant-sc@5.3.0': {}
 
   '@fontsource/libre-caslon-display@5.3.0': {}
 

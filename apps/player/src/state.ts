@@ -67,6 +67,8 @@ export type PlayerState = {
   notes: Record<string, PlayerNote>
   /** Private words from the Storyteller, oldest first. */
   messages: { id: string; text: string; at: string }[]
+  /** How many of those this phone has opened. */
+  whispersSeen: number
   /** The table in seat order, who is alive, and who still holds a vote, as the
    *  Storyteller last said. A dead player has one vote for the rest of the game. */
   table: { id?: string; name: string; alive: boolean; ghostVote: boolean; traveller: boolean; pub?: string }[]
@@ -107,6 +109,7 @@ export type PlayerActions = {
   setPhase: (phase: string, day: number, at?: number) => void
   markRevealed: () => void
   addMessage: (id: string, text: string, at: string) => void
+  seeWhispers: () => void
   setTable: (table: { id?: string; name: string; alive: boolean; ghostVote: boolean; traveller: boolean; pub?: string }[]) => void
   addChatLine: (seatId: string, line: { id: string; from: 'me' | 'them'; text: string; at: string }) => boolean
   readChat: (seatId: string) => void
@@ -148,6 +151,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
       phaseAt: null,
       notes: {},
       messages: [],
+      whispersSeen: 0,
       table: [],
       chats: {},
       cinematicPlayed: null,
@@ -180,6 +184,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
               seatId: s.seatId,
               notes: sameGame ? s.notes : {},
               messages: sameGame ? s.messages : [],
+              whispersSeen: sameGame ? s.whispersSeen : 0,
             }
           }
           // A code for the room we already sat down in keeps our seat; a code
@@ -194,6 +199,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
             characterId: null,
             hasRevealed: false,
             messages: [],
+            whispersSeen: 0,
             notes: {},
             table: [],
             chats: {},
@@ -298,6 +304,8 @@ export const useStore = create<PlayerState & PlayerActions>()(
 
       // The relay replays what it holds when a phone comes back, so the same
       // word can arrive twice; it is kept once, under the id it was sent with.
+      seeWhispers: () => set((s) => ({ whispersSeen: s.messages.length })),
+
       addMessage: (id, text, at) =>
         set((s) =>
           s.messages.some((m) => m.id === id)
@@ -398,6 +406,7 @@ export const useStore = create<PlayerState & PlayerActions>()(
           seatName: null,
           notes: {},
           messages: [],
+          whispersSeen: 0,
           table: [],
           chats: {},
           cinematicPlayed: null,
@@ -422,6 +431,11 @@ export const useStore = create<PlayerState & PlayerActions>()(
       merge: (persisted, current) => {
         const state = { ...current, ...(persisted as Partial<PlayerState>) } as PlayerState &
           PlayerActions
+        // Notes that arrived before this phone knew to count them were read
+        // on the old screen, so they do not come back as sealed letters.
+        if ((persisted as Partial<PlayerState> | undefined)?.whispersSeen === undefined) {
+          state.whispersSeen = state.messages.length
+        }
         const payload = state.payload
         if (payload?.kind === 'room' && !(payload.key instanceof Uint8Array)) {
           state.payload = {

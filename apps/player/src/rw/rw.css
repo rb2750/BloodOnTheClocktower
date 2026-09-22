@@ -1,0 +1,735 @@
+@import '@fontsource/cormorant-garamond/500.css';
+@import '@fontsource/cormorant-garamond/600.css';
+@import '@fontsource/cormorant-garamond/700.css';
+@import '@fontsource/cormorant-garamond/500-italic.css';
+@import '@fontsource/cormorant-garamond/600-italic.css';
+@import '@fontsource/cormorant-sc/600.css';
+@import '@fontsource/cormorant-sc/700.css';
+@import '@fontsource/alegreya-sans/400.css';
+@import '@fontsource/alegreya-sans/500.css';
+@import '@fontsource/alegreya-sans/700.css';
+@import '@fontsource/alegreya-sans/400-italic.css';
+
+/*
+ * Ravenswood: the player's app.
+ *
+ * The town square at night is the ground everything stands on, and it changes
+ * with the phase. Light comes only from real sources: the moon, the clock, the
+ * town's windows and the player's own lantern. Tokens are dark enamel with a
+ * brass rim; team colour lives on the rim and nowhere else.
+ */
+.rw {
+  --night: #070a12;
+  --lamp: #e9c07a;
+  --seal: #8e1f1a;
+  --ink: #251f17;
+  --paper: #efe5cc;
+  --tx: #efe7d6;
+  --dim: #afa592;
+  --faint: #736b5d;
+  --good: #86acdd;
+  --evil: #d7786f;
+  --brass: #b69a5e;
+  --line: rgba(182, 154, 94, 0.32);
+  --out: cubic-bezier(0.22, 1, 0.36, 1);
+  --slow: cubic-bezier(0.65, 0, 0.35, 1);
+  --in: cubic-bezier(0.55, 0, 1, 0.45);
+
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: var(--night);
+  color: var(--tx);
+  font: 400 17px/1.4 'Alegreya Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* No specificity, so every component's own background and border win. */
+:where(.rw) button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.rw button:focus-visible,
+.rw input:focus-visible,
+.rw textarea:focus-visible {
+  outline: 2px solid var(--lamp);
+  outline-offset: 3px;
+}
+
+.rw .disp {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------------------- scene */
+.rw-scene {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.rw-scene svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: opacity 3s var(--slow);
+}
+.rw-veil {
+  position: absolute;
+  inset: 0;
+  background: #03050a;
+  transition: opacity 0.6s var(--out);
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- frame */
+.rw-page {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.rw-hdr {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px 0;
+}
+.rw-title {
+  font: 700 44px/0.95 'Cormorant Garamond', serif;
+}
+.rw-sub {
+  font-size: 15px;
+  color: var(--dim);
+  margin-top: 6px;
+}
+.rw-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--lamp);
+  font-size: 16px;
+  font-weight: 500;
+  min-height: 44px;
+  margin: -6px 0 2px;
+}
+.rw-icons {
+  display: flex;
+  gap: 10px;
+}
+.rw-icon {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(7, 10, 18, 0.55);
+  border: 1px solid var(--line);
+  color: var(--lamp);
+}
+.rw-wax {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 21px;
+  height: 21px;
+  border-radius: 11px;
+  background: var(--seal);
+  box-shadow: inset 0 0 0 1px #b8423a, 0 0 0 2px var(--night);
+  color: #f7e6dc;
+  font: 700 12px/21px 'Alegreya Sans';
+  text-align: center;
+  padding: 0 6px;
+  animation: rw-pop 0.4s var(--out) both;
+}
+.rw-wax.inline {
+  position: static;
+  box-shadow: none;
+}
+
+/* ---------------------------------------------------------------- tokens */
+.rw-tok {
+  --s: 64px;
+  --rim: var(--brass);
+  position: relative;
+  width: var(--s);
+  height: var(--s);
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 38%, #1c2436, #111726 70%);
+  box-shadow:
+    0 0 0 1.5px #04060b,
+    0 0 0 3.5px var(--rim),
+    0 0 0 4.5px #04060b,
+    0 12px 18px -10px #000;
+  transition:
+    box-shadow 0.5s var(--out),
+    filter 0.9s var(--slow),
+    background 0.9s var(--slow),
+    transform 0.25s var(--out);
+}
+.rw-tok::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--s) * 0.09);
+  border-radius: 50%;
+  border: 0.7px solid rgba(182, 154, 94, 0.35);
+  pointer-events: none;
+}
+.rw-tok img {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  transition: opacity 0.9s, filter 0.9s;
+  pointer-events: none;
+}
+.rw-tok .ini {
+  font: 700 calc(var(--s) * 0.34) / 1 'Cormorant Garamond';
+  color: var(--tx);
+}
+.rw-tok.good { --rim: var(--good); }
+.rw-tok.evil { --rim: var(--evil); }
+.rw-tok.hot {
+  --rim: var(--lamp);
+  box-shadow:
+    0 0 0 1.5px #04060b,
+    0 0 0 3.5px var(--lamp),
+    0 0 0 4.5px #04060b,
+    0 0 34px 0 rgba(233, 192, 122, 0.55);
+}
+.rw-tok.dead {
+  --rim: #4a4f5a;
+  background: #0b0e15;
+}
+.rw-tok.dead img,
+.rw-tok.dead .ini {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+.rw-shroud {
+  position: absolute;
+  top: -1px;
+  left: 25%;
+  right: 25%;
+  height: 40%;
+  z-index: 2;
+  background: #8a9097;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 76%, 0 100%);
+}
+.rw-shroud.drop {
+  animation: rw-shroud 0.7s cubic-bezier(0.3, 1.25, 0.5, 1) 0.6s both;
+}
+.rw-tok.pressed { transform: scale(0.94); }
+
+.rw-lantern .flame {
+  transform-origin: 17px 27px;
+  transform-box: view-box;
+  transition: opacity 0.6s var(--in), transform 0.9s var(--in);
+}
+.rw-lantern.out .flame {
+  opacity: 0;
+  transform: scale(0.3, 0.1);
+}
+.rw-lantern .wick { opacity: 0; transition: opacity 0.3s 0.6s; }
+.rw-lantern.out .wick { opacity: 1; }
+
+/* ---------------------------------------------------------------- the table */
+.rw-ring {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.rw-ring > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.rw-seat {
+  position: absolute;
+  translate: -50% -50%;
+  width: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: opacity 0.9s var(--slow);
+}
+.rw-seat .tokwrap { position: relative; }
+.rw-plate {
+  margin-top: 9px;
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 700 14px/1 'Cormorant SC', serif;
+  letter-spacing: 0.06em;
+  text-shadow: 0 1px 2px #000;
+}
+.rw-plate.dead {
+  color: var(--faint);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+.rw-says {
+  margin-top: 3px;
+  font: italic 500 15px/1.1 'Cormorant Garamond', serif;
+  color: var(--dim);
+  text-shadow: 0 1px 2px #000;
+  transition: opacity 0.9s var(--slow);
+}
+.rw-seat .rw-wax { top: -5px; right: -6px; }
+.rw-hand {
+  position: absolute;
+  right: -8px;
+  top: -8px;
+  z-index: 3;
+  width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--lamp);
+  color: var(--ink);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 0 2px var(--night);
+  animation: rw-pop 0.35s var(--out) both;
+}
+.rw-prog {
+  --p: 0;
+  position: absolute;
+  inset: -9px;
+  border-radius: 50%;
+  background: conic-gradient(var(--lamp) calc(var(--p) * 1%), rgba(233, 192, 122, 0.12) 0);
+  -webkit-mask: radial-gradient(circle, transparent calc(50% - 3px), #000 calc(50% - 3px));
+  mask: radial-gradient(circle, transparent calc(50% - 3px), #000 calc(50% - 3px));
+  pointer-events: none;
+}
+.rw-centre {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: 56%;
+  max-width: 230px;
+  text-align: center;
+  pointer-events: none;
+}
+.rw-eyebrow { font-size: 14px; color: var(--dim); }
+.rw-eyebrow.live { color: var(--lamp); }
+.rw-say {
+  font: italic 600 26px/1.15 'Cormorant Garamond', serif;
+  margin-top: 4px;
+  text-shadow: 0 1px 3px #000;
+}
+.rw-note {
+  font: italic 500 16px/1.2 'Cormorant Garamond', serif;
+  color: var(--dim);
+  margin-top: 6px;
+}
+.rw-tally {
+  font: 700 84px/0.9 'Cormorant Garamond', serif;
+  text-shadow: 0 2px 4px #000;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.rw-tally small {
+  font-size: 28px;
+  color: var(--dim);
+  font-weight: 600;
+}
+.rw-swap { animation: rw-rise 0.5s var(--out) both; }
+
+/* the night dims everything but the sky */
+.rw.is-night .rw-seat .rw-tok { filter: brightness(0.4) saturate(0.55); }
+.rw.is-night .rw-seat .rw-says { opacity: 0; }
+.rw.is-night .rw-seat .rw-wax { opacity: 0; }
+.rw .rw-seat .rw-tok { transition-delay: calc(var(--k, 0) * 0.15s); }
+
+/* ---------------------------------------------------------------- dock and controls */
+.rw-dock {
+  position: relative;
+  flex: none;
+  margin: 0 12px 12px;
+  padding: 16px;
+  border-radius: 26px;
+  background: rgba(9, 12, 21, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--line);
+  animation: rw-up 0.5s var(--out) both;
+}
+.rw-dock::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 22px;
+  border: 0.6px solid rgba(182, 154, 94, 0.2);
+  pointer-events: none;
+}
+.rw-help {
+  font-size: 15px;
+  color: var(--dim);
+  text-align: center;
+  line-height: 1.35;
+  padding: 4px 8px;
+}
+.rw-btn {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 56px;
+  border-radius: 28px;
+  padding: 0 22px;
+  font: 700 18px 'Alegreya Sans' !important;
+  background: var(--lamp) !important;
+  color: #20180a !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(37, 31, 23, 0.55),
+    inset 0 0 0 3.5px var(--lamp),
+    inset 0 0 0 4.5px rgba(37, 31, 23, 0.35);
+  transition: transform 0.15s var(--out), opacity 0.2s;
+}
+.rw-btn:active { transform: scale(0.97); }
+.rw-btn:disabled { opacity: 0.45; }
+.rw-btn.line {
+  background: rgba(233, 192, 122, 0.07) !important;
+  color: var(--lamp) !important;
+  box-shadow: inset 0 0 0 1px rgba(233, 192, 122, 0.55);
+}
+.rw-btn.ghost {
+  background: transparent !important;
+  color: var(--dim) !important;
+  box-shadow: none;
+  min-height: 44px;
+  font-weight: 500 !important;
+  font-size: 16px !important;
+}
+.rw-btn.danger { color: var(--evil) !important; }
+.rw-err {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--evil);
+}
+
+/* ---------------------------------------------------------------- lists */
+.rw-list {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 20px 24px;
+}
+.rw-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 14px;
+  min-height: 66px;
+  padding: 8px 0;
+  text-align: left;
+  border-bottom: 1px solid rgba(182, 154, 94, 0.16);
+}
+.rw-item .nm { font: 600 22px/1.1 'Cormorant Garamond', serif; }
+.rw-item .ab { font-size: 14.5px; color: var(--dim); line-height: 1.3; margin-top: 2px; }
+.rw-item.on .nm { color: var(--lamp); }
+.rw-sect {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 0 4px;
+  font: 600 15px 'Alegreya Sans';
+}
+.rw-sect::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--line), transparent);
+}
+
+/* ---------------------------------------------------------------- sheets */
+.rw-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(2, 3, 7, 0.62);
+  animation: rw-fade 0.35s var(--out) both;
+}
+.rw-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 21;
+  max-height: calc(100% - 60px - env(safe-area-inset-top));
+  display: flex;
+  flex-direction: column;
+  border-radius: 30px 30px 0 0;
+  background: rgba(11, 14, 24, 0.96);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-top: 1px solid var(--line);
+  animation: rw-sheet 0.5s var(--out) both;
+}
+.rw-sheet::before {
+  content: '';
+  position: absolute;
+  inset: 4px 4px 0;
+  border-radius: 26px 26px 0 0;
+  border: 0.6px solid rgba(182, 154, 94, 0.18);
+  border-bottom: 0;
+  pointer-events: none;
+}
+.rw-sheet-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 22px calc(28px + env(safe-area-inset-bottom));
+}
+.rw-grab {
+  display: block;
+  width: 100%;
+  padding: 10px 0 14px;
+}
+.rw-grab::before {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(182, 154, 94, 0.4);
+  margin: 0 auto;
+}
+.rw-lbl {
+  font: 600 14px 'Alegreya Sans';
+  color: var(--dim);
+  margin: 22px 0 10px;
+}
+.rw-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.rw-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 22px;
+  border: 1px solid var(--line) !important;
+  font: 500 16px 'Alegreya Sans' !important;
+  transition: background 0.3s, border-color 0.3s, color 0.3s, transform 0.15s var(--out);
+}
+.rw-chip:active { transform: scale(0.96); }
+.rw-chip.art { padding-left: 6px; }
+.rw-chip.on {
+  border-color: var(--lamp) !important;
+  color: var(--lamp) !important;
+  background: rgba(233, 192, 122, 0.09) !important;
+}
+.rw-field {
+  width: 100%;
+  min-height: 50px;
+  border-radius: 25px;
+  border: 1px solid var(--line);
+  background: rgba(7, 10, 18, 0.6);
+  color: var(--tx);
+  padding: 0 18px;
+  font: 17px 'Alegreya Sans';
+  outline: none;
+}
+.rw-field::placeholder { color: var(--faint); font-style: italic; }
+.rw-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(182, 154, 94, 0.18);
+  font-size: 17px;
+}
+.rw-line small { color: var(--faint); font-size: 13px; margin-top: 3px; flex: none; }
+
+/* ---------------------------------------------------------------- letters */
+.rw-letter {
+  position: relative;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 18px;
+  padding: 34px 26px 24px;
+  box-shadow: 0 30px 60px -30px #000;
+  text-align: center;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.rw-letter::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 13px;
+  border: 0.7px solid rgba(90, 70, 40, 0.35);
+  pointer-events: none;
+}
+.rw-seal {
+  position: absolute;
+  left: 50%;
+  top: -26px;
+  width: 54px;
+  height: 54px;
+  margin-left: -27px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #a8322a, #7a1712 70%);
+  box-shadow: inset 0 0 0 3px #6e140f, inset 0 0 0 5px #9c2c24, 0 6px 10px -4px #000;
+  transition: transform 0.7s var(--in), opacity 0.7s var(--in);
+}
+.rw-seal.l { clip-path: polygon(0 0, 50% 0, 46% 100%, 0 100%); }
+.rw-seal.r { clip-path: polygon(50% 0, 100% 0, 100% 100%, 46% 100%); }
+.rw-letter.open .rw-seal.l { transform: translate(-22px, 26px) rotate(-38deg); opacity: 0; }
+.rw-letter.open .rw-seal.r { transform: translate(22px, 30px) rotate(34deg); opacity: 0; }
+.rw-letter .shut, .rw-letter .said { transition: opacity 0.4s; }
+.rw-letter.open .shut { opacity: 0; }
+.rw-letter:not(.open) .said { opacity: 0; }
+
+/* ---------------------------------------------------------------- overlays */
+.rw-over {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 28px;
+}
+.rw-over .veil {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 3, 8, 0.86);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: rw-fade 0.45s var(--out) both;
+}
+.rw-grow { animation: rw-grow 0.6s var(--out) both; }
+.rw-rise { animation: rw-rise 0.6s var(--out) both; }
+.rw-banner {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: calc(10px + env(safe-area-inset-top));
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 22px;
+  background: rgba(18, 22, 34, 0.95);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 20px 40px -20px #000;
+  text-align: left;
+  animation: rw-drop 0.55s var(--out) both;
+}
+.rw-codebox {
+  width: 60px;
+  height: 70px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  font: 700 34px 'Cormorant Garamond';
+  background: rgba(7, 10, 18, 0.6);
+}
+.rw-codebox.cur { border-color: var(--lamp); box-shadow: 0 0 0 3px rgba(233, 192, 122, 0.15); }
+.rw-bub {
+  max-width: 80%;
+  padding: 10px 15px;
+  border-radius: 20px;
+  font-size: 17px;
+  line-height: 1.3;
+  margin-top: 6px;
+  user-select: text;
+  -webkit-user-select: text;
+  overflow-wrap: anywhere;
+}
+.rw-bub.me { margin-left: auto; background: var(--lamp); color: #20180a; border-bottom-right-radius: 6px; }
+.rw-bub.them { background: rgba(239, 229, 204, 0.07); border: 1px solid rgba(182, 154, 94, 0.24); border-bottom-left-radius: 6px; }
+.rw-daymark { text-align: center; font-size: 13px; color: var(--faint); margin: 16px 0 4px; }
+.rw-toggle {
+  flex: none;
+  width: 52px;
+  height: 32px;
+  border-radius: 16px;
+  background: rgba(182, 154, 94, 0.25);
+  position: relative;
+  transition: background 0.25s;
+}
+.rw-toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  background: var(--tx);
+  transition: transform 0.25s var(--out), background 0.25s;
+}
+.rw-toggle.on { background: var(--lamp); }
+.rw-toggle.on::after { transform: translateX(20px); background: #20180a; }
+
+/* the Grimoire drawn by @botc/ui, in this app's enamel */
+.rw .token {
+  background: radial-gradient(circle at 50% 38%, #1c2436, #111726 70%);
+}
+.rw .token-initials { color: var(--tx); }
+.rw .seat-name { color: var(--tx); font-family: 'Cormorant SC', serif; font-weight: 700; }
+
+@keyframes rw-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rw-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes rw-up { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: none; } }
+@keyframes rw-drop { from { opacity: 0; transform: translateY(-120%); } to { opacity: 1; transform: none; } }
+@keyframes rw-pop { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+@keyframes rw-sheet { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes rw-grow { from { opacity: 0; transform: translateY(40vh) scale(0.28); } to { opacity: 1; transform: none; } }
+@keyframes rw-shroud { from { transform: translateY(-110%); } to { transform: none; } }
+@keyframes rw-seat-in { from { opacity: 0; scale: 0.6; } to { opacity: 1; scale: 1; } }
+.rw-seat.enter { animation: rw-seat-in 0.55s var(--out) both; animation-delay: calc(var(--k, 0) * 0.08s); }
+
+@media (prefers-reduced-motion: reduce) {
+  .rw *, .rw *::before, .rw *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+/* The grimoire has the whole screen to itself, so its ring follows the shape
+   of the phone instead of the Storyteller's squarer one. */
+.rw-ring .circle {
+  --pad: calc(var(--size) * 1.15);
+  --ry: min(calc(50cqh - var(--pad)), calc(var(--rx) * 2.8));
+}
+.rw-ring .chip {
+  max-width: none;
+}
