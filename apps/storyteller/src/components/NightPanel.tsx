@@ -124,6 +124,9 @@ function SendEvilInfo({ step }: { step: 'demoninfo' | 'minioninfo' }) {
   )
 }
 
+/** Steps the guide handles end to end; their tokens are placed by the guide alone. */
+const GUIDED = new Set(['sailor', 'innkeeper', 'pukka', 'exorcist', 'devilsadvocate', 'assassin', 'grandmother', 'chambermaid', 'gambler', 'professor', 'tinker', 'courtier', 'moonchild'])
+
 export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd: () => void }) {
   const game = useStore((s) => s.game)
   const nightOrder = useStore((s) => s.nightOrder)
@@ -268,7 +271,7 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
         {/* Every token the character has, not only when the official text
             says to place one: the Grandmother's grandchild is placed on
             night 1 but her night 1 text never mentions it. */}
-        {entry && entry.reminderTokens.length > 0 && (
+        {entry && entry.reminderTokens.length > 0 && !GUIDED.has(entry.id) && (
           <div className="mt-3 flex flex-wrap gap-2">
             {/* A character can carry two tokens of the same name (the Pukka's
                 two "Poisoned"): one button each is enough, and the key must

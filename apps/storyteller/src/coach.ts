@@ -42,6 +42,24 @@ function facts(game: Game) {
   return { seats, who, one, demon, minions, alive, effect, n, diedIn, deadNow, goodAlive, evilAlive, impaired }
 }
 
+/** What is carried over from last night: poison waiting to kill, protection, the Demon blocked. */
+export function carried(game: Game): Tip[] {
+  const f = facts(game)
+  const t: Tip[] = []
+  const pukka = f.one('pukka')
+  for (const s of f.effect('Poisoned', 'pukka').filter((s) => s.alive)) {
+    const safe = s.effects.some((e) => e.label === 'Safe') || (real(s) === 'sailor' && !f.impaired(s))
+    t.push({ k: 'hint', t: `${pukka?.name ?? 'The Pukka'} poisoned ${s.name} last night. ${s.name}’s ability does nothing until then, and ${safe ? `${s.name} would die at the Pukka’s step tonight but is protected` : `${s.name} dies at the Pukka’s step tonight`}.` })
+  }
+  for (const s of f.seats.filter((s) => s.alive && s.effects.some((e) => e.label.startsWith('Drunk'))))
+    t.push({ k: 'hint', t: `${s.name} is drunk (${nameOf(s.effects.find((e) => e.label.startsWith('Drunk'))!.sourceCharacterId)}): their ability does nothing.` })
+  for (const s of f.effect('Survives Execution')) t.push({ k: 'hint', t: `${s.name} survives execution today (Devil’s Advocate).` })
+  const gc = f.effect('Grandchild')[0]
+  const gm = f.one('grandmother')
+  if (gc?.alive && gm?.alive) t.push({ k: 'hint', t: `${gc.name} is the Grandmother’s grandchild: if the Demon kills them, ${gm.name} dies too.` })
+  return t
+}
+
 /** How the game stands, in one line, and whether evil or good is ahead. */
 export function balance(game: Game): Tip[] {
   const f = facts(game)
@@ -107,6 +125,7 @@ export function nightCoach(game: Game, entry: NightEntry | undefined, wokeTonigh
       } else {
         add('say', '“Night falls. Everyone, close your eyes.”')
         add('do', 'Wait until every eye is closed, then work down the steps.')
+        t.push(...carried(game))
         t.push(...tinkerHint(game, 'night'))
       }
       break
@@ -254,6 +273,7 @@ export function dayCoach(game: Game, block: { seatId: string | null; tied: boole
   const add = (k: Tip['k'], text: string) => t.push({ k, t: text })
   const lastNight = f.deadNow(f.diedIn(`Night ${f.n}`))
 
+  t.push(...carried(game))
   if (f.n === 1 && nominationsToday === 0)
     t.push(basic('How each side wins'), basic('Nominations'), basic('Executions'), basic('The dead'))
   if (nominationsToday === 0) {
