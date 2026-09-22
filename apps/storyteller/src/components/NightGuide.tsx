@@ -30,7 +30,7 @@ export function NightGuide({ entry }: { entry: NightEntry }) {
   const [chosen, setChosen] = useState<Seat[]>([])
   if (!game || entry.kind !== 'character') return null
 
-  const actors = entry.seats.map((s) => game.seats.find((x) => x.id === s.seatId)).filter((s): s is Seat => Boolean(s && s.alive))
+  const actors = entry.seats.map((s) => game.seats.find((x) => x.id === s.seatId)).filter((s): s is Seat => Boolean(s && (s.alive || entry.id === 'moonchild')))
   const actor = actors[0]
   if (!actor) return null
   const night = game.phase.k === 'night' ? game.phase.n : 0
@@ -173,7 +173,7 @@ export function NightGuide({ entry }: { entry: NightEntry }) {
       break
     }
     case 'devilsadvocate': {
-      const key = `Devil’s Advocate ${actor.name}`
+      const key = `${entry.name} ${actor.name}`
       if (done(key)) { body = <Done text={game.log.find((l) => l.phase === `Night ${night}` && l.text.startsWith(key))!.text} />; break }
       const last = game.seats.find((s) => s.effects.some((e) => e.label === 'Survives Execution'))
       body = (
@@ -247,6 +247,17 @@ export function NightGuide({ entry }: { entry: NightEntry }) {
       )
       break
     }
+    case 'moonchild': {
+      const key = `Moonchild ${actor.name}`
+      if (actor.alive) { body = <p className="mt-3 text-[14px] text-(--text-dim)">{actor.name} is alive, so nothing happens. Tap Next.</p>; break }
+      if (done(key)) { body = <Done text={game.log.find((l) => l.phase === `Night ${night}` && l.text.startsWith(key))!.text} />; break }
+      body = (
+        <Button variant="danger" className="mt-3 w-full" onClick={() => setPick({ title: `Who did ${actor.name} choose when they died?`, hint: 'If that player is good, they die now. If evil, nothing happens.', count: 1, allow: alive, onDone: ([s]) => { if (isGood(s!)) { kill(s!, 'other', 'The Moonchild'); mark(`${key}: chose ${s!.name}, who is good.`, [s!.id]) } else { mark(`${key}: chose ${s!.name}, who is evil. Nothing happens.`, [s!.id]); toast(`${s!.name} is evil: nothing happens.`) } } })}>
+          Who did {actor.name} choose?
+        </Button>
+      )
+      break
+    }
     case 'tinker':
       body = <Button variant="danger" className="mt-3 w-full" onClick={() => kill(actor, 'other', 'The Storyteller')}>Kill {actor.name} the Tinker tonight</Button>
       break
@@ -264,8 +275,10 @@ export function NightGuide({ entry }: { entry: NightEntry }) {
       break
   }
 
+  const pending = Boolean(body) && !done(`${entry.name} `) && !['tinker'].includes(entry.id) && !(entry.id === 'grandmother' && (!first || game.seats.some((s) => s.effects.some((e) => e.label === 'Grandchild')))) && !(entry.id === 'pukka' && done(`Pukka ${actor.name}`)) && !(['assassin', 'professor', 'courtier'].includes(entry.id) && actor.effects.some((e) => e.label === 'No Ability'))
   return (
     <>
+      {pending && <span data-guide-pending={entry.name} hidden />}
       {body}
       <Sheet open={pick !== null} onOpenChange={(o) => !o && setPick(null)} title={pick?.title ?? ''} subtitle={pick?.hint}>
         <PickSeats pick={pick} seats={game.seats} onClose={() => setPick(null)} />

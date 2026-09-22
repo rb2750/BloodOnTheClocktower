@@ -135,6 +135,7 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
   const [telling, setTelling] = useState<{ seatId: string; characterId: string } | null>(null)
   const { reachable, showGrimoire } = useRoom()
   const [showed, setShowed] = useState<string | null>(null)
+  const [skipArmed, setSkipArmed] = useState(false)
   const concealed = useStore((s) => s.concealed)
 
   const order = useMemo(() => nightOrder(), [nightOrder, game])
@@ -330,7 +331,21 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
               live
               variant="primary"
               className="flex-1"
-              onClick={() => { haptic('tap'); setNightStep(step + 1) }}
+              onClick={() => {
+                // A step with its action still unrecorded needs a second tap,
+                // and says what was skipped, so nothing is forgotten by accident.
+                const pending = document.querySelector('[data-guide-pending]')?.getAttribute('data-guide-pending')
+                if (pending && !skipArmed) {
+                  haptic('warn')
+                  toast(`You haven’t recorded the ${pending}’s action. Tap Next again to skip it.`, { duration: 4000 })
+                  setSkipArmed(true)
+                  window.setTimeout(() => setSkipArmed(false), 4000)
+                  return
+                }
+                setSkipArmed(false)
+                haptic('tap')
+                setNightStep(step + 1)
+              }}
             >
               Next
               <ChevronRight size={20} />
