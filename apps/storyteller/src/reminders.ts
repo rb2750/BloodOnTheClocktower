@@ -9,7 +9,7 @@ import type { EffectKind, Expiry } from './state/types.js'
  * poison is how the coach knows who dies on its next turn, and the grandchild
  * is remembered all game.
  */
-const UNTIL_DUSK = new Set(['Drunk', 'Safe', 'Survives Execution', 'Chosen', 'Cannot Die', 'Died Today'])
+const UNTIL_DUSK = new Set(['Drunk', 'Safe', 'Survives Execution', 'Exorcised', 'Cannot Die', 'Died Today'])
 
 export function effectFor(label: string, sourceCharacterId: string): { kind: EffectKind; expiry: Expiry } {
   const lower = label.toLowerCase()

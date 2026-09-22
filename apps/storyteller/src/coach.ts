@@ -59,7 +59,7 @@ function tinkerHint(game: Game, when: 'night' | 'day'): Tip[] {
   const tinker = f.one('tinker')
   if (!tinker || !tinker.alive) return []
   const lastNight = f.deadNow(f.diedIn(`Night ${game.phase.k === 'day' ? f.n : f.n - 1}`))
-  const exorcised = f.effect('Chosen', 'exorcist').some((s) => s.id === f.demon?.id)
+  const exorcised = f.effect('Exorcised', 'exorcist').some((s) => s.id === f.demon?.id)
   // The first night and day are quiet by design, so there is nothing to fix yet.
   if (f.n <= 1) return []
   const reasons: string[] = []
@@ -184,7 +184,7 @@ export function nightCoach(game: Game, entry: NightEntry | undefined, wokeTonigh
       add('note', 'Place “Survives Execution” on that player. If they are executed tomorrow, they don’t die.')
       break
     case 'pukka': {
-      const blocked = f.effect('Chosen', 'exorcist').some((s) => s.id === f.demon?.id)
+      const blocked = f.effect('Exorcised', 'exorcist').some((s) => s.id === f.demon?.id)
       const prev = f.effect('Poisoned', 'pukka').filter((s) => s.alive)
       if (blocked && !first) {
         add('warn', `The Exorcist chose ${f.demon?.name} tonight: skip this step. The Pukka doesn’t wake, nobody new is poisoned, and nobody dies to the Pukka tonight.`)

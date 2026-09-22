@@ -7,6 +7,7 @@ import { useRoom } from '../room.js'
 import { WhisperSheet } from './WhisperSheet.js'
 import { CharacterToken } from './CharacterToken.js'
 import { Coach, RulesButton } from './Coach.js'
+import { NightGuide } from './NightGuide.js'
 import { effectFor } from '../reminders.js'
 import { evilNotes } from '../evil-info.js'
 import { balance, nightCoach } from '../coach.js'
@@ -176,10 +177,13 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
                 </div>
               )}
               <ReminderText source={entry.reminder} />
+              {!concealed && <NightGuide key={entry.key} entry={entry} />}
               {!concealed && (
                 <Coach
                   tips={[
-                    ...nightCoach(game, entry, woke),
+                    // The guide places tokens and marks deaths itself, so the
+                    // coach keeps the what and why and drops the how.
+                    ...nightCoach(game, entry, woke).filter((t) => t.k !== 'note' && !/^Tap .* seat and tap Kill|mark them dead/i.test(t.t)),
                     ...(entry.id === 'dawn' || entry.id === 'dusk' ? balance(game) : []),
                   ]}
                 />
