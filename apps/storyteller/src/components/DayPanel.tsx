@@ -33,6 +33,8 @@ export function DayPanel({ onOpenSeat, onEnd }: { onOpenSeat: (id: string) => vo
   const concealed = useStore((s) => s.concealed)
 
   const [nominating, setNominating] = useState<{ nominatorId?: string } | null>(null)
+  // A rule can be overridden with a second tap, after a warning: the Storyteller is in charge.
+  const [override, setOverride] = useState<string | null>(null)
 
   const block = useMemo(() => currentBlock(game), [game])
   if (!game || game.phase.k !== 'day') return null
@@ -177,9 +179,16 @@ export function DayPanel({ onOpenSeat, onEnd }: { onOpenSeat: (id: string) => vo
             return (
               <button
                 key={seat.id}
-                disabled={!allowed}
                 title={check.reason}
                 onClick={() => {
+                  if (!allowed && override !== seat.id) {
+                    haptic('warn')
+                    toast.warning(`${check.reason} Tap again to allow it anyway.`, { duration: 4000 })
+                    setOverride(seat.id)
+                    window.setTimeout(() => setOverride(null), 4000)
+                    return
+                  }
+                  setOverride(null)
                   if (asNominator) setNominating({ nominatorId: seat.id })
                   else {
                     haptic('confirm')
@@ -188,7 +197,7 @@ export function DayPanel({ onOpenSeat, onEnd }: { onOpenSeat: (id: string) => vo
                     toast(`${seatName(nominating!.nominatorId!)} nominates ${seat.name}.`)
                   }
                 }}
-                className="flex min-h-(--tap-min) flex-col items-start justify-center rounded-(--radius-surface) border border-(--hairline-strong) px-4 py-2 text-left disabled:opacity-30"
+                className={`flex min-h-(--tap-min) flex-col items-start justify-center rounded-(--radius-surface) border px-4 py-2 text-left ${allowed ? 'border-(--hairline-strong)' : override === seat.id ? 'border-(--color-red)' : 'border-(--hairline) opacity-60'}`}
               >
                 <span className="text-[14px]">{seat.name}</span>
                 <span className="caps text-[9.5px] text-(--text-faint)">
