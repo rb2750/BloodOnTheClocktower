@@ -5,7 +5,7 @@ import { useStore } from '../state/store.js'
 import { useRoom } from '../room.js'
 import { WhisperSheet } from './WhisperSheet.js'
 import { CharacterToken } from './CharacterToken.js'
-import { Coach } from './Coach.js'
+import { Coach, RulesButton } from './Coach.js'
 import { balance, nightCoach } from '../coach.js'
 import { GameOverHint } from './GameOverHint.js'
 
@@ -221,6 +221,7 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
         )}
 
         <GameOverHint onEnd={onEnd} />
+        {!concealed && <RulesButton />}
 
         {/* How far through the night, one tick per step. */}
         <div className="mt-3 flex gap-[3px]" aria-hidden>

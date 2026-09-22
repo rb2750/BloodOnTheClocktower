@@ -8,6 +8,7 @@ import { HoldToConfirm } from './HoldToConfirm.js'
 import { ReminderChip, ReminderOption } from './ReminderChip.js'
 import { CharacterPicker } from './CharacterPicker.js'
 import { WhisperSheet } from './WhisperSheet.js'
+import { EXPLAIN } from '../rules-explained.js'
 import { useRoom } from '../room.js'
 import type { EffectKind } from '../state/types.js'
 
@@ -104,7 +105,17 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
 
         <div className="mt-4">
           {shown ? (
-            <AbilityText>{shown.ability}</AbilityText>
+            <>
+              <AbilityText>{shown.ability}</AbilityText>
+              {EXPLAIN[shown.id] && (
+                <p className="serif m-0 mt-2 text-[14px] leading-snug text-(--text-dim)">{EXPLAIN[shown.id]}</p>
+              )}
+              {drunk && (
+                <p className="serif m-0 mt-2 text-[14px] leading-snug text-(--color-red-2)">
+                  Really the Drunk: their ability never works. Give them believable information, which can be wrong.
+                </p>
+              )}
+            </>
           ) : (
             <p className="serif text-[15px] text-(--text-faint)">Tap the token to assign one.</p>
           )}

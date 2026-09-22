@@ -1,5 +1,8 @@
 import { getCharacter, teamAlignment, type NightEntry } from '@botc/rules'
 import type { Game, Seat } from './state/types.js'
+import { BASICS, EXPLAIN } from './rules-explained.js'
+
+const basic = (title: string): Tip => ({ k: 'rule', t: `${title}: ${BASICS.find((b) => b.title === title)!.text}` })
 
 /*
  * The coach: exactly what to do, in order, for a first-time Storyteller.
@@ -11,7 +14,7 @@ import type { Game, Seat } from './state/types.js'
  * makes sure nothing is forgotten.
  */
 
-export type Tip = { k: 'do' | 'say' | 'note' | 'hint' | 'warn'; t: string }
+export type Tip = { k: 'rule' | 'do' | 'say' | 'note' | 'hint' | 'warn'; t: string }
 
 const real = (s: Seat) => s.trueCharacterId ?? s.characterId
 const team = (s: Seat) => getCharacter(real(s) ?? '')?.team
@@ -79,9 +82,13 @@ export function nightCoach(game: Game, entry: NightEntry | undefined, wokeTonigh
   const t: Tip[] = []
   const add = (k: Tip['k'], text: string) => t.push({ k, t: text })
 
+  // What this character does, in plain words, before what to do about it.
+  if (entry.kind === 'character' && EXPLAIN[entry.id]) add('rule', EXPLAIN[entry.id]!)
+
   switch (entry.id) {
     case 'dusk':
       if (first) {
+        t.push(basic('Night and day'), basic('Drunk and poisoned'), basic('Telling the truth'))
         add('do', 'Check every player has looked at their character on their phone. If anyone hasn’t, use Hand out characters.')
         add('say', '“Everyone, close your eyes.”')
         add('do', 'Wait until every eye is closed. Then work down the steps, tapping Next after each one. Steps for characters not in play are already left out.')
@@ -93,6 +100,7 @@ export function nightCoach(game: Game, entry: NightEntry | undefined, wokeTonigh
       }
       break
     case 'minioninfo': {
+      add('rule', 'With 7 or more players, evil learn who each other are on the first night, so they can work together.')
       const m = f.minions.map((s) => s.name)
       add('do', `Wake the Minion${m.length > 1 ? 's' : ''}: ${list(m)}.`)
       add('do', `Show the “This is the Demon” card and point at ${f.demon?.name ?? 'the Demon'}.`)
@@ -101,12 +109,14 @@ export function nightCoach(game: Game, entry: NightEntry | undefined, wokeTonigh
       break
     }
     case 'demoninfo':
+      add('rule', 'The Demon learns their Minions and three good characters that are not in play. Those are safe for evil to pretend to be, because no real player has them.')
       add('do', `Wake the Demon: ${f.demon?.name ?? '?'}.`)
       add('do', `Show “These are your Minions” and point at ${list(f.minions.map((s) => s.name))}.`)
       add('do', `Show “These characters are not in play”, then the three bluffs below: ${list(game.bluffs.map(nameOf))}.`)
       add('do', 'Put them back to sleep.')
       break
     case 'dawn': {
+      t.push(basic('Announcing deaths'))
       const dead = f.deadNow(f.diedIn(`Night ${f.n}`))
       add('do', 'Wait about ten seconds so nobody can tell who woke last.')
       add('say', dead.length ? `“Good morning. ${list(dead.map((s) => s.name))} died last night.” Don’t say how.` : '“Good morning. Nobody died last night.”')
@@ -225,6 +235,8 @@ export function dayCoach(game: Game, block: { seatId: string | null; tied: boole
   const add = (k: Tip['k'], text: string) => t.push({ k, t: text })
   const lastNight = f.deadNow(f.diedIn(`Night ${f.n}`))
 
+  if (f.n === 1 && nominationsToday === 0)
+    t.push(basic('How each side wins'), basic('Nominations'), basic('Executions'), basic('The dead'))
   if (nominationsToday === 0) {
     add('say', lastNight.length ? `If you haven’t yet: “${list(lastNight.map((s) => s.name))} died last night.”` : 'If you haven’t yet: “Nobody died last night.”')
     add('do', 'Let the town talk freely for a few minutes. Give private chats time if people want them.')
