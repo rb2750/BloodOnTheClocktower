@@ -76,6 +76,8 @@ export function DayPanel({ onOpenSeat, onEnd }: { onOpenSeat: (id: string) => vo
               </span>
             </div>
 
+            <GameOverHint onEnd={onEnd} />
+
             <SayThis>
               {blockSeat
                 ? `${blockSeat.name} is about to die, with ${block.votes} vote${
@@ -89,8 +91,6 @@ export function DayPanel({ onOpenSeat, onEnd }: { onOpenSeat: (id: string) => vo
             {/* The coach names characters, so it goes with the roles when they are hidden. */}
             {!concealed && <Coach tips={[...dayCoach(game, block, today.length), ...(today.length === 0 ? balance(game) : [])]} />}
             {!concealed && <RulesButton />}
-
-            <GameOverHint onEnd={onEnd} />
 
             <Floor
               mode={game.floor?.mode ?? 'open'}

@@ -14,7 +14,7 @@ function flash() {
   window.setTimeout(() => document.documentElement.classList.remove('alerting'), 900)
 }
 
-export type Alert = 'word' | 'role' | 'vote' | 'closed' | 'night' | 'day' | 'hand' | 'seat' | 'chat' | 'nudge'
+export type Alert = 'word' | 'role' | 'vote' | 'closed' | 'night' | 'day' | 'hand' | 'seat' | 'chat' | 'nudge' | 'timesup' | 'over'
 
 const BUZZ: Record<Alert, number | number[]> = {
   word: [60, 40, 60],
@@ -27,6 +27,9 @@ const BUZZ: Record<Alert, number | number[]> = {
   seat: [30, 30, 30],
   chat: [50, 40, 50],
   nudge: [140, 70, 140, 70, 140],
+  // Three seconds: the one alarm in the app, for a timer running out.
+  timesup: [400, 200, 400, 200, 400, 200, 400, 200, 400],
+  over: [200, 100, 200, 100, 500],
 }
 
 

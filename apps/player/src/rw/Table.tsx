@@ -144,9 +144,22 @@ export function TableScreen({
   }
 
   // ---- the middle of the square says only what is true right now
+  const over = useStore((s) => s.over)
+  const finished = phaseKnown && /^finished/i.test(phase)
   let centre: React.ReactNode
   let key = ''
-  if (light === 'night') {
+  if (finished) {
+    key = 'over'
+    centre = (
+      <>
+        <div className="rw-eyebrow">The game is over</div>
+        <div className="rw-say" style={{ color: over?.winner === 'evil' ? 'var(--evil)' : over ? 'var(--good)' : undefined }}>
+          {over ? `${over.winner === 'evil' ? 'Evil' : 'Good'} wins` : 'Thanks for playing'}
+        </div>
+        <div className="rw-note">Hold your lantern to show the table who you were</div>
+      </>
+    )
+  } else if (light === 'night') {
     key = 'night'
     centre = (
       <>
@@ -372,7 +385,7 @@ export function TableScreen({
     <div className="rw-page">
       <div className="rw-hdr">
         <div>
-          <div className="rw-title">{phaseKnown ? phase : 'Ravenswood'}</div>
+          <div className="rw-title">{finished ? 'Game over' : phaseKnown ? phase : 'Ravenswood'}</div>
           <div className="rw-sub">{night ? 'Eyes closed' : aliveLine(alive, all.length - alive) || (seatName ?? '')}</div>
         </div>
         <div className="rw-icons">

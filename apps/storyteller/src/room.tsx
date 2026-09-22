@@ -14,7 +14,8 @@ import {
   type RelayStatus,
 } from '@botc/protocol'
 import { canNominate, getCharacter } from '@botc/rules'
-import { alert } from '@botc/ui'
+import { alert, haptic } from '@botc/ui'
+import { toast } from 'sonner'
 import { currentPush } from './push.js'
 import { get as idbGet, set as idbSet } from 'idb-keyval'
 import { phaseLabel, useStore } from './state/store.js'
@@ -75,7 +76,15 @@ function phaseMessage(game: ReturnType<typeof useStore.getState>['game']): Relay
   if (!phase || phase.k === 'setup') return null
   const day = phase.k === 'ended' ? 0 : phase.n
   const at = game.log.filter((l) => l.kind === 'phase').at(-1)?.at
+  if (phase.k === 'ended') return { t: 'phase', phase: phaseLabel(phase), day, at, winner: phase.winner, reason: phase.rationale }
   return { t: 'phase', phase: phaseLabel(phase), day, at }
+}
+
+function timerMessage(game: ReturnType<typeof useStore.getState>['game']): RelayMessage {
+  const timer = game?.timer
+  return timer
+    ? { t: 'timer', endsAt: timer.endsAt, seconds: timer.seconds, label: timer.label, at: timer.at }
+    : { t: 'timer', endsAt: null, seconds: 0, label: '', at: Date.now() }
 }
 
 function floorMessage(game: ReturnType<typeof useStore.getState>['game']): RelayMessage {
@@ -192,6 +201,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
       client.send(voteMessage(now))
       client.send(floorMessage(now))
       client.send(nominationsMessage(now))
+      client.send(timerMessage(now))
     }
 
     const sendRole = (client: Relay, seatId: string) => {
@@ -410,10 +420,32 @@ export function RoomProvider({ children }: { children: ReactNode }) {
     if (!relay.current || !message || message.t !== 'phase') return
     relay.current.send(message)
     if (lastPhase.current !== null && lastPhase.current !== message.phase) {
-      relay.current.sendRaw(`push:*:${/^night/i.test(message.phase) ? 'night' : 'day'}`)
+      relay.current.sendRaw(`push:*:${message.winner ? 'over' : /^night/i.test(message.phase) ? 'night' : 'day'}`)
     }
     lastPhase.current = message.phase
   }, [phase])
+
+  // The timer. Phones count down on their own clocks; the push at the end is
+  // for the iPhone in a pocket, which cannot buzz any other way.
+  const timer = game?.timer
+  useEffect(() => {
+    if (!relay.current) return
+    relay.current.send(timerMessage(useStore.getState().game))
+    if (!timer) return
+    const left = timer.endsAt - Date.now()
+    if (left <= 0) return
+    const ring = window.setTimeout(() => {
+      relay.current?.sendRaw('push:*:timesup')
+      haptic('warn')
+      toast('Time is up.', { duration: 6000 })
+    }, left)
+    // Ten seconds of "0:00" on every screen, then the pill goes away by itself.
+    const clear = window.setTimeout(() => useStore.getState().stopTimer(), left + 10_000)
+    return () => {
+      window.clearTimeout(ring)
+      window.clearTimeout(clear)
+    }
+  }, [timer])
 
   // The vote, as it is counted. Every raised hand is a change.
   const nominations = game?.nominations

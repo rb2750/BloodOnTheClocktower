@@ -115,6 +115,8 @@ export type StoreActions = {
   wantsFloor: (seatId: string, want: boolean) => void
   giveFloor: (seatId: string | null) => void
   setNominationsOpen: (open: boolean) => void
+  startTimer: (seconds: number, label: string) => void
+  stopTimer: () => void
   askToNominate: (request: { id: string; nominatorId: string; nomineeId: string }) => void
   dropNominationRequest: (id: string) => void
   toggleVote: (nominationId: string, seatId: string) => void
@@ -608,6 +610,18 @@ export const useStore = create<Store>()(
               queue: floor.queue.filter((s) => s !== seatId),
               speaking: seatId,
             }
+          }),
+
+        startTimer: (seconds, label) =>
+          quiet((draft) => {
+            if (!draft.game) return
+            const now = Date.now()
+            draft.game.timer = { endsAt: now + seconds * 1000, seconds, label, at: now }
+          }),
+        stopTimer: () =>
+          quiet((draft) => {
+            if (!draft.game) return
+            draft.game.timer = null
           }),
 
         setNominationsOpen: (open) =>

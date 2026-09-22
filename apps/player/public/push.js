@@ -12,6 +12,8 @@ const LINES = {
   nudge: 'The Storyteller needs you. Look up.',
   floor: 'You have the floor. Speak.',
   nominations: 'Nominations are open.',
+  timesup: 'Time is up.',
+  over: 'The game is over.',
 }
 
 self.addEventListener('push', (event) => {

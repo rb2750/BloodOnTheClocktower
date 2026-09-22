@@ -733,3 +733,30 @@
 .rw-ring .chip {
   max-width: none;
 }
+
+/* the Storyteller's countdown: small, out of the way, loud only at the end */
+.rw-timer {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(64px + var(--safe-top, env(safe-area-inset-top)));
+  z-index: 24;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(18, 22, 34, 0.9);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+.rw-timer .t { font: 700 20px/1 'Cormorant Garamond', serif; }
+.rw-timer .l { font-size: 13px; color: var(--dim); }
+.rw-timer.ending { border-color: var(--lamp); }
+.rw-timer.ending .t { color: var(--lamp); animation: rw-timer-tick 1s steps(1) infinite; }
+.rw-timer.done { border-color: var(--evil); }
+.rw-timer.done .t, .rw-timer.done .l { color: var(--evil); animation: none; }
+@keyframes rw-timer-tick { 50% { opacity: .55; } }

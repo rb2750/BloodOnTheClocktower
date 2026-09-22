@@ -5,6 +5,8 @@ import { Screen } from '../components/Screen.js'
 import { CharacterToken } from '../components/CharacterToken.js'
 import type { Screen as ScreenName } from '../App.js'
 import type { Game, LogKind, Seat } from '../state/types.js'
+import { endingScript } from '../components/GameOverHint.js'
+import { useStore } from '../state/store.js'
 
 const TONE: Record<LogKind, string> = {
   phase: 'text-(--text)',
@@ -136,6 +138,7 @@ export function RecapScreen({
   onBack?: () => void
 }) {
   const a = useMemo(() => analyse(game), [game])
+  const concealed = useStore((s) => s.concealed)
   const ended = game.phase.k === 'ended' ? game.phase : null
   const winner = ended?.winner
   const winnerColour = winner === 'good' ? 'text-(--color-blue-2)' : 'text-(--color-red-2)'
@@ -186,6 +189,17 @@ export function RecapScreen({
           </p>
         )}
       </section>
+
+      {ended && (
+        <section className="mt-8">
+          <Label>What to say now</Label>
+          <ol className="m-0 mt-2 flex list-decimal flex-col gap-2 pl-6">
+            {endingScript(game, concealed).map((line, i) => (
+              <li key={i} className="serif text-[17px] leading-snug text-(--text)">{line}</li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       <dl className="mt-8 grid grid-cols-3 gap-y-6 border-y border-(--hairline) py-5 text-center">
         <Stat n={game.seats.length} label="Players" />

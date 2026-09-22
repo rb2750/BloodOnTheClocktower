@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { checkSeating, getCharacter } from '@botc/rules'
-import { Grimoire, Lock, Unlock, Eye, EyeOff, Bell, haptic } from '@botc/ui'
+import { Grimoire, Lock, Unlock, Eye, EyeOff, Bell, Hourglass, haptic } from '@botc/ui'
 import { toast } from 'sonner'
 import { useRoom } from '../room.js'
 import { useStore, phaseLabel } from '../state/store.js'
@@ -14,6 +14,7 @@ import { LogSheet } from '../components/LogSheet.js'
 import { Dial } from '../components/Dial.js'
 import { DistributeSheet } from '../components/DistributeSheet.js'
 import { EndGameSheet } from '../components/EndGameSheet.js'
+import { TimerSheet, clock, useNow } from '../components/TimerSheet.js'
 import { useRingDrag } from '../hooks/useRingDrag.js'
 import type { Screen as ScreenName } from '../App.js'
 
@@ -27,6 +28,9 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
   const nightOrder = useStore((s) => s.nightOrder)
   const moveSeat = useStore((s) => s.moveSeat)
   const concealed = useStore((s) => s.concealed)
+  const timer = useStore((s) => s.game?.timer ?? null)
+  const [timing, setTiming] = useState(false)
+  const now = useNow()
   const setConcealed = useStore((s) => s.setConcealed)
 
   const [openSeat, setOpenSeat] = useState<string | null>(null)
@@ -110,6 +114,14 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
         fill
         trailing={
           <span className="flex items-center">
+            <button
+              onClick={() => setTiming(true)}
+              aria-label="Timer"
+              className={`flex h-11 items-center gap-1 px-2 tabular-nums ${timer ? (timer.endsAt - now <= 0 ? 'text-(--color-red-2)' : 'text-(--now)') : 'text-(--text-faint)'}`}
+            >
+              <Hourglass size={20} />
+              {timer && <span className="text-[15px] font-medium">{clock(timer.endsAt - now)}</span>}
+            </button>
             {/* One tap buzzes every phone: for the table that has drifted off. */}
             <button
               onClick={() => {
@@ -245,6 +257,7 @@ export function RunScreen({ go }: { go: (s: ScreenName) => void }) {
       />
       <DistributeSheet open={distributing} onClose={() => setDistributing(false)} />
       <EndGameSheet open={ending} onClose={() => setEnding(false)} />
+      <TimerSheet open={timing} onClose={() => setTiming(false)} />
       <PhaseCinematic />
     </>
   )

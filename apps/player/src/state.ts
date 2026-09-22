@@ -97,6 +97,13 @@ export type PlayerState = {
   roleChanged: boolean
   /** The last nudge this phone answered, so a replay of it stays silent. */
   nudgedAt: number
+  /** The Storyteller's countdown, or none. */
+  timer: { endsAt: number; seconds: number; label: string; at: number } | null
+  /** The timer end this phone already rang for, so a reload stays quiet. */
+  timerRang: number
+  /** How the game ended, once the Storyteller says. */
+  over: { winner: 'good' | 'evil'; reason: string } | null
+  overSeenAt: number | null
   /** Stable id for this device, so a claimed seat survives a reload. */
   deviceId: string
   hasRevealed: boolean
@@ -106,7 +113,10 @@ export type PlayerActions = {
   applyPayload: (payload: Payload) => void
   setRole: (characterId: string, scriptIds: string[], scriptName: string) => void
   setSeat: (seatId: string, seatName: string, roomId: string) => void
-  setPhase: (phase: string, day: number, at?: number) => void
+  setPhase: (phase: string, day: number, at?: number, over?: { winner: 'good' | 'evil'; reason: string }) => void
+  setTimer: (timer: PlayerState['timer']) => void
+  setTimerRang: (endsAt: number) => void
+  seeOver: () => void
   markRevealed: () => void
   addMessage: (id: string, text: string, at: string) => void
   seeWhispers: () => void
@@ -162,6 +172,10 @@ export const useStore = create<PlayerState & PlayerActions>()(
       storytellerKey: null,
       roleChanged: false,
       nudgedAt: 0,
+      timer: null,
+      timerRang: 0,
+      over: null,
+      overSeenAt: null,
       grimoire: null,
       deviceId: newId(),
       hasRevealed: false,
@@ -233,6 +247,10 @@ export const useStore = create<PlayerState & PlayerActions>()(
       setGrimoire: (grimoire) => set({ grimoire }),
 
       setNudgedAt: (nudgedAt) => set({ nudgedAt }),
+      setTimer: (timer) =>
+        set((s) => (timer && s.timer && timer.at < s.timer.at ? s : { timer })),
+      setTimerRang: (timerRang) => set({ timerRang }),
+      seeOver: () => set((s) => ({ overSeenAt: s.phaseAt ?? Date.now() })),
 
       setSeat: (seatId, seatName, roomId) =>
         set((s) => {
@@ -248,10 +266,10 @@ export const useStore = create<PlayerState & PlayerActions>()(
 
       // The relay replays every phase message it holds, oldest first, so a
       // reconnect walks back through the night before landing on the day.
-      setPhase: (phase, day, at) =>
+      setPhase: (phase, day, at, over) =>
         set((s) => {
           if (at !== undefined && s.phaseAt !== null && at < s.phaseAt) return s
-          return { phase, day, phaseKnown: true, phaseAt: at ?? null }
+          return { phase, day, phaseKnown: true, phaseAt: at ?? null, over: over ?? null }
         }),
 
       setTable: (table) => set({ table }),

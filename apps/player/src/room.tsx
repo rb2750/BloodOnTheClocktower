@@ -260,7 +260,20 @@ function useRelayConnection() {
             if (was.phaseKnown && was.phase !== message.phase) {
               alert(/^night/i.test(message.phase) ? 'night' : 'day')
             }
-            return setPhase(message.phase, message.day, message.at)
+            return setPhase(
+              message.phase,
+              message.day,
+              message.at,
+              message.winner ? { winner: message.winner, reason: message.reason ?? '' } : undefined,
+            )
+          }
+          if (message.t === 'timer') {
+            useStore.getState().setTimer(
+              message.endsAt === null
+                ? null
+                : { endsAt: message.endsAt, seconds: message.seconds, label: message.label, at: message.at },
+            )
+            return
           }
           if (message.t === 'vote') {
             // A short buzz when a vote opens, a longer one when it closes, so a

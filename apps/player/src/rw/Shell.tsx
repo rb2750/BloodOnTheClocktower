@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
 import { PayloadError, payloadFromHash } from '@botc/protocol'
 import { getCharacter, teamAlignment } from '@botc/rules'
+import { alert } from '@botc/ui'
 import { useStore } from '../state.js'
 import { useRelay } from '../room.js'
 import { Scene, type Light } from './Scene.js'
@@ -24,6 +25,11 @@ const TEAM: Record<string, string> = { townsfolk: 'Townsfolk', outsider: 'Outsid
  * day, and a change of phase is the scene changing, which is why nothing
  * replays on a reload: a fresh page simply draws the time it already is.
  */
+function clock(ms: number) {
+  const s = Math.max(0, Math.ceil((ms - 200) / 1000))
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+}
+
 export function Shell() {
   const applyPayload = useStore((s) => s.applyPayload)
   const payload = useStore((s) => s.payload)
@@ -36,6 +42,13 @@ export function Shell() {
   const whispersSeen = useStore((s) => s.whispersSeen)
   const seeWhispers = useStore((s) => s.seeWhispers)
   const grimoire = useStore((s) => s.grimoire)
+  const timer = useStore((s) => s.timer)
+  const timerRang = useStore((s) => s.timerRang)
+  const setTimerRang = useStore((s) => s.setTimerRang)
+  const over = useStore((s) => s.over)
+  const overSeenAt = useStore((s) => s.overSeenAt)
+  const phaseAt = useStore((s) => s.phaseAt)
+  const seeOver = useStore((s) => s.seeOver)
   const { claimed, status } = useRelay()
   const { all } = useSeats()
 
@@ -142,6 +155,34 @@ export function Shell() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page])
+
+  // ---- the timer, counted on this phone's own clock
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!timer) return
+    const t = window.setInterval(() => setNow(Date.now()), 250)
+    return () => window.clearInterval(t)
+  }, [timer])
+  const left = timer ? timer.endsAt - now : 0
+  const [timesUp, setTimesUp] = useState(false)
+  useEffect(() => {
+    if (!timer || left > 0 || timer.endsAt === timerRang) return
+    // A timer that ended while the phone was away is not an alarm now.
+    if (now - timer.endsAt > 15_000) return setTimerRang(timer.endsAt)
+    setTimerRang(timer.endsAt)
+    alert('timesup')
+    setTimesUp(true)
+    const t = window.setTimeout(() => setTimesUp(false), 5000)
+    return () => window.clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timer, left <= 0])
+
+  // ---- the end of the game, said once
+  const finished = phaseKnown && /^finished/i.test(phase) && over !== null
+  const showOver = finished && overSeenAt !== (phaseAt ?? null) && !reveal && page.k === 'table'
+  useEffect(() => {
+    if (showOver) alert('over')
+  }, [showOver])
 
   const [offline, setOffline] = useState(false)
   useEffect(() => {
@@ -257,6 +298,37 @@ export function Shell() {
             <div style={{ fontSize: 14, color: 'var(--dim)' }}>Tap to open it. Only you can see it.</div>
           </div>
         </button>
+      )}
+
+      {/* the Storyteller's countdown, small, on every page */}
+      {timer && !timesUp && (
+        <div className={`rw-timer${left <= 10_000 ? ' ending' : ''}${left <= 0 ? ' done' : ''}`} role="timer" aria-live="off">
+          <span className="t">{clock(left)}</span>
+          {timer.label && <span className="l">{left <= 0 ? 'Time is up' : timer.label}</span>}
+        </div>
+      )}
+
+      {timesUp && (
+        <div className="rw-over" onClick={() => setTimesUp(false)}>
+          <div className="veil" style={{ background: 'rgba(2,3,8,.82)' }} />
+          <div className="disp rw-rise" style={{ position: 'relative', fontSize: 64, lineHeight: 1 }}>Time is up</div>
+          {timer?.label && <div className="rw-rise" style={{ position: 'relative', marginTop: 12, color: 'var(--dim)', fontSize: 18, animationDelay: '.1s' }}>{timer.label} is over</div>}
+        </div>
+      )}
+
+      {showOver && over && (
+        <div className="rw-over">
+          <div className="veil" style={{ background: 'rgba(2,3,8,.9)' }} />
+          <div className="rw-rise" style={{ position: 'relative', color: 'var(--dim)', fontSize: 16 }}>The game is over</div>
+          <div className="disp rw-rise" style={{ position: 'relative', fontSize: 72, lineHeight: 1, marginTop: 10, color: over.winner === 'evil' ? 'var(--evil)' : 'var(--good)', animationDelay: '.1s' }}>
+            {over.winner === 'evil' ? 'Evil' : 'Good'} wins
+          </div>
+          {over.reason && <p className="rw-rise" style={{ position: 'relative', font: "italic 500 22px/1.35 'Cormorant Garamond'", margin: '18px 0 0', maxWidth: '30ch', animationDelay: '.2s' }}>{over.reason}</p>}
+          <p className="rw-rise" style={{ position: 'relative', color: 'var(--dim)', fontSize: 15, margin: '22px 0 0', maxWidth: '32ch', animationDelay: '.3s' }}>
+            Wait for the Storyteller. When they ask, hold your lantern and show the table who you were.
+          </p>
+          <button className="rw-btn line rw-rise" style={{ position: 'relative', marginTop: 26, animationDelay: '.4s' }} onClick={seeOver}>Back to the table</button>
+        </div>
       )}
 
       {offline && !roleChanged && !grimNew && (

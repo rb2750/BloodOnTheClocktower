@@ -25,7 +25,10 @@ export type RelayMessage =
   | { t: 'grimoire'; seatId: string; id: string; sealed: string }
   /** `at` is when the phase changed, so a phone joining an hour into the
    *  night can tell an old night from one that has just fallen. */
-  | { t: 'phase'; phase: string; day: number; at?: number }
+  | { t: 'phase'; phase: string; day: number; at?: number; winner?: 'good' | 'evil'; reason?: string }
+  /** A countdown the whole table can see. `endsAt` null clears it. Stamped so
+   *  the replayed backlog cannot bring back a timer that was stopped. */
+  | { t: 'timer'; endsAt: number | null; seconds: number; label: string; at: number }
   /** Today's nomination, as the Storyteller is counting it, or none. Hands are
    *  raised in the open, so who voted is public and travels as names. */
   | { t: 'vote'; nomination: VoteSnapshot | null }
