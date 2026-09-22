@@ -33,6 +33,53 @@ const BUZZ: Record<Alert, number | number[]> = {
 }
 
 
+let audio: AudioContext | null = null
+
+/**
+ * Sound needs a tap before the browser allows it, so the first touch on the
+ * page opens the audio context and keeps it warm. Playback mode lets an
+ * iPhone with the mute switch on still sound the alarm.
+ */
+export function unlockAudio() {
+  const open = () => {
+    try {
+      const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession
+      if (session) session.type = 'playback'
+      audio ??= new AudioContext()
+      if (audio.state !== 'running') void audio.resume()
+    } catch {}
+  }
+  for (const ev of ['touchend', 'pointerup', 'keydown']) document.addEventListener(ev, open, { passive: true })
+}
+
+/** The one sound in the app: a timer running out, rung for three seconds. */
+export function alarm() {
+  try {
+    if (!audio) audio = new AudioContext()
+    const ctx = audio
+    const play = () => {
+      const t0 = ctx.currentTime + 0.02
+      for (let i = 0; i < 6; i++) {
+        for (const [freq, off] of [[880, 0], [1320, 0.12]] as const) {
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.type = 'triangle'
+          osc.frequency.value = freq
+          const t = t0 + i * 0.5 + off
+          gain.gain.setValueAtTime(0.0001, t)
+          gain.gain.exponentialRampToValueAtTime(0.5, t + 0.02)
+          gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.22)
+          osc.connect(gain).connect(ctx.destination)
+          osc.start(t)
+          osc.stop(t + 0.25)
+        }
+      }
+    }
+    if (ctx.state !== 'running') void ctx.resume().then(play)
+    else play()
+  } catch {}
+}
+
 /** Say it every way at once. */
 export function alert(kind: Alert) {
   try {

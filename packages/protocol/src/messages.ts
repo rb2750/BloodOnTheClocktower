@@ -16,8 +16,9 @@ export type RelayMessage =
   /** A player raising or lowering their hand on the open nomination. */
   | { t: 'hand'; seatId: string; up: boolean }
   /** A private line from one player to another, sealed between their two keys.
-   *  The envelope says who is talking; only the two of them can read what. */
-  | { t: 'chat'; id: string; from: string; to: string; sealed: string }
+   *  The envelope says who is talking; the two of them can read what, and so
+   *  can the Storyteller, from `copy`, which is sealed to their key for the recap. */
+  | { t: 'chat'; id: string; from: string; to: string; sealed: string; copy?: string }
   | { t: 'role'; seatId: string; sealed: string }
   /** A private line from the Storyteller, sealed to one player's own key. */
   | { t: 'whisper'; seatId: string; id: string; sealed: string }

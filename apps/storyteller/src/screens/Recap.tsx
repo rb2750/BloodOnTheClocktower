@@ -353,6 +353,28 @@ export function RecapScreen({
         </section>
       )}
 
+      {/* --- What they said to each other -------------------------------- */}
+      {(game.chats?.length ?? 0) > 0 && (
+        <section className="mt-10">
+          <Label>What they said to each other</Label>
+          <ol className="m-0 list-none p-0">
+            {[...game.chats!].sort((x, y) => x.when - y.when).map((c, i, all) => (
+              <li key={c.id}>
+                {c.at !== all[i - 1]?.at && (
+                  <div className="mt-6 mb-2 flex items-center gap-3 first:mt-0">
+                    <span className="display text-[22px] leading-none text-(--text)">{c.at}</span>
+                    <span className="h-px flex-1 bg-(--hairline)" />
+                  </div>
+                )}
+                <div className="serif py-0.5 text-[15px] leading-snug text-(--text)">
+                  <span className="text-(--text-dim)">{a.name(c.from)} to {a.name(c.to)}:</span> {c.text}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
       {/* --- The story --------------------------------------------------- */}
       <section className="mt-10 pb-8">
         <Label>How it went</Label>

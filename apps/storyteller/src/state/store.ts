@@ -116,6 +116,7 @@ export type StoreActions = {
   giveFloor: (seatId: string | null) => void
   setNominationsOpen: (open: boolean) => void
   startTimer: (seconds: number, label: string) => void
+  recordChat: (line: NonNullable<Game['chats']>[number]) => void
   stopTimer: () => void
   askToNominate: (request: { id: string; nominatorId: string; nomineeId: string }) => void
   dropNominationRequest: (id: string) => void
@@ -610,6 +611,15 @@ export const useStore = create<Store>()(
               queue: floor.queue.filter((s) => s !== seatId),
               speaking: seatId,
             }
+          }),
+
+        recordChat: (line) =>
+          quiet((draft) => {
+            if (!draft.game) return
+            draft.game.chats ??= []
+            // The relay replays its backlog on every reconnect.
+            if (draft.game.chats.some((c) => c.id === line.id)) return
+            draft.game.chats.push(line)
           }),
 
         startTimer: (seconds, label) =>

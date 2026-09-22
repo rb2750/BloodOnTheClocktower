@@ -337,7 +337,9 @@ function useRelayConnection() {
     const id = Math.random().toString(36).slice(2, 10)
     const at = s.phase
     const sealed = await sealFor(pair.current, theirPub, { text, at })
-    relay.current.send({ t: 'chat', id, from: s.seatId, to, sealed })
+    // A second copy for the Storyteller, so the recap can tell the story of who said what.
+    const copy = storytellerKey.current ? await sealFor(pair.current, storytellerKey.current, { text, at }) : undefined
+    relay.current.send({ t: 'chat', id, from: s.seatId, to, sealed, copy })
     addChatLine(to, { id, from: 'me', text, at })
     return true
   }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Toaster, toast } from 'sonner'
 import { PayloadError, payloadFromHash } from '@botc/protocol'
 import { getCharacter, teamAlignment } from '@botc/rules'
-import { alert } from '@botc/ui'
+import { alert, alarm } from '@botc/ui'
 import { useStore } from '../state.js'
 import { useRelay } from '../room.js'
 import { Scene, type Light } from './Scene.js'
@@ -171,6 +171,7 @@ export function Shell() {
     if (now - timer.endsAt > 15_000) return setTimerRang(timer.endsAt)
     setTimerRang(timer.endsAt)
     alert('timesup')
+    alarm()
     setTimesUp(true)
     const t = window.setTimeout(() => setTimesUp(false), 5000)
     return () => window.clearTimeout(t)

@@ -122,6 +122,8 @@ export type Game = {
   nominationsOpen?: boolean
   /** Nominations the table has asked for, in the order they arrived. */
   nominationQueue?: { id: string; nominatorId: string; nomineeId: string; at: number }[]
+  /** What players said to each other, for the recap. */
+  chats?: { id: string; from: string; to: string; text: string; at: string; when: number }[]
   /** A countdown shown on every phone, or none. */
   timer?: { endsAt: number; seconds: number; label: string; at: number } | null
   finishedAt?: number

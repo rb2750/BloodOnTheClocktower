@@ -10,11 +10,12 @@ import {
   keptSealingPair,
   indexesFor,
   sealFor,
+  openSealed,
   type RelayMessage,
   type RelayStatus,
 } from '@botc/protocol'
 import { canNominate, getCharacter } from '@botc/rules'
-import { alert, haptic } from '@botc/ui'
+import { alert, haptic, alarm } from '@botc/ui'
 import { toast } from 'sonner'
 import { currentPush } from './push.js'
 import { get as idbGet, set as idbSet } from 'idb-keyval'
@@ -329,6 +330,13 @@ export function RoomProvider({ children }: { children: ReactNode }) {
             client.sendRaw('push:host:chat')
             const [a, b] = [message.from, message.to].sort()
             setTalking((t) => [...t.filter((x) => !(x.a === a && x.b === b)), { a: a!, b: b!, at: Date.now() }].slice(-12))
+            const sender = keys.current.get(message.from)
+            if (message.copy && sender && pair.current) {
+              const { id, from, to } = message
+              void openSealed<{ text: string; at: string }>(pair.current, sender, message.copy)
+                .then((line) => useStore.getState().recordChat({ id, from, to, text: line.text, at: line.at, when: Date.now() }))
+                .catch(() => undefined)
+            }
             return
           }
           if (message.t !== 'claim') return
@@ -437,6 +445,7 @@ export function RoomProvider({ children }: { children: ReactNode }) {
     const ring = window.setTimeout(() => {
       relay.current?.sendRaw('push:*:timesup')
       haptic('warn')
+      alarm()
       toast('Time is up.', { duration: 6000 })
     }, left)
     // Ten seconds of "0:00" on every screen, then the pill goes away by itself.
