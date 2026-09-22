@@ -72,6 +72,32 @@ export function NightGuide({ entry }: { entry: NightEntry }) {
 
   let body: React.ReactNode = null
   const first = night === 1
+  // The whole step in plain words, in order, before the buttons.
+  const you = actor.name
+  const steps: Record<string, string[]> = {
+    sailor: [`Wake ${you}.`, `${you} points at any alive player.`, 'Tap below and tell the app who they pointed at, then choose who is drunk. Usually the player they pointed at.', `${you} goes back to sleep.`],
+    innkeeper: [`Wake ${you}.`, `${you} points at 2 players, and may include themselves. Both are safe tonight.`, 'Tap below and pick those 2, then choose which ONE of them is drunk. Your choice.', `${you} goes back to sleep.`],
+    pukka: first
+      ? [`Wake ${you}.`, `${you} points at one player. That player is poisoned.`, 'Tap below and pick them.', `Nobody dies tonight. ${you} goes back to sleep.`]
+      : ['First: the player poisoned last night dies now. Tap the red button.', `Then wake ${you}. They point at a new player, who is now poisoned.`, 'Tap below and pick them.', `${you} goes back to sleep.`],
+    exorcist: [`Wake ${you}.`, `${you} points at a player, not the same one as last night.`, 'Tap below and pick them. If it is the Demon, the app tells you what to do next.', `${you} goes back to sleep.`],
+    devilsadvocate: [`Wake ${you}.`, `${you} points at a living player, not the same one as last night. If that player is executed tomorrow, they survive.`, 'Tap below and pick them.', `${you} goes back to sleep.`],
+    assassin: [`Wake ${you}.`, 'Ask with a thumbs up: use your kill tonight?', 'If NO: tap Next, nothing happens.', 'If YES: they point at a player. Tap below and pick them. That player dies no matter what protects them. The app remembers the kill is used.'],
+    grandmother: first
+      ? [`Wake ${you}.`, 'Tap below and pick one good player: the grandchild.', 'Point at that player, and show their character token to the Grandmother. The app names the token.', `${you} goes back to sleep.`]
+      : ['Nobody wakes. Nothing to do here.'],
+    chambermaid: [`Wake ${you}.`, `${you} points at 2 other alive players.`, 'Tap below and pick them. The app tells you how many fingers to hold up.', `Hold up that many fingers. ${you} goes back to sleep.`],
+    gambler: [`Wake ${you}.`, `${you} points at a player and at a character on their sheet: a guess.`, 'Tap Guessed right or Guessed wrong. Wrong means they die.', `${you} goes back to sleep.`],
+    professor: [`Wake ${you}.`, 'Ask with a thumbs up: use your ability tonight?', 'If NO: tap Next.', 'If YES: they point at a dead player. Tap below and pick them. The app brings them back if they are a Townsfolk.'],
+    tinker: ['Nobody wakes. You may kill the Tinker now if you want to. Otherwise tap Next.'],
+    courtier: [`Wake ${you}.`, 'Ask with a thumbs up: use your ability tonight?', 'If NO: tap Next.', 'If YES: they name a character. Tap below and pick the player who has it.'],
+    moonchild: actor.alive ? ['Nobody wakes. Nothing to do here.'] : ['The Moonchild died today and chose a player. Tap below and pick who. If that player is good, they die now.'],
+  }
+  const intro = steps[entry.id] ? (
+    <ol className="mt-3 list-decimal space-y-1 pl-5 text-[15px] leading-snug text-(--text)">
+      {steps[entry.id]!.map((line, i) => <li key={i}>{line}</li>)}
+    </ol>
+  ) : null
   const Done = ({ text }: { text: string }) => <p className="mt-3 text-[14px] text-(--color-ok)">✓ {text}</p>
 
   switch (entry.id) {
@@ -279,6 +305,7 @@ export function NightGuide({ entry }: { entry: NightEntry }) {
   return (
     <>
       {pending && <span data-guide-pending={entry.name} hidden />}
+      {intro}
       {body}
       <Sheet open={pick !== null} onOpenChange={(o) => !o && setPick(null)} title={pick?.title ?? ''} subtitle={pick?.hint}>
         <PickSeats pick={pick} seats={game.seats} onClose={() => setPick(null)} />

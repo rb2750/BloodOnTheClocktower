@@ -10,6 +10,7 @@ import { Coach, RulesButton } from './Coach.js'
 import { NightGuide } from './NightGuide.js'
 import { effectFor } from '../reminders.js'
 import { evilNotes } from '../evil-info.js'
+import { EXPLAIN } from '../rules-explained.js'
 import { balance, nightCoach } from '../coach.js'
 import { GameOverHint } from './GameOverHint.js'
 
@@ -180,14 +181,17 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
                     .join(', ')}
                 </div>
               )}
-              <ReminderText source={entry.reminder} />
+              {/* A guided step is its own instructions: the rulebook text and
+                  the coach would say the same thing twice, in harder words. */}
+              {!GUIDED.has(entry.id) && <ReminderText source={entry.reminder} />}
+              {GUIDED.has(entry.id) && !concealed && EXPLAIN[entry.id] && (
+                <p className="serif mt-1 text-[13.5px] leading-snug text-(--text-dim)">{EXPLAIN[entry.id]}</p>
+              )}
               {!concealed && <NightGuide key={entry.key} entry={entry} />}
-              {!concealed && (
+              {!concealed && !GUIDED.has(entry.id) && (
                 <Coach
                   tips={[
-                    // The guide places tokens and marks deaths itself, so the
-                    // coach keeps the what and why and drops the how.
-                    ...nightCoach(game, entry, woke).filter((t) => t.k !== 'note' && !/^Tap .* seat and tap Kill|mark them dead/i.test(t.t)),
+                    ...nightCoach(game, entry, woke).filter((t) => t.k !== 'note'),
                     ...(entry.id === 'dawn' || entry.id === 'dusk' ? balance(game) : []),
                   ]}
                 />
