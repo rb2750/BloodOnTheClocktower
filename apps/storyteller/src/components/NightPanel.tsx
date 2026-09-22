@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { bluffCandidates, getCharacter, placesReminder, seesGrimoire } from '@botc/rules'
 import { Button, ReminderText, Sheet, Label, ChevronLeft, ChevronRight, Qr, Dawn, Signpost, Eye, haptic } from '@botc/ui'
+import { toast } from 'sonner'
 import { useStore } from '../state/store.js'
 import { useRoom } from '../room.js'
 import { WhisperSheet } from './WhisperSheet.js'
@@ -64,6 +65,70 @@ function Bluffs() {
         })}
       </div>
       <p className="caps mt-1.5 text-(--text-faint)">Tap one to swap it</p>
+    </div>
+  )
+}
+
+/**
+ * Evil's first-night information, sent to their phones as well as shown.
+ *
+ * The Minions learn their Demon; the Demon learns its Minions and the three
+ * bluffs. It travels as a sealed note like any other, so it is resent if a
+ * phone comes back, and the note is logged. Swapping a bluff after sending
+ * offers the send again, since what the Demon holds is then out of date.
+ */
+function SendEvilInfo({ step }: { step: 'demoninfo' | 'minioninfo' }) {
+  const game = useStore((s) => s.game)
+  const log = useStore((s) => s.log)
+  const { whisper, reachable } = useRoom()
+  const [busy, setBusy] = useState(false)
+  if (!game) return null
+  const teamOf = (s: (typeof game.seats)[number]) => getCharacter(s.trueCharacterId ?? s.characterId ?? '')?.team
+  const demon = game.seats.find((s) => teamOf(s) === 'demon')
+  const minions = game.seats.filter((s) => teamOf(s) === 'minion')
+  const names = (xs: { name: string }[]) =>
+    xs.length <= 1 ? (xs[0]?.name ?? 'nobody') : `${xs.slice(0, -1).map((x) => x.name).join(', ')} and ${xs.at(-1)!.name}`
+  const bluffs = game.bluffs.map((id) => getCharacter(id)?.name ?? id)
+  const notes =
+    step === 'demoninfo' && demon
+      ? [{ seat: demon, text: `You are the Demon. Your ${minions.length === 1 ? 'Minion is' : 'Minions are'} ${names(minions)}. These characters are not in play: ${names(bluffs.map((name) => ({ name })))}. They are safe for you to claim.` }]
+      : minions.map((m) => ({
+          seat: m,
+          text: `Your Demon is ${demon?.name ?? 'unknown'}.${minions.length > 1 ? ` Your fellow ${minions.length === 2 ? 'Minion is' : 'Minions are'} ${names(minions.filter((x) => x.id !== m.id))}.` : ''}`,
+        }))
+  const sent = (seatId: string, text: string) => game.log.some((l) => l.kind === 'info' && l.info?.toSeatId === seatId && l.info.given === text)
+
+  return (
+    <div className="mt-3 flex flex-wrap gap-2">
+      {notes.map(({ seat, text }) => {
+        const done = sent(seat.id, text)
+        const online = reachable.includes(seat.id)
+        return (
+          <button
+            key={seat.id}
+            disabled={busy || done}
+            onClick={async () => {
+              setBusy(true)
+              haptic('confirm')
+              const id = Math.random().toString(36).slice(2, 10)
+              const ok = await whisper(seat.id, text, id)
+              setBusy(false)
+              if (!ok) {
+                toast.error(`${seat.name}’s phone is not connected. Show them on your screen instead.`)
+                return
+              }
+              log('info', `Told ${seat.name}: ${text}`, [seat.id], { toSeatId: seat.id, given: text, truthful: true, id })
+              toast(`Sent to ${seat.name}’s phone.`)
+            }}
+            className={`flex min-h-9 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium ${
+              done ? 'border-(--hairline) text-(--text-faint)' : 'border-(--accent) text-(--text)'
+            }`}
+          >
+            <Signpost size={14} />
+            {done ? `Sent to ${seat.name}` : `Send to ${seat.name}’s phone${online ? '' : ' (not connected)'}`}
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -140,6 +205,7 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
         {/* The three bluffs are the point of the Demon's step, so they sit on
             it as tokens to be shown, not as a sentence about showing them. */}
         {entry?.id === 'demoninfo' && <Bluffs />}
+        {(entry?.id === 'demoninfo' || entry?.id === 'minioninfo') && !concealed && <SendEvilInfo step={entry.id} />}
 
         {/* Handing out characters belongs at dusk on the first night, which is
             exactly when it happens at a table. Offered here rather than buried

@@ -106,6 +106,7 @@ export function nightCoach(game: Game, entry: NightEntry | undefined, wokeTonigh
       add('do', `Show the “This is the Demon” card and point at ${f.demon?.name ?? 'the Demon'}.`)
       if (m.length > 1) add('do', 'Point at each Minion so they see each other.')
       add('do', 'Put them back to sleep.')
+      add('do', 'Tap the Send button below too, so each Minion has it on their phone.')
       break
     }
     case 'demoninfo':
@@ -113,6 +114,7 @@ export function nightCoach(game: Game, entry: NightEntry | undefined, wokeTonigh
       add('do', `Wake the Demon: ${f.demon?.name ?? '?'}.`)
       add('do', `Show “These are your Minions” and point at ${list(f.minions.map((s) => s.name))}.`)
       add('do', `Show “These characters are not in play”, then the three bluffs below: ${list(game.bluffs.map(nameOf))}.`)
+      add('do', `Tap “Send to ${f.demon?.name ?? 'the Demon'}’s phone” below so they can re-read their Minions and bluffs later.`)
       add('do', 'Put them back to sleep.')
       break
     case 'dawn': {
