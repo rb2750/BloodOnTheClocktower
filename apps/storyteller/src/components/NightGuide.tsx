@@ -72,6 +72,35 @@ export function NightGuide({ entry }: { entry: NightEntry }) {
 
   let body: React.ReactNode = null
   const first = night === 1
+
+  /**
+   * Which of some players to make drunk, with the reason. Drunk means their
+   * ability does nothing, so it goes on whoever has the most to lose tonight:
+   * the Demon (no kill), then someone with a night ability, then someone
+   * whose passive protection matters. Never the Sailor themselves unless
+   * evil needs the help, because a drunk Sailor can die.
+   */
+  const suggestDrunk = (options: Seat[], sailor?: Seat): { seat: Seat; why: string } => {
+    const goodAlive = game.seats.filter((s) => s.alive && isGood(s)).length
+    const evilAlive = game.seats.filter((s) => s.alive && !isGood(s)).length
+    const c = (s: Seat) => getCharacter(real(s) ?? '')
+    const score = (s: Seat): [number, string] => {
+      const ch = c(s)
+      if (!ch) return [0, '']
+      if (ch.team === 'demon') return [5, `${s.name} is the Demon: drunk, they kill nobody tonight`]
+      if (ch.id === 'sailor') return [evilAlive >= goodAlive - 1 ? 4 : 1, evilAlive >= goodAlive - 1 ? 'evil needs help and a drunk Sailor can die' : 'a drunk Sailor can be killed, so only pick them to help evil']
+      if (ch.otherNight > 0 || ch.firstNight > 0) return [3, `${s.name} (${ch.name}) acts at night, so this costs them tonight’s ability`]
+      if (['tealady', 'fool', 'innkeeper'].includes(ch.id)) return [2, `${s.name} (${ch.name}) protects, and drunk they don’t`]
+      return [1, `${s.name} (${ch.name}) loses little`]
+    }
+    const ranked = options.map((s) => ({ seat: s, r: score(s) })).sort((a, b) => b.r[0] - a.r[0])
+    const best = ranked[0]!
+    if (sailor && best.seat.id !== sailor.id && best.r[0] <= 1 && ranked.length > 1) return { seat: best.seat, why: 'nobody here has much to lose, so the usual choice: the player they pointed at' }
+    return { seat: best.seat, why: best.r[1] }
+  }
+  const Suggest = ({ s }: { s: { seat: Seat; why: string } }) => (
+    <p className="text-[13.5px] leading-snug text-(--color-blue-2)">Suggested: {s.seat.name}, because {s.why}.</p>
+  )
   // The whole step in plain words, in order, before the buttons.
   const you = actor.name
   const steps: Record<string, string[]> = {
@@ -111,12 +140,15 @@ export function NightGuide({ entry }: { entry: NightEntry }) {
       )
       if (chosen.length === 1 && chosen[0]!.id !== actor.id || chosen.length === 1) {
         const other = chosen[0]!
+        const opts = [other, actor].filter((s, i, a) => a.findIndex((x) => x.id === s.id) === i)
+        const sug = suggestDrunk(opts, actor)
         body = (
           <div className="mt-3 flex flex-col gap-2">
             <p className="text-[14px] text-(--text-dim)">{actor.name} pointed at {other.name}. Who is drunk until dusk?</p>
+            <Suggest s={sug} />
             <div className="flex gap-2">
-              {[other, actor].filter((s, i, a) => a.findIndex((x) => x.id === s.id) === i).map((s) => (
-                <Button key={s.id} variant="primary" className="flex-1" onClick={() => { place(s, 'Drunk', 'sailor'); mark(`${key}: ${s.name} is drunk until dusk.`, [s.id]); setChosen([]); haptic('confirm') }}>
+              {opts.map((s) => (
+                <Button key={s.id} variant={s.id === sug.seat.id ? 'primary' : 'quiet'} className="flex-1" onClick={() => { place(s, 'Drunk', 'sailor'); mark(`${key}: ${s.name} is drunk until dusk.`, [s.id]); setChosen([]); haptic('confirm') }}>
                   {s.name} is drunk
                 </Button>
               ))}
@@ -130,12 +162,14 @@ export function NightGuide({ entry }: { entry: NightEntry }) {
       const key = `Innkeeper ${actor.name}`
       if (done(key)) { body = <Done text={game.log.find((l) => l.phase === `Night ${night}` && l.text.startsWith(key))!.text} />; break }
       if (chosen.length === 2) {
+        const sug = suggestDrunk(chosen)
         body = (
           <div className="mt-3 flex flex-col gap-2">
             <p className="text-[14px] text-(--text-dim)">{chosen[0]!.name} and {chosen[1]!.name} are safe tonight. Which one is drunk until dusk? Your choice.</p>
+            <Suggest s={sug} />
             <div className="flex gap-2">
               {chosen.map((s) => (
-                <Button key={s.id} variant="primary" className="flex-1" onClick={() => { for (const c of chosen) place(c, 'Safe', 'innkeeper'); place(s, 'Drunk', 'innkeeper'); mark(`${key}: ${chosen[0]!.name} and ${chosen[1]!.name} are safe tonight, ${s.name} is drunk until dusk.`, chosen.map((c) => c.id)); setChosen([]); haptic('confirm') }}>
+                <Button key={s.id} variant={s.id === sug.seat.id ? 'primary' : 'quiet'} className="flex-1" onClick={() => { for (const c of chosen) place(c, 'Safe', 'innkeeper'); place(s, 'Drunk', 'innkeeper'); mark(`${key}: ${chosen[0]!.name} and ${chosen[1]!.name} are safe tonight, ${s.name} is drunk until dusk.`, chosen.map((c) => c.id)); setChosen([]); haptic('confirm') }}>
                   {s.name} is drunk
                 </Button>
               ))}
@@ -226,10 +260,15 @@ export function NightGuide({ entry }: { entry: NightEntry }) {
       }
       const gc = game.seats.find((s) => s.effects.some((e) => e.label === 'Grandchild'))
       if (gc) { body = <Done text={`${gc.name} is the grandchild. Show ${actor.name} ${gc.name} and the ${nameOf(real(gc))} token.`} />; break }
+      const cands = game.seats.filter((s) => s.alive && isGood(s) && s.id !== actor.id)
+      const gsug = cands.find((s) => getCharacter(real(s) ?? '')?.team === 'townsfolk' && (getCharacter(real(s) ?? '')?.otherNight ?? 0) > 0) ?? cands[0]
       body = (
+        <>
+        {gsug && <Suggest s={{ seat: gsug, why: 'a Townsfolk who acts at night is a likely Demon target, which makes the Grandmother matter' }} />}
         <Button className="mt-3 w-full" onClick={() => setPick({ title: 'Choose the grandchild', hint: 'Any good player. Then point at them and show their character token.', count: 1, allow: (s) => (!s.alive ? 'dead' : !isGood(s) ? 'evil' : s.id === actor.id ? 'the Grandmother' : null), onDone: ([s]) => { place(s!, 'Grandchild', 'grandmother'); mark(`Grandmother ${actor.name}: shown ${s!.name}, the ${nameOf(real(s!))}.`, [s!.id]); haptic('confirm') } })}>
           Choose the grandchild
         </Button>
+        </>
       )
       break
     }
