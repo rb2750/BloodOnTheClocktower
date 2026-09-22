@@ -3,10 +3,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 /**
  * Press and hold, told apart from a tap and from a scroll.
  *
- * A tap is a press released within a quarter of a second without moving. A
- * hold fills over `ms` and fires `onDone`; `onEnd` fires when a completed hold
- * is let go, which is how anything held open closes again. Moving the finger
- * more than a few pixels is a scroll and cancels everything.
+ * A tap is a press released without moving and before a hold has visibly
+ * begun. It fires on the browser's own click, not on the finger lifting: a
+ * phone sends that click a moment after the finger lifts, and anything opened
+ * on the lift (a sheet and its backdrop) would catch it and close again.
+ * A hold fills over `ms` and fires `onDone`; `onEnd` fires when a completed
+ * hold is let go. Moving the finger more than a few pixels is a scroll and
+ * cancels everything.
  */
 export function useHold({
   ms,
@@ -25,6 +28,7 @@ export function useHold({
   const state = useRef<{ t0: number; x: number; y: number; done: boolean; raf: number } | null>(null)
   const cb = useRef({ onDone, onTap, onEnd })
   cb.current = { onDone, onTap, onEnd }
+  const tapped = useRef(false)
 
   const stop = useCallback((tap: boolean) => {
     const s = state.current
@@ -33,14 +37,15 @@ export function useHold({
     state.current = null
     setP(0)
     if (s.done) cb.current.onEnd?.()
-    else if (tap) cb.current.onTap?.()
+    tapped.current = tap && !s.done
   }, [])
 
   useEffect(() => {
     const up = () => {
       const s = state.current
       if (!s) return
-      stop(!s.done && performance.now() - s.t0 < 250)
+      // Without a hold to make, any unmoved press is a tap, however slow.
+      stop(!s.done && (s.raf === 0 || performance.now() - s.t0 < 450))
     }
     const move = (e: PointerEvent) => {
       const s = state.current
@@ -91,6 +96,11 @@ export function useHold({
     bind: {
       onPointerDown,
       onContextMenu: (e: React.MouseEvent) => e.preventDefault(),
+      onClick: () => {
+        if (!tapped.current) return
+        tapped.current = false
+        cb.current.onTap?.()
+      },
     },
   }
 }

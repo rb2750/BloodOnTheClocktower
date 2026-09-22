@@ -27,10 +27,16 @@ export function RwSheet({ open, onClose, children }: { open: boolean; onClose: (
       if (!popped && history.state?.sheet === id) history.back()
     }
   }, [open])
+  // A phone delivers the click from the tap that opened the sheet a moment
+  // late; the backdrop must not take it as a tap to close.
+  const openedAt = useRef(0)
+  useEffect(() => {
+    if (open) openedAt.current = performance.now()
+  }, [open])
   if (!open) return null
   return (
     <>
-      <div className="rw-scrim" onClick={() => history.back()} />
+      <div className="rw-scrim" onClick={() => performance.now() - openedAt.current > 400 && history.back()} />
       <div className="rw-sheet" role="dialog" aria-modal="true">
         <button className="rw-grab" onClick={() => history.back()} aria-label="Close" />
         <div className="rw-sheet-body">{children}</div>
