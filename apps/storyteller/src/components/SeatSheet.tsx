@@ -228,7 +228,7 @@ export function SeatSheet({ seatId, onClose }: { seatId: string | null; onClose:
             {[...new Set(game.seats.map((s) => s.trueCharacterId ?? s.characterId).filter(Boolean) as string[])]
               .flatMap((cid) => (getCharacter(cid)?.reminders ?? []).map((label) => ({ cid, label })))
               .filter((r, i, all) => all.findIndex((x) => x.cid === r.cid && x.label === r.label) === i)
-              .filter((r) => !seat.effects.some((e) => e.label === r.label && e.sourceCharacterId === r.cid))
+              .filter((r) => r.label !== 'Dead' && !seat.effects.some((e) => e.label === r.label && e.sourceCharacterId === r.cid))
               .map((r) => (
                 <ReminderOption
                   key={`${r.cid}-${r.label}`}

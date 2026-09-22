@@ -129,6 +129,7 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
   const setNightStep = useStore((s) => s.setNightStep)
   const toDay = useStore((s) => s.toDay)
   const addEffect = useStore((s) => s.addEffect)
+  const toggleAlive = useStore((s) => s.toggleAlive)
   const [placing, setPlacing] = useState<{ label: string; characterId: string } | null>(null)
   const [telling, setTelling] = useState<{ seatId: string; characterId: string } | null>(null)
   const { reachable, showGrimoire } = useRoom()
@@ -276,7 +277,7 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
                 }}
                 className="min-h-9 rounded-full border border-(--hairline-strong) px-3 text-[13px] font-medium text-(--text)"
               >
-                place “{label}”
+                {label === 'Dead' ? 'mark someone dead' : `place “${label}”`}
               </button>
             ))}
           </div>
@@ -348,11 +349,16 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
               key={seat.id}
               onClick={() => {
                 if (!placing) return
-                addEffect(seat.id, {
-                  label: placing.label,
-                  sourceCharacterId: placing.characterId,
-                  ...effectFor(placing.label, placing.characterId),
-                })
+                if (placing.label === 'Dead') {
+                  // The token means the player is dead, so mark them dead.
+                  if (seat.alive) toggleAlive(seat.id)
+                } else {
+                  addEffect(seat.id, {
+                    label: placing.label,
+                    sourceCharacterId: placing.characterId,
+                    ...effectFor(placing.label, placing.characterId),
+                  })
+                }
                 setPlacing(null)
               }}
               className="flex min-h-(--tap-min) flex-col items-center gap-1 rounded-(--radius-surface) border border-(--hairline-strong) p-2"

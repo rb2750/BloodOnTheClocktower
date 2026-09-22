@@ -683,10 +683,24 @@ export const useStore = create<Store>()(
             }
             const seat = draft.game.seats.find((s) => s.id === seatId)
             if (!seat) return
-            // Execution and death are separate events: a player can be executed
-            // and survive, and a dead player can be executed again. Either way
-            // it uses up the day's execution.
-            pushLog(draft, 'execution', `${seat.name} was executed.`, [seatId])
+            // Execution kills, unless a rule in play says this player survives
+            // it. Those are checked here so a first-time Storyteller cannot
+            // forget one, and the log says which rule it was.
+            const real = seat.trueCharacterId ?? seat.characterId
+            const has = (label: string) => seat.effects.some((e) => e.label === label)
+            let saved: string | null = null
+            if (has('Survives Execution')) saved = 'the Devil’s Advocate protected them'
+            else if (real === 'fool' && !has('No Ability')) {
+              saved = 'the Fool survives the first time'
+              seat.effects.push({ id: id(), kind: 'custom', label: 'No Ability', sourceCharacterId: 'fool', expiry: { kind: 'permanent' }, createdAt: Date.now(), createdOn: phaseLabel(draft.game.phase) })
+            } else if (real === 'sailor' && !has('Drunk') && !has('Poisoned')) saved = 'a sober Sailor cannot die'
+            else if (has('Cannot Die')) saved = 'the Tea Lady protects them'
+            pushLog(draft, 'execution', saved ? `${seat.name} was executed but survives: ${saved}.` : `${seat.name} was executed.`, [seatId])
+            if (!saved && seat.alive) {
+              seat.alive = false
+              seat.deadVoteAvailable = true
+              pushLog(draft, 'death', `${seat.name} died by execution.`, [seatId])
+            }
           }),
 
         log: (kind, text, seatIds = [], info) =>

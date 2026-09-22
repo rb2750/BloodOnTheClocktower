@@ -36,9 +36,10 @@ function facts(game: Game) {
   const diedIn = (phase: string) =>
     game.log.filter((l) => (l.kind === 'death' || l.kind === 'execution') && l.phase === phase).flatMap((l) => l.seatIds)
   const deadNow = (ids: string[]) => [...new Set(ids)].map((id) => seats.find((s) => s.id === id)).filter((s): s is Seat => Boolean(s && !s.alive))
+  const impaired = (s: Seat) => s.effects.find((e) => e.label === 'Poisoned' || e.label.startsWith('Drunk'))
   const goodAlive = alive.filter((s) => !isEvil(s)).length
   const evilAlive = alive.filter((s) => isEvil(s)).length
-  return { seats, who, one, demon, minions, alive, effect, n, diedIn, deadNow, goodAlive, evilAlive }
+  return { seats, who, one, demon, minions, alive, effect, n, diedIn, deadNow, goodAlive, evilAlive, impaired }
 }
 
 /** How the game stands, in one line, and whether evil or good is ahead. */
@@ -84,6 +85,16 @@ export function nightCoach(game: Game, entry: NightEntry | undefined, wokeTonigh
 
   // What this character does, in plain words, before what to do about it.
   if (entry.kind === 'character' && EXPLAIN[entry.id]) add('rule', EXPLAIN[entry.id]!)
+
+  // A drunk or poisoned player's ability does nothing. Say so before the
+  // steps, because every step below assumes it works.
+  const actors = entry.seats.map((s) => game.seats.find((x) => x.id === s.seatId)).filter((s): s is Seat => Boolean(s))
+  for (const s of actors) {
+    const why = f.impaired(s)
+    if (!why) continue
+    const because = why.label === 'Poisoned' ? 'poisoned' : `drunk (${nameOf(why.sourceCharacterId)})`
+    add('warn', `${s.name} is ${because}, so their ability does nothing tonight. Wake them and go through the motions, but place no tokens for them${['grandmother', 'chambermaid', 'gambler', 'exorcist'].includes(entry.id) ? ', and you may give them wrong information' : ''}.`)
+  }
 
   switch (entry.id) {
     case 'dusk':
@@ -142,8 +153,8 @@ export function nightCoach(game: Game, entry: NightEntry | undefined, wokeTonigh
       break
     case 'sailor':
       add('do', `Wake ${nm}. They point at an alive player.`)
-      add('do', 'Decide who is drunk until dusk: the Sailor or the player they chose. Usually pick the other player.')
-      add('note', 'Place “Drunk” on whoever you picked.')
+      add('do', `Decide who is drunk until dusk: ${nm}, or the player they pointed at. Usually the player they pointed at.`)
+      add('note', `Place “Drunk” on that one player: tap “place Drunk”, then their seat. Not both.`)
       add('hint', 'While sober the Sailor cannot die, even to the Demon or execution. Making the Sailor drunk is how you let them die.')
       break
     case 'courtier':
@@ -151,9 +162,10 @@ export function nightCoach(game: Game, entry: NightEntry | undefined, wokeTonigh
       add('note', 'Place “Drunk 3” on whoever has that character, and “No Ability” on the Courtier.')
       break
     case 'innkeeper':
-      add('do', `Wake ${nm}. They point at 2 players. Neither can die tonight.`)
-      add('do', 'Pick one of the two to be drunk until dusk.')
-      add('note', 'Place “Safe” on both and “Drunk” on the one you picked.')
+      add('do', `Wake ${nm}. They point at 2 players, which may include themselves. Neither of those two can die tonight.`)
+      add('note', 'Place “Safe” on each of the two players they pointed at (tap “place Safe”, then the seat, twice).')
+      add('do', 'Then choose one of those same two players to be drunk until dusk. Your choice.')
+      add('note', `Place “Drunk” on the one you chose. Nothing goes on ${nm} unless they pointed at themselves.`)
       add('hint', 'If the Pukka’s victim is Safe tonight, they survive. The Assassin still kills through it.')
       break
     case 'gambler':
@@ -178,12 +190,17 @@ export function nightCoach(game: Game, entry: NightEntry | undefined, wokeTonigh
         add('warn', `The Exorcist chose ${f.demon?.name} tonight: skip this step. The Pukka doesn’t wake, nobody new is poisoned, and nobody dies to the Pukka tonight.`)
         break
       }
-      if (!first && prev.length) {
-        const p = prev[0]!
+      // The token can go missing; the log of who was poisoned last night cannot.
+      const lastNight = `Night ${f.n - 1}`
+      const logged = game.log.filter((l) => l.phase === lastNight && l.kind === 'effect' && / is poisoned\.$/.test(l.text)).flatMap((l) => l.seatIds)
+      const victims = prev.length ? prev : f.seats.filter((s) => s.alive && logged.includes(s.id))
+      if (!first && victims.length === 0) add('hint', 'Nobody is marked as poisoned from last night, so nobody dies to the Pukka now. If someone was poisoned and the token is missing, mark them dead from their seat.')
+      if (!first && victims.length) {
+        const p = victims[0]!
         const safe = p.effects.some((e) => e.label === 'Safe') || real(p) === 'sailor'
         add('do', safe
           ? `${p.name} was poisoned last night but is protected tonight, so they don’t die. Take their “Poisoned” token off.`
-          : `${p.name} was poisoned last night and dies now: mark them dead from their seat, then take their “Poisoned” token off.`)
+          : `${p.name} was poisoned last night and dies now. Tap ${p.name}’s seat and tap Kill, then take their “Poisoned” token off.`)
         if (real(p) === 'fool') add('warn', `${p.name} is the Fool: the first time they would die, they don’t. Leave them alive and place “No Ability” on them.`)
         const gm = f.one('grandmother')
         if (f.effect('Grandchild').some((s) => s.id === p.id) && gm?.alive && !safe) add('warn', `${p.name} is the Grandmother’s grandchild, so ${gm.name} the Grandmother dies too.`)
