@@ -6,6 +6,8 @@ import { toast } from 'sonner'
 import { useStore, currentBlock } from '../state/store.js'
 import type { Seat } from '../state/types.js'
 import { GameOverHint } from './GameOverHint.js'
+import { Coach } from './Coach.js'
+import { balance, dayCoach } from '../coach.js'
 
 /**
  * The day.
@@ -80,6 +82,8 @@ export function DayPanel({ onOpenSeat, onEnd }: { onOpenSeat: (id: string) => vo
                   ? 'Those players are tied, so nobody is about to die.'
                   : 'I am about to call for nominations.'}
             </SayThis>
+
+            <Coach tips={[...dayCoach(game, block, today.length), ...(today.length === 0 ? balance(game) : [])]} />
 
             <GameOverHint onEnd={onEnd} />
 

@@ -5,6 +5,8 @@ import { useStore } from '../state/store.js'
 import { useRoom } from '../room.js'
 import { WhisperSheet } from './WhisperSheet.js'
 import { CharacterToken } from './CharacterToken.js'
+import { Coach } from './Coach.js'
+import { balance, nightCoach } from '../coach.js'
 import { GameOverHint } from './GameOverHint.js'
 
 /**
@@ -84,6 +86,12 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
   const step = Math.min(game.phase.step, Math.max(order.length - 1, 0))
   const entry = order[step]
   const isLast = step >= order.length - 1
+  // Who woke tonight for their own ability, for the Chambermaid.
+  const woke = order
+    // Some steps are the Storyteller's to resolve and nobody opens their eyes.
+    .filter((o) => o.kind !== 'step' && !['chambermaid', 'tinker', 'moonchild'].includes(o.id) && !(o.id === 'grandmother' && game.phase.k === 'night' && game.phase.n > 1) && !o.allDead)
+    .flatMap((o) => o.seats.map((s) => game.seats.find((x) => x.id === s.seatId)))
+    .filter((s): s is NonNullable<typeof s> => Boolean(s && s.alive))
 
   return (
     <>
@@ -112,6 +120,14 @@ export function NightPanel({ onHandOut, onEnd }: { onHandOut: () => void; onEnd:
                 </div>
               )}
               <ReminderText source={entry.reminder} />
+              {!concealed && (
+                <Coach
+                  tips={[
+                    ...nightCoach(game, entry, woke),
+                    ...(entry.id === 'dawn' || entry.id === 'dusk' ? balance(game) : []),
+                  ]}
+                />
+              )}
             </div>
           </div>
         ) : (
